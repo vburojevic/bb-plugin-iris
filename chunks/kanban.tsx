@@ -1,11 +1,10 @@
-import { toneColor } from "../ui/palette";
 // Board with editable (chunk "interact"): the read-only Board's columns and
 // cards, plus dragging cards within and between columns (a long press on
 // touch), keyboard moves (Space lifts, arrows move, Space drops, Escape puts
 // it back), adding and renaming cards. Changes are saved with the card under
 // an "@" key and handed to a bound <state>; the rules live in core/kanban.ts.
 
-import { Chip, Glyph, cn, str, useEnv } from "@iris/ui";
+import { Chip, Glyph, cn, str, useEnv, toneColor } from "@iris/ui";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { isPendingValue } from "../core/evaluate";
 import { type Kanban, type KanbanCard, type KanbanMemory, applyMemory, arrangement, locate, memoryOf, moveCard, newCardId, normalizeKanban, nudge } from "../core/kanban";

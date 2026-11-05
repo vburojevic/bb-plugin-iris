@@ -8,7 +8,7 @@
 import { chunkEntryUrl, sampleUrl } from "./chunks";
 import { useEnv } from "./env";
 import { hexColor, themeVar, useGlSlot } from "./gl";
-import { sequentialRamp, tooClose } from "./palette";
+import { sequentialRamp, toneColor, tooClose } from "./palette";
 import { InlineError } from "./render";
 import { renderValue } from "./render";
 import { runCells } from "../core/compute";
@@ -21,7 +21,7 @@ export type { GlSlot } from "./gl";
 export { chunkEntryUrl, sampleUrl };
 export { Chip, CompareView, Glyph, InlineError, literalStrings, Prose, Shimmer, cn, hexColor, num, sequentialRamp, str, themeVar, useEnv, useGlSlot };
 export { renderValue, runCells };
-export { tooClose };
+export { toneColor, tooClose };
 
 export const CHUNK_API = {
   get useEnv() { return useEnv; },
@@ -42,6 +42,7 @@ export const CHUNK_API = {
   get runCells() { return runCells; },
   get sequentialRamp() { return sequentialRamp; },
   get tooClose() { return tooClose; },
+  get toneColor() { return toneColor; },
   get CompareView() { return CompareView; },
   get literalStrings() { return literalStrings; },
 };

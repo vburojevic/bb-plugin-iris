@@ -83,5 +83,35 @@ export default definePluginApp((app) => {
   // A pinned card shows in the thread context card where bb has it on, and in the thread's Info tab everywhere.
   app.slots.experimental_threadContextCardSection({ id: "iris-pinned", title: "Pinned card", group: "iris", component: ({ threadId }) => <PinnedSection threadId={threadId} /> });
   app.slots.experimental_threadInfoSection({ id: "iris-pinned-info", group: "iris", component: ({ threadId }) => <PinnedInfoSection threadId={threadId} /> });
+  // Prose you'd rather see as a card: one click puts the request in the composer, ready to send.
+  app.slots.messageAction({
+    id: "iris-as-card",
+    title: "Show as an Iris card",
+    icon: `${PLUGIN_ID}/mark`,
+    run: ({ message, selectedText, composer }) => {
+      if (!composer) return;
+      const part = selectedText?.trim();
+      const text = part
+        ? `Show this as an Iris card:\n> ${part.slice(0, 2000).replace(/\n/g, "\n> ")}`
+        : message.role === "assistant"
+          ? "Show your answer above as an Iris card."
+          : "Answer that with an Iris card.";
+      composer.insert(text, { at: "end", block: true });
+      composer.focus();
+    },
+  });
+  app.composer.experimental_registerCommand({
+    id: "iris-ask-card",
+    title: "Iris: show that as a card",
+    run: ({ composer }) => {
+      composer.insert("Show that as an Iris card.", { at: "end", block: true });
+      composer.focus();
+    },
+  });
+  app.commands.register({
+    id: "iris-playground",
+    title: "Iris: open the playground in the browser",
+    run: () => void window.open("https://vburojevic.github.io/bb-plugin-iris/#/play", "_blank", "noopener,noreferrer"),
+  });
   app.slots.navPanel({ id: "gallery", title: PLUGIN_ID === "iris" ? "Iris" : `Iris (${PLUGIN_ID})`, icon: `${PLUGIN_ID}/mark`, path: "gallery", component: GalleryPage });
 });

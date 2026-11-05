@@ -1,10 +1,9 @@
-import { toneColor } from "../ui/palette";
 // VideoPlayer and AudioPlayer (chunk "assets"). Rules live in core/players.ts.
 // Media streams from a bb preview URL with byte ranges (chunks/file-access.ts);
 // the controls are Iris's own so they follow the theme. Without a thread the
 // gallery plays a bundled clip (video) or a synthesized one (audio).
 
-import { Chip, Glyph, InlineError, Shimmer, cn, num, str, useEnv } from "@iris/ui";
+import { Chip, Glyph, InlineError, Shimmer, cn, num, str, useEnv, toneColor } from "@iris/ui";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { isPendingValue } from "../core/evaluate";
 import {

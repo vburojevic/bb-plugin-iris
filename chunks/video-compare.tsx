@@ -1,4 +1,3 @@
-import { toneColor } from "../ui/palette";
 // VideoCompare (chunk "compare"): two videos on one timeline. Both stream
 // through bb preview leases as VideoPlayer's do (useMediaSource); the shared
 // controls come from chunks/players.tsx and the timing rules from
@@ -10,7 +9,7 @@ import { toneColor } from "../ui/palette";
 // and seeked for large. Where neither video is inside (a gap made by the
 // offset), a wall clock carries t. Pausing lines both up on the same frame.
 
-import { Chip, Glyph, Shimmer, cn, num, str, useEnv } from "@iris/ui";
+import { Chip, Glyph, Shimmer, cn, num, str, useEnv, toneColor } from "@iris/ui";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { catchUp, normalizeVideos, offsetText, timeline, videoTime } from "../core/compare";
 import { isPendingValue } from "../core/evaluate";

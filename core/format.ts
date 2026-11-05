@@ -102,7 +102,10 @@ export function formatNumber(n: number): string {
 /** 0.42 and 42 both read as 42%: values above 1 are taken as already in percent. */
 function formatPercent(n: number, d?: number): string {
   const value = Math.abs(n) <= 1 ? n * 100 : n;
-  const digits = d ?? (Math.abs(value) < 10 && !Number.isInteger(value) ? 1 : 0);
+  let digits = d ?? (Math.abs(value) < 10 && !Number.isInteger(value) ? 1 : 0);
+  // 99.6% must never read as 100%, nor 0.04% as 0%: without set decimals, add up to two until it can't.
+  const at = (k: number) => Math.round(value * 10 ** k) / 10 ** k;
+  if (d == null) while (digits < 2 && value !== 100 && value !== 0 && (Math.abs(at(digits)) === 100 || at(digits) === 0)) digits += 1;
   return `${value.toLocaleString(LOCALE, { minimumFractionDigits: digits, maximumFractionDigits: digits })}%`;
 }
 

@@ -54,6 +54,10 @@ const SAMPLE_BB: Record<string, unknown> = {
     { name: "Studio Mac", status: "connected", lastSeenAt: now - 4000 },
     { name: "Build server", status: "connected", lastSeenAt: now - 9000 },
   ],
+  terminals: [
+    { id: "term_web", title: "npm run dev", status: "running", exitCode: null, cwd: "~/checkout-service", createdAt: now - 1_800_000, output: "\u001b[32m✓\u001b[0m Ready in 1.2s\n\u001b[2m○ Local:   http://localhost:3000\u001b[0m\n GET /checkout 200 in 41ms\n GET /api/cart 200 in 12ms\n" },
+    { id: "term_test", title: "vitest --watch", status: "exited", exitCode: 1, cwd: "~/checkout-service", createdAt: now - 600_000, output: " \u001b[31m✗\u001b[0m CartTotals applies discount once\n Tests  1 failed | 142 passed (143)\n" },
+  ],
   plugins: [
     { id: "iris", version: "0.6.0", status: "running", detail: null },
     { id: "github-status", version: "1.2.0", status: "running", detail: null },

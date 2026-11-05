@@ -506,6 +506,7 @@ Cards read bb's own live data with `load("bb:<source>")`, scoped to the card's t
 | `bb:environments` | The project's worktrees with their threads, changed files and pull requests |
 | `bb:machines` | bb machines and whether they're connected |
 | `bb:plugins` | Installed plugins and their health |
+| `bb:terminals` | This thread's terminals: title, status, exit code; `?output=1` adds the tail of what each prints, for a live `<Logs>` |
 
 ```iris
 <let t={load("bb:thread")} />

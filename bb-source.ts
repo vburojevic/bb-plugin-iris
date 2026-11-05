@@ -10,7 +10,7 @@ import type { ProjectSource } from "./project-source";
 type Answer = { ok: true; value: unknown } | { ok: false; error: string };
 
 /** How long an answer stays fresh: thread state changes fast, git and PRs slower, account-wide data slowest. */
-const CACHE_MS: Record<string, number> = { thread: 3000, threads: 4000, pr: 10_000, commits: 8000, changes: 8000, environments: 8000, usage: 30_000, machines: 15_000, plugins: 30_000 };
+const CACHE_MS: Record<string, number> = { terminals: 2000, thread: 3000, threads: 4000, pr: 10_000, commits: 8000, changes: 8000, environments: 8000, usage: 30_000, machines: 15_000, plugins: 30_000 };
 const MAX_THREADS = 60;
 const MAX_USAGE_THREADS = 30;
 
@@ -139,6 +139,34 @@ export function createBbSource(bb: BbPluginApi, project: ProjectSource) {
     return { ok: true, value: list.map(asRecord).map((p) => ({ id: str(p.id) ?? "", version: str(p.version), status: str(p.status) ?? "unknown", detail: str(p.statusDetail)?.slice(0, 200) ?? null })) };
   }
 
+  /** The thread's terminals, its environment's too, each with the tail of its output when asked. */
+  async function terminals(threadId: string, query: Record<string, string>): Promise<Answer> {
+    const own = await ownThread(threadId);
+    if (!own) return { ok: false, error: "this thread isn't available" };
+    const scopes: unknown[] = [{ kind: "thread", threadId }];
+    const env = str(own.environmentId);
+    if (env) scopes.push({ kind: "environment", environmentId: env });
+    const seen = new Map<string, Record<string, unknown>>();
+    for (const scope of scopes) {
+      const r = asRecord(await sdk.terminals.list({ scope } as never).catch(() => null));
+      for (const s of (Array.isArray(r.sessions) ? r.sessions : []).map(asRecord)) if (str(s.id) && !seen.has(String(s.id))) seen.set(String(s.id), s);
+    }
+    const bytes = query.output ? Math.min(16_384, Math.max(256, Number(query.output) > 1 ? Number(query.output) : 4096)) : 0;
+    const rows = await Promise.all(
+      [...seen.values()].slice(0, 20).map(async (s) => {
+        const row: Record<string, unknown> = { id: str(s.id), title: str(s.title) ?? "", status: str(s.status) ?? "unknown", exitCode: num(s.exitCode), cwd: str(s.initialCwd), createdAt: num(s.createdAt) };
+        if (bytes) {
+          const o = asRecord(await sdk.terminals.output({ terminalId: String(s.id), tailBytes: bytes } as never).catch(() => null));
+          const chunks = Array.isArray(o.chunks) ? o.chunks.map(asRecord) : [];
+          const text = Buffer.concat(chunks.map((c) => Buffer.from(str(c.dataBase64) ?? "", "base64"))).toString("utf8");
+          row.output = text.slice(-bytes);
+        }
+        return row;
+      }),
+    );
+    return { ok: true, value: rows };
+  }
+
   async function fromProject(threadId: string, name: string): Promise<Answer> {
     if (name === "commits") {
       const r = await project.commits(threadId);
@@ -175,6 +203,7 @@ export function createBbSource(bb: BbPluginApi, project: ProjectSource) {
       if (name === "usage") return await usage();
       if (name === "machines") return await machines();
       if (name === "plugins") return await plugins();
+      if (name === "terminals") return await terminals(threadId as string, query);
       return await fromProject(threadId as string, name);
     } catch (e) {
       return { ok: false, error: `bb couldn't read bb:${name}: ${message(e)}` };

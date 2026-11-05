@@ -24,6 +24,7 @@ export const BB_SOURCES: readonly BbSourceSpec[] = [
   { name: "environments", thread: true, summary: "the project's worktrees: [{branch, threads, changedFiles, pullRequest}]" },
   { name: "machines", thread: false, summary: "bb machines: [{name, status, lastSeenAt}]" },
   { name: "plugins", thread: false, summary: "installed plugins and their health: [{id, version, status, detail}]" },
+  { name: "terminals", thread: true, summary: "this thread's terminals (output=1 adds the last 4 KB each prints, output=16000 up to 16 KB; draw it with Logs): [{id, title, status: starting|running|exited|disconnected, exitCode, cwd, createdAt, output?}]" },
 ];
 
 export function isBbSource(path: string): boolean {

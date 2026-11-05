@@ -331,7 +331,12 @@ export function RoadmapView({ props }: ViewProps) {
                   i.milestone ? (
                     <div key={k} className="relative h-6">
                       <span className="absolute top-1 size-3.5 -translate-x-1/2 rotate-45 rounded-[3px]" style={{ left: x(i.s), background: env.palette.accent }} />
-                      <span className="absolute top-0.5 whitespace-nowrap pl-3 text-[12px]" style={{ left: x(i.s) }}>
+                      {/* Past the middle the label sits left of the diamond, so it never runs off a narrow lane. */}
+                      <span
+                        className={cn("absolute top-0.5 max-w-[50%] truncate text-[12px]", (i.s - min) / span > 0.5 ? "pr-3 text-right" : "pl-3")}
+                        style={(i.s - min) / span > 0.5 ? { right: `${100 - ((i.s - min) / span) * 100}%` } : { left: x(i.s) }}
+                        title={toText(i.title)}
+                      >
                         {toText(i.title)}
                       </span>
                     </div>

@@ -168,7 +168,19 @@ async function mermaid() {
   mermaidModule ??= import("mermaid").then((m) => m.default);
   const m = await mermaidModule;
   const css = getComputedStyle(document.documentElement);
-  const v = (name: string, fallback: string) => css.getPropertyValue(name).trim() || fallback;
+  // Themes write colors as color-mix() or oklch(), which Mermaid's color parser rejects; a 1x1
+  // canvas resolves any CSS color to plain rgb.
+  const probe = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+  const rgb = (color: string, fallback: string) => {
+    if (!probe) return fallback;
+    probe.clearRect(0, 0, 1, 1);
+    probe.fillStyle = fallback;
+    probe.fillStyle = color;
+    probe.fillRect(0, 0, 1, 1);
+    const [r, g, b, a] = probe.getImageData(0, 0, 1, 1).data;
+    return a ? `rgb(${r}, ${g}, ${b})` : fallback;
+  };
+  const v = (name: string, fallback: string) => rgb(css.getPropertyValue(name).trim() || fallback, fallback);
   const dark = document.documentElement.classList.contains("dark");
   m.initialize({
     startOnLoad: false,
@@ -210,7 +222,8 @@ function MermaidBlock({ source }: { source: string }) {
       .then(({ svg }) => {
         if (live && ref.current) ref.current.innerHTML = DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true, svgFilters: true }, ADD_TAGS: ["foreignObject"] });
       })
-      .catch(() => {
+      .catch((e: unknown) => {
+        console.warn("Mermaid couldn't draw this diagram", e);
         if (live && ref.current) ref.current.textContent = source;
       });
     return () => {

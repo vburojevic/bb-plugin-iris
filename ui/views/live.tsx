@@ -590,15 +590,24 @@ export function ThreadsView({ props }: ViewProps) {
                   <StatusDot {...threadTone(t)} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px]">{t.title}</span>
-                    {t.branch ? <span className="block truncate font-mono text-[11px] text-muted-foreground">{t.branch}</span> : null}
-                  </span>
-                  {t.background ? (
-                    <span className="shrink-0 text-xs text-muted-foreground" title="Background agents, commands and workflows running">
-                      +{t.background} in background
+                    {/* On a phone the status and time move to this second line, so the title keeps the width. */}
+                    <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] text-muted-foreground">
+                      {t.branch ? <span className="min-w-0 max-w-full truncate font-mono">{t.branch}</span> : null}
+                      {t.background ? (
+                        <span className="shrink-0" title="Background agents, commands and workflows running">
+                          {t.branch ? "· " : ""}+{t.background} in background
+                        </span>
+                      ) : null}
+                      <span className="inline-flex shrink-0 items-center gap-1.5 sm:hidden">
+                        <ThreadChip t={t} />
+                        <span className="whitespace-nowrap tabular-nums">{ago(t.updatedAt)}</span>
+                      </span>
                     </span>
-                  ) : null}
-                  <ThreadChip t={t} />
-                  <span className="min-w-[4.5rem] shrink-0 whitespace-nowrap text-right text-xs tabular-nums text-muted-foreground">{ago(t.updatedAt)}</span>
+                  </span>
+                  <span className="contents max-sm:hidden">
+                    <ThreadChip t={t} />
+                    <span className="min-w-[4.5rem] shrink-0 whitespace-nowrap text-right text-xs tabular-nums text-muted-foreground">{ago(t.updatedAt)}</span>
+                  </span>
                 </button>
               </li>
             ) : (
@@ -666,11 +675,11 @@ function EnvironmentRow({ e, sample }: { e: EnvironmentInfo; sample: boolean }) 
   const folder = e.path ? e.path.split("/").filter(Boolean).pop() : null;
   return (
     <li className="min-w-0 px-2.5 py-2">
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <Glyph name={e.isWorktree ? "folder-git-2" : "folder"} size={14} className="text-muted-foreground" />
-        <span className="min-w-0 truncate font-mono text-[12.5px] font-medium">{e.branch ?? e.name ?? folder ?? e.id}</span>
-        {e.current ? <Chip tone="info">This thread</Chip> : null}
-        <span className="ml-auto flex shrink-0 items-center gap-1.5">
+        <span className="min-w-[9rem] flex-1 basis-0 truncate font-mono text-[12.5px] font-medium">{e.branch ?? e.name ?? folder ?? e.id}</span>
+        <span className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+          {e.current ? <Chip tone="info">This thread</Chip> : null}
           {e.changedFiles ? <Chip>{e.changedFiles} changed</Chip> : e.changedFiles === 0 ? <span className="text-xs text-muted-foreground">clean</span> : null}
           {pr ? (
             <button type="button" onClick={() => !sample && env.perform([{ $iris: "action", kind: "openUrl", args: [pr.url] }])} title={pr.title} className="inline-flex">

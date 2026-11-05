@@ -206,14 +206,14 @@ export function AcceptanceView({ props }: ViewProps) {
 function AcceptanceMatrix({ model, selected, onSelect, panelId }: { model: ReturnType<typeof normalizeAcceptance>; selected: string | null; onSelect: (k: string | null) => void; panelId: string }) {
   return (
     <div className="iris-scroll-x mt-2 overflow-x-auto">
-      <table className="w-full min-w-max border-separate border-spacing-0 text-[13px]">
+      <table className="w-full border-separate border-spacing-0 text-[13px]">
         <thead>
           <tr>
             <th className="pb-1.5 pr-3 text-left text-xs font-normal text-muted-foreground">
               <span className="sr-only">Criterion</span>
             </th>
             {model.columns.map((c) => (
-              <th key={c} scope="col" className="min-w-[3.75rem] px-1.5 pb-1.5 text-center text-xs font-medium text-muted-foreground">
+              <th key={c} scope="col" className="w-[3.25rem] min-w-[3.25rem] whitespace-nowrap px-1 pb-1.5 text-center text-xs font-medium text-muted-foreground">
                 {c}
               </th>
             ))}
@@ -222,7 +222,7 @@ function AcceptanceMatrix({ model, selected, onSelect, panelId }: { model: Retur
         <tbody>
           {model.rows.map((r, ri) => (
             <tr key={ri} className="[&>*]:border-t [&>*]:border-border/70">
-              <th scope="row" className="max-w-[22rem] py-1.5 pr-3 text-left align-middle font-normal">
+              <th scope="row" className="min-w-[7.5rem] max-w-[22rem] py-1.5 pr-3 text-left align-middle font-normal">
                 <div className="whitespace-normal leading-snug">{r.name}</div>
                 {r.note ? <div className="mt-0.5 whitespace-normal text-[12px] leading-snug text-muted-foreground">{r.note}</div> : null}
                 {r.evidence ? <EvidenceLink evidence={r.evidence} /> : null}

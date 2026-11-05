@@ -7,6 +7,13 @@ import { IrisBlock } from "./block";
 import { setPin, usePin } from "./pin-store";
 import { Glyph } from "./views/kit";
 
+/** A short hash of the card's source, so each pinned card keeps its own inputs. */
+function sourceKey(source: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < source.length; i++) h = Math.imul(h ^ source.charCodeAt(i), 0x01000193);
+  return (h >>> 0).toString(36);
+}
+
 /** The context card section: the pinned card, live, with a way to unpin it. Nothing when none is pinned. */
 export function PinnedSection({ threadId }: { threadId: string }) {
   const rpc = useRpc<RpcContract>();
@@ -14,7 +21,7 @@ export function PinnedSection({ threadId }: { threadId: string }) {
   if (!pin) return null;
   return (
     <div className="iris-pinned relative min-w-0 pb-1">
-      <IrisBlock source={pin.source} streaming={false} threadId={threadId} mode="panel" stateKey={`pinned:${threadId}`} bare />
+      <IrisBlock source={pin.source} streaming={false} threadId={threadId} mode="panel" stateKey={`pinned:${threadId}:${sourceKey(pin.source)}`} bare />
       <div className="mt-1 flex justify-end">
         <button type="button" onClick={() => void setPin(rpc, threadId, null)} className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-state-hover hover:text-foreground">
           <Glyph name="pin-off" size={12} />

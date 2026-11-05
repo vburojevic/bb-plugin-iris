@@ -243,7 +243,7 @@
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .h-px, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).h-px { height: 1px; }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .max-h-28, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).max-h-28 { max-height: calc(var(--spacing) * 28); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .max-h-36, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).max-h-36 { max-height: calc(var(--spacing) * 36); }
-  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .max-h-40, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).max-h-40 { max-height: calc(var(--spacing) * 40); }
+  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .max-h-60, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).max-h-60 { max-height: calc(var(--spacing) * 60); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .max-h-72, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).max-h-72 { max-height: calc(var(--spacing) * 72); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .max-h-\[360px\], :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).max-h-\[360px\] { max-height: 360px; }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .max-h-\[420px\], :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).max-h-\[420px\] { max-height: 420px; }

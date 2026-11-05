@@ -112,6 +112,7 @@ export default definePluginApp((app) => {
   app.commands.register({
     id: "iris-playground",
     title: "Iris: open the playground in the browser",
+    // A palette command gets no navigate handle, so it opens the page directly.
     run: () => void window.open(`${PLAYGROUND_URL}#/play`, "_blank", "noopener,noreferrer"),
   });
   app.slots.navPanel({ id: "gallery", title: PLUGIN_ID === "iris" ? "Iris" : `Iris (${PLUGIN_ID})`, icon: `${PLUGIN_ID}/mark`, path: "gallery", component: GalleryPage });

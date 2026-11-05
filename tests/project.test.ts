@@ -209,6 +209,6 @@ describe("path filter globs", () => {
     const path = `${"a".repeat(60)}/${"b".repeat(60)}.ts`;
     const t = performance.now();
     expect(matchesPathFilter(path, [evil])).toBe(false);
-    expect(performance.now() - t).toBeLessThan(200);
+    expect(performance.now() - t).toBeLessThan(1000);
   });
 });

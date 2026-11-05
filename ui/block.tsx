@@ -241,7 +241,10 @@ function Toolbar(p: { source: string; language: string; showSource: boolean; onT
   // The playground runs ```iris cards only; pages and apps need bb's sandbox bridge.
   const shareable = !ON_PLAYGROUND && !p.streaming && p.language === "iris" && p.source.trim().length > 0 && p.source.length <= MAX_LINK_SOURCE;
   const openInPlayground = () => {
-    navigate.openUrl(PLAYGROUND_URL + playLink(p.source.trim()));
+    if (!navigate.openUrl(PLAYGROUND_URL + playLink(p.source.trim()))) {
+      toast.error("bb couldn't open the playground link here");
+      return;
+    }
     // A card's files and bb data stay on this machine; the playground draws it without them.
     if (/\bload\(/.test(p.source)) toast("Opened in the playground. Files and bb data this card loads stay here, so it shows them as pending.");
   };

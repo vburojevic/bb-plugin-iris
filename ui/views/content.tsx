@@ -3,6 +3,7 @@ import { useState, type ReactNode } from "react";
 import { isElementValue, isPendingValue, toText } from "../../core/evaluate";
 import { formatValue } from "../../core/format";
 import { useEnv } from "../env";
+import { toneColor } from "../palette";
 import type { ViewProps } from "../render";
 import { renderElementValue, renderValue } from "../render";
 import { useLoadedImage, imageError } from "../files";
@@ -264,7 +265,7 @@ export function GaugeView({ props }: ViewProps) {
   const ratio = Math.max(0, Math.min(1, (value - min) / (max - min || 1)));
   const thresholds = Array.isArray(props.thresholds) ? (props.thresholds as { at: number; tone: string }[]) : [];
   const t = [...thresholds].sort((a, b) => a.at - b.at).filter((x) => value >= x.at).pop();
-  const color = (t && palette.tone[t.tone as keyof typeof palette.tone]) ?? (props.tone ? palette.tone[props.tone as keyof typeof palette.tone] : undefined) ?? palette.accent;
+  const color = (t && toneColor(palette, t.tone)) ?? toneColor(palette, props.tone) ?? palette.accent;
   const r = 52;
   const arc = Math.PI * r;
   return (

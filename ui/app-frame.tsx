@@ -64,17 +64,20 @@ function gate(frame: HTMLIFrameElement | null): Gate {
   return "ok";
 }
 
-/** What a page asked to send, waiting for the person's click on the bar Iris draws. */
-type Pending = { kind: "send" | "submit"; preview: string; run: () => void; at: number };
-/** The bar's buttons wake after this long, so a page can't pop it up under a click already on its way. */
+/** What a page asked to send, waiting for the person's click on the bar Iris draws. `text` is shown whole and is exactly what goes out. */
+type Pending = { kind: "send" | "submit"; text: string; run: () => void; at: number };
+/** Send wakes only once the bar has sat still this long, so a page can't slide it under a click already on its way. */
 const ARM_MS = 600;
+/** Longest message or answer a page may ask to send; longer ones are refused rather than shown in part. */
+const MAX_SEND = 20_000;
 
-function previewOf(value: unknown): string {
+/** The text a request would send: a string as is, anything else as JSON. Null when it can't be written down. */
+function wireText(value: unknown): string | null {
   if (typeof value === "string") return value;
   try {
-    return JSON.stringify(value, null, 2) ?? String(value);
+    return JSON.stringify(value, null, 2) ?? null;
   } catch {
-    return String(value);
+    return null;
   }
 }
 
@@ -129,6 +132,7 @@ export function AppFrame({ source, streaming, threadId, stateKey, submit, kind =
   const [pending, setPending] = useState<Pending | null>(null);
   const pendingRef = useRef<Pending | null>(null);
   const quietUntil = useRef(0);
+  const reported = useRef(false);
   const ask = (p: Pending | null, quiet = 0) => {
     pendingRef.current = p;
     if (quiet) quietUntil.current = performance.now() + quiet;
@@ -179,6 +183,7 @@ export function AppFrame({ source, streaming, threadId, stateKey, submit, kind =
   // A new page never inherits the old page's waiting request.
   useEffect(() => {
     pendingRef.current = null;
+    reported.current = false;
     setPending(null);
   }, [doc]);
 
@@ -209,7 +214,8 @@ export function AppFrame({ source, streaming, threadId, stateKey, submit, kind =
       if (e.source !== frame.current?.contentWindow || !e.data || e.data.__iris !== true) return;
       const { type, data } = e.data as { type: string; data: unknown };
       if (type === "height") setAlive(true);
-      if (type === "height") setHeight(Math.max(kind === "react" ? 24 : 80, Math.min(1600, Number(data) || 0)));
+      // While a request waits, the page can't resize itself to slide the bar under the pointer.
+      if (type === "height" && !pendingRef.current) setHeight(Math.max(kind === "react" ? 24 : 80, Math.min(1600, Number(data) || 0)));
       else if (type === "error") setErrors((list) => addError(list, { message: String(data) }));
       else if (type === "app-error" && kind === "react" && data && typeof data === "object") {
         const d = data as { message?: unknown; line?: unknown };
@@ -221,15 +227,23 @@ export function AppFrame({ source, streaming, threadId, stateKey, submit, kind =
       } else if (type === "submit" || (type === "action" && (data as { kind?: unknown } | null)?.kind === "send")) {
         // Speaking for the person waits for their click on Iris's own bar. One request at a time:
         // a page can't swap the text under a waiting bar or stack a pile of them.
-        if (type === "submit" && !submit) return actions.report(new Error("iris.submit() works only inside an iris_ask picker"));
+        const once = (message: string) => {
+          if (reported.current) return;
+          reported.current = true;
+          actions.report(new Error(message));
+        };
+        if (type === "submit" && !submit) return once("iris.submit() works only inside an iris_ask picker");
         if (pendingRef.current || performance.now() < quietUntil.current) return;
         const value = type === "submit" ? data : (data as { args?: unknown[] }).args?.[0];
-        const text = previewOf(value);
-        if (!text.trim()) return;
+        const text = wireText(value);
+        if (text === null || !text.trim()) return;
+        if (text.length > MAX_SEND) return once(`A page can send at most ${MAX_SEND.toLocaleString("en-US")} characters at once`);
+        // An answer goes out as the JSON shown, parsed back, so the agent gets exactly what the person read.
+        const answer = type === "submit" && typeof value !== "string" ? JSON.parse(text) : value;
         ask({
           kind: type === "submit" ? "submit" : "send",
-          preview: text.length > 4000 ? `${text.slice(0, 4000)}…` : text,
-          run: type === "submit" ? () => submit?.(data) : () => actions.perform([{ $iris: "action", kind: "send", args: [text] }]),
+          text,
+          run: type === "submit" ? () => submit?.(answer) : () => actions.perform([{ $iris: "action", kind: "send", args: [text] }]),
           at: performance.now(),
         });
       } else if (type === "action") {
@@ -307,11 +321,31 @@ export function AppFrame({ source, streaming, threadId, stateKey, submit, kind =
 
 function ConfirmBar({ pending, app, onSend, onCancel }: { pending: Pending; app: string; onSend: () => void; onCancel: () => void }) {
   const [armed, setArmed] = useState(false);
+  const sendRef = useRef<HTMLButtonElement | null>(null);
+  // Send wakes once the button has held still for ARM_MS: anything that moves it (a card above
+  // resizing, a scroll) puts it back to sleep, so it can't be slid under a click on its way.
+  const settledAt = useRef(pending.at);
   useEffect(() => {
     setArmed(false);
-    const t = setTimeout(() => setArmed(true), Math.max(0, ARM_MS - (performance.now() - pending.at)));
-    return () => clearTimeout(t);
+    settledAt.current = pending.at;
+    let last = "";
+    let frame = 0;
+    const tick = () => {
+      const r = sendRef.current?.getBoundingClientRect();
+      const where = r ? `${Math.round(r.left)},${Math.round(r.top)}` : "";
+      if (where !== last) {
+        last = where;
+        settledAt.current = Math.max(settledAt.current, performance.now());
+        setArmed(false);
+      } else if (performance.now() - settledAt.current >= ARM_MS) setArmed(true);
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
   }, [pending]);
+  const send = () => {
+    if (performance.now() - settledAt.current >= ARM_MS) onSend();
+  };
   const what = pending.kind === "submit" ? `This ${app} wants to send this answer` : `This ${app} wants to send this message as you`;
   return (
     <div role="group" aria-label={what} className="iris-confirm mt-1.5 rounded-[12px] bg-muted/50 px-3 py-2.5 text-[13px] ring-1 ring-border">
@@ -319,12 +353,12 @@ function ConfirmBar({ pending, app, onSend, onCancel }: { pending: Pending; app:
         <Glyph name="shield-check" size={13} className="shrink-0" />
         {what}
       </div>
-      <div className="mt-1.5 max-h-40 overflow-y-auto whitespace-pre-wrap break-words rounded-lg bg-card px-2.5 py-1.5 ring-1 ring-border [overflow-wrap:anywhere]">{pending.preview}</div>
+      <div className="mt-1.5 max-h-60 overflow-y-auto whitespace-pre-wrap break-words rounded-lg bg-card px-2.5 py-1.5 ring-1 ring-border [overflow-wrap:anywhere]">{pending.text}</div>
       <div className="mt-2 flex justify-end gap-1.5">
         <button type="button" onClick={onCancel} className="inline-flex h-8 items-center rounded-full px-3.5 text-[13px] font-medium text-muted-foreground ring-1 ring-border hover:bg-state-hover hover:text-foreground">
           Don't send
         </button>
-        <button type="button" disabled={!armed} onClick={onSend} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-foreground px-3.5 text-[13px] font-medium text-background hover:opacity-90 disabled:opacity-45">
+        <button ref={sendRef} type="button" disabled={!armed} onClick={send} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-foreground px-3.5 text-[13px] font-medium text-background hover:opacity-90 disabled:opacity-45">
           <Glyph name="send" size={13} />
           Send
         </button>

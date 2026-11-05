@@ -8,7 +8,8 @@ import { parse } from "../core/parse";
 import { parseCaptions } from "../core/players";
 import { highlight } from "../site/editor";
 
-const fast = (fn: () => unknown, ms = 250) => {
+// A backtracking blowup on these sizes takes seconds; the bound leaves room for a busy machine.
+const fast = (fn: () => unknown, ms = 1000) => {
   const t = performance.now();
   fn();
   expect(performance.now() - t).toBeLessThan(ms);

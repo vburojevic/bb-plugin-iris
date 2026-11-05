@@ -82,8 +82,8 @@ export function TestsView({ props }: ViewProps) {
       {!listed.length && !others.length ? (
         runTotal && !failedCount ? (
         <div className="mt-3 flex items-center gap-2 text-[13px] text-muted-foreground">
-          <Glyph name="party-popper" size={15} />
-          Every test passed
+          <Glyph name={passed ? "party-popper" : "circle-dashed"} size={15} />
+          {passed ? (skipped ? "Every test that ran passed" : "Every test passed") : "Every test was skipped"}
         </div>
         ) : (
           <div className="mt-3 text-xs text-muted-foreground">{runTotal ? "The failures aren't listed" : "No tests in this report"}</div>

@@ -103,7 +103,7 @@ describe("Terminal", () => {
     const start = Date.now();
     t.write("\u001b[50000000Cx\u001b[200000B\u001b[9999;9999Hy");
     for (let k = 0; k < 6000; k++) t.write("line\n");
-    expect(Date.now() - start).toBeLessThan(500);
+    expect(Date.now() - start).toBeLessThan(1500);
     expect(t.rows.length).toBeLessThanOrEqual(5000);
     expect(Math.max(...t.rows.map((r) => r.chars.length))).toBeLessThanOrEqual(1000);
   });

@@ -45,7 +45,7 @@ On a Mac running bb 0.48 or later:
 bb plugin install "git:https://github.com/vburojevic/bb-plugin-iris.git@^1.0.0"
 ```
 
-That's it. New agent sessions learn Iris on their own, and the gallery appears in bb's sidebar under **Iris**. Sessions that were already running pick it up when they next start or resume. Iris adds about 15k tokens of instructions to each session it reaches.
+That's it. New agent sessions learn Iris on their own, and the gallery appears in bb's sidebar under **Iris**. Sessions that were already running pick it up when they next start or resume. Iris adds about 3,500 tokens of instructions to each session it reaches: its rules and an index of every component. Prop details and examples load only when an agent asks for them.
 
 > [!TIP]
 > Try every component in your browser first: the [playground](https://vburojevic.github.io/bb-plugin-iris/#/play) runs Iris's real renderer, with a live editor and links you can share.
@@ -535,6 +535,7 @@ Cards then read it with `load("plugin:<your-plugin-id>/status")`. Iris fetches `
 |---|---|
 | `iris_check` | Validates a block, reads its files, moves every input to its extremes, and returns an outline of what the person will see; an iris-react module is compiled and its imports checked |
 | `iris_docs` | Every prop and an example for the named components |
+| `iris_examples` | Working examples for whole component families |
 | `iris_ask` | A waiting picker written in Iris markup, an iris-react app or HTML; the answer comes back as JSON |
 
 The same from a shell: `bb iris check <file>`, `bb iris components`, `bb iris docs <Name>`, and `bb iris try "<prompt>"` to run a prompt in a subthread that knows Iris.
@@ -547,7 +548,7 @@ Iris reaches every top-level thread, whoever started it, and leaves threads that
 |---|---|---|
 | `stance` | `eager` shows anything that can be shown; `balanced` keeps short answers as prose | `eager` |
 | `rollout` | `everywhere` (every top-level thread), or `trial` for threads started with `bb iris try` only | `everywhere` |
-| `workers` | Teach threads that agents spawn under a top-level thread too (about 15k tokens of instructions per session) | `false` |
+| `workers` | Teach threads that agents spawn under a top-level thread too (about 3,500 tokens of instructions per session) | `false` |
 | `skipPlugins` | Plugin ids, comma-separated, whose own top-level threads skip Iris | empty |
 | `webLookups` | Maps, place search and photos through Iris's server (OpenStreetMap, Photon, Wikimedia Commons) | `true` |
 
@@ -565,7 +566,7 @@ Change one with `bb plugin config iris set <key> <value>`, then `bb plugin reloa
 
 ## Evals
 
-`npm run eval` runs 24 generic chat moments (status reports, mid-task progress updates, proof that something is done, PR and CI state, data to decide on) through Claude Code headless with exactly the instructions Iris gives agents. Each answer is scored on an Iris block, a clean check, a fitting component and no markdown tables, plus a 1 to 5 judgment of fit. `npm run release:check` runs the tests, the type check and the eval gate, which fails when the score drops more than 3 points below `evals/baseline.json`.
+`npm run eval` runs 24 generic chat moments (status reports, mid-task progress updates, proof that something is done, PR and CI state, data to decide on) through Claude Code headless with exactly the instructions and tools Iris gives agents in bb (`iris_docs`, `iris_examples` and `iris_check`, served by `evals/mcp-server.ts`). Each answer is scored on an Iris block, a clean check, a fitting component and no markdown tables, plus a 1 to 5 judgment of fit. `npm run release:check` runs the tests, the type check and the eval gate, which fails when the score drops more than 3 points below `evals/baseline.json`.
 
 ## Develop
 

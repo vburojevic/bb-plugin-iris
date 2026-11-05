@@ -2,8 +2,9 @@
 //
 // Each case is a generic bb moment (a status report, proof that something is
 // done, PR or CI state, data to decide on). The agent (Claude Code, headless,
-// Opus 5.5, no tools) answers with exactly the instructions Iris gives agents
-// in bb. Every answer is scored:
+// Opus 5.5) answers with exactly the instructions Iris gives agents in bb, and
+// the same Iris tools (iris_docs, iris_examples, iris_check, served by
+// evals/mcp-server.ts); no other tools. Every answer is scored:
 //   - deterministic (half): an ```iris block is present, it passes check()
 //     with no errors, it uses one of the components the case expects, and the
 //     answer has no markdown table;
@@ -24,7 +25,7 @@ import { fileURLToPath } from "node:url";
 import { CATALOG } from "../core/catalog";
 import { check } from "../core/check";
 import type { LoadResult } from "../core/program";
-import { CODE_WORK_INSTRUCTIONS, mainInstructions, referenceSections } from "../core/prompt";
+import { CODE_WORK_INSTRUCTIONS, indexSections, mainInstructions } from "../core/prompt";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const MODEL = "claude-opus-5-5";
@@ -59,16 +60,22 @@ const saveBaseline = args.includes("--save-baseline");
 
 /** The instructions an agent gets from Iris in bb, in the order bb gives them. */
 function systemPrompt(): string {
-  return [mainInstructions("eager"), ...referenceSections().map((s) => s.text), CODE_WORK_INSTRUCTIONS].join("\n\n");
+  return [mainInstructions("eager"), ...indexSections().map((s) => s.text), CODE_WORK_INSTRUCTIONS].join("\n\n");
 }
 
-function claude(prompt: string, system: string, timeoutMs = 240_000): Promise<string> {
+const TSX = path.join(here, "..", "node_modules", ".bin", "tsx");
+const MCP_CONFIG = JSON.stringify({ mcpServers: { iris: { command: TSX, args: [path.join(here, "mcp-server.ts")] } } });
+const IRIS_TOOLS = ["mcp__iris__iris_docs", "mcp__iris__iris_examples", "mcp__iris__iris_check"].join(",");
+
+function claude(prompt: string, system: string, timeoutMs = 300_000, withIris = false): Promise<string> {
   return new Promise((resolve, reject) => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "iris-eval-"));
     const sysFile = path.join(dir, "system.md");
     fs.writeFileSync(sysFile, system, { flag: "wx" });
     // No tools and no MCP servers: the agent can only answer in text.
-    const child = spawn("claude", ["-p", "--bare", "--strict-mcp-config", "--model", MODEL, "--append-system-prompt-file", sysFile, "--tools", "", "--output-format", "json", "--no-session-persistence"], { stdio: ["pipe", "pipe", "pipe"] });
+    // Built-in tools off; the agent gets only Iris's own tools, the judge none.
+    const iris = withIris ? ["--mcp-config", MCP_CONFIG, "--allowedTools", IRIS_TOOLS] : [];
+    const child = spawn("claude", ["-p", "--bare", "--strict-mcp-config", ...iris, "--model", MODEL, "--append-system-prompt-file", sysFile, "--tools", "", "--output-format", "json", "--no-session-persistence"], { stdio: ["pipe", "pipe", "pipe"] });
     child.on("error", (e) => {
       fs.rmSync(dir, { recursive: true, force: true });
       reject(e);
@@ -159,7 +166,7 @@ async function runCase(c: Case, system: string): Promise<Result> {
 
 async function runOnce(c: Case, system: string): Promise<Result> {
   try {
-    const answer = await claude(c.prompt, system);
+    const answer = await claude(c.prompt, system, 300_000, true);
     fs.mkdirSync(path.join(here, "results", "answers"), { recursive: true });
     fs.writeFileSync(path.join(here, "results", "answers", `${c.id}.md`), answer);
     const j = await judgeAnswer(c, answer);

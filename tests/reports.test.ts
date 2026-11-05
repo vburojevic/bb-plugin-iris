@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { normalizeBench, normalizeCoverage, normalizeFindings, normalizeTests } from "../core/reports";
 import { delimited, parseDataFile } from "../core/data";
-import { mainInstructions, CODE_WORK_INSTRUCTIONS, referenceSections, SECTION_LIMIT } from "../core/prompt";
+import { mainInstructions, CODE_WORK_INSTRUCTIONS, docsFor, indexSections, referenceSections, SECTION_LIMIT } from "../core/prompt";
 import { CATALOG } from "../core/catalog";
 
 describe("reports", () => {
@@ -56,5 +56,22 @@ describe("prompt", () => {
   it("documents every component", () => {
     const all = referenceSections().map((s) => s.text).join("\n");
     for (const c of CATALOG) expect(all, c.name).toContain(`<${c.name}>`);
+  });
+  it("indexes every component and its required props in the always-on instructions", () => {
+    const index = indexSections();
+    for (const s of index) expect(s.text.length, s.tool).toBeLessThanOrEqual(SECTION_LIMIT);
+    const all = index.map((s) => s.text).join("\n");
+    for (const c of CATALOG) {
+      expect(all, c.name).toContain(` ${c.name}(`);
+      for (const [n, p] of Object.entries(c.props)) if (p.required) expect(all, `${c.name}.${n}`).toContain(`${n}*`);
+    }
+  });
+  it("keeps what every session pays for small", () => {
+    // About 3k tokens: the rules, the index and the code-work section. Details load on demand.
+    const always = [mainInstructions("eager"), ...indexSections().map((s) => s.text), CODE_WORK_INSTRUCTIONS].join("\n");
+    expect(always.length).toBeLessThan(13_000);
+  });
+  it("serves full docs on demand for every component", () => {
+    for (const c of CATALOG) expect(docsFor([c.name]), c.name).toContain("Example:");
   });
 });

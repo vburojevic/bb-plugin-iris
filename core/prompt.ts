@@ -1,8 +1,10 @@
 import { BB_SOURCES } from "./bb-data";
 // Everything agents are told about Iris, generated from the catalog so the
-// prompt, the validator and the renderers can never disagree. bb caps each
-// instruction section at 4,096 characters, so the reference is packed into
-// several sections, each carried by a tool that returns that part's examples.
+// prompt, the validator and the renderers can never disagree. Kept small on
+// purpose, since every session pays for it: the rules, and an index of every
+// component with its prop names. Types, meanings and examples load on demand
+// through iris_docs and iris_examples. bb caps each instruction section at
+// 4,096 characters, so the index is split across those two tools.
 
 import { CATALOG, GROUPS, type ComponentSpec, type PropSpec } from "./catalog";
 import { KIT, reactGuide } from "./react-kit";
@@ -36,7 +38,7 @@ This chat renders \`\`\`iris blocks as live, interactive UI in the person's bb t
 - A question you need answered goes through ask mode, or iris_ask for a rich pick (the agent waits). Choices and FollowUps are only for optional next steps after a finished answer.
 - \`\`\`iris-react holds a TSX module whose default export is a React component, for apps with real state or logic (games, simulators, editors): sandboxed, no network. Import hooks from "react", icons from "lucide-react", and ${KIT.map((k) => k.name).join(", ")}, useStored and iris from "iris" so it looks native. iris_docs(["React"]) has their props.
 - \`\`\`iris-app holds a full HTML page for canvas, WebGL and custom visuals: sandboxed, no network, theme in CSS vars (--background --foreground --primary --border --iris-1..8), window.iris.insert/send/copy.
-- Run iris_check on a block with load(), inputs or anything unusual, and on every iris-react app, before sending it. iris_docs has every prop and example.
+- Before using a component you haven't used in this thread, call iris_docs with its name for prop types and a working example; the index below lists prop names only. Run iris_check on a block with load(), inputs or anything unusual, and on every iris-react app, before sending it.
 
 ## Example
 \`\`\`iris
@@ -76,6 +78,45 @@ export function componentReference(c: ComponentSpec): string {
   const kids = c.children === "none" ? "" : c.children === "raw" ? " [verbatim content]" : c.children === "nodes" ? " [children]" : c.children === "markdown" ? " [markdown]" : " [text]";
   const props = Object.entries(c.props).map(([n, p]) => propLine(n, p));
   return `<${c.name}>${kids} ${c.summary}${props.length ? `\n  ${props.join("\n  ")}` : ""}`;
+}
+
+export interface IndexSection {
+  /** Tool that carries this part of the index. */
+  tool: "iris_docs" | "iris_examples";
+  groups: string[];
+  text: string;
+}
+
+/** One family's line: each component with its prop names, * marking required ones. */
+function indexLine(group: string): string {
+  const cs = CATALOG.filter((c) => c.group === group);
+  return cs.length ? `${group}: ${cs.map((c) => `${c.name}(${Object.entries(c.props).map(([n, p]) => n + (p.required ? "*" : "")).join(" ")})`).join(" ")}` : "";
+}
+
+/**
+ * The always-on component index, in two parts under the per-section cap: every component and
+ * its prop names. iris_docs returns types, meanings and an example; iris_examples a family's examples.
+ */
+export function indexSections(): IndexSection[] {
+  const heads = [
+    "# Iris components\nEvery component with its prop names (* = required). iris_docs([\"Chart\", \"Table\"]) returns their prop types, meanings and a working example; iris_docs([\"React\"]) the iris-react kit; iris_docs([\"bb\"]) the bb: live data shapes.\n",
+    "# Iris components, continued\niris_examples([\"Planning\"]) returns working examples for whole families.\n",
+  ];
+  const lines = GROUPS.map(indexLine).filter(Boolean);
+  const total = lines.reduce((n, l) => n + l.length + 1, 0);
+  const sections: IndexSection[] = [
+    { tool: "iris_docs", groups: [], text: heads[0] },
+    { tool: "iris_examples", groups: [], text: heads[1] },
+  ];
+  let used = 0;
+  lines.forEach((line, k) => {
+    const s = used + line.length < total / 2 ? sections[0] : sections[1];
+    s.text += `${line}\n`;
+    s.groups.push(GROUPS.filter((g) => indexLine(g))[k]);
+    used += line.length + 1;
+  });
+  for (const s of sections) if (s.text.length > SECTION_LIMIT) throw new Error(`${s.tool} index is ${s.text.length} characters, over the ${SECTION_LIMIT} cap`);
+  return sections;
 }
 
 export interface ReferenceSection {

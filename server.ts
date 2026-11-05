@@ -11,8 +11,8 @@ import { parseDataFile } from "./core/data";
 import { isPluginSource, parsePluginSource } from "./core/plugin-data";
 import { tailText } from "./core/live";
 import type { LoadResult } from "./core/program";
-import { CODE_WORK_INSTRUCTIONS, docsFor, examplesForGroups, mainInstructions, referenceSections, type Stance } from "./core/prompt";
-import { CATALOG } from "./core/catalog";
+import { CODE_WORK_INSTRUCTIONS, docsFor, examplesForGroups, indexSections, mainInstructions, type Stance } from "./core/prompt";
+import { CATALOG, GROUPS } from "./core/catalog";
 import { rpcContract, type FileUrlResult, type FolderFilesResult } from "./shared/rpc";
 import { failure, parseChangesTarget, parsePathFilter, parseThreadIds } from "./core/project";
 import { createProjectSource } from "./project-source";
@@ -93,7 +93,7 @@ export default async function plugin(bb: BbPluginApi) {
     workers: {
       type: "boolean",
       label: "Teach agent-spawned threads too",
-      description: "Off: only top-level threads learn Iris; threads that agents spawn under them do not, which saves about 15k tokens of instructions in every worker session.",
+      description: "Off: only top-level threads learn Iris; threads that agents spawn under them do not, which saves about 3,500 tokens of instructions in every worker session.",
       default: false,
     },
     skipPlugins: {
@@ -436,8 +436,7 @@ export default async function plugin(bb: BbPluginApi) {
     return;
   }
 
-  const sections = referenceSections();
-  const [docsSection, ...exampleSections] = sections;
+  const [docsIndex, examplesIndex] = indexSections();
 
   bb.agents.registerTool({
     name: "iris_check",
@@ -456,9 +455,9 @@ export default async function plugin(bb: BbPluginApi) {
   });
 
   bb.agents.registerTool({
-    name: docsSection.tool,
-    description: "Returns every prop and a working example for the Iris components you name.",
-    instructions: docsSection.text,
+    name: "iris_docs",
+    description: "Returns every prop (type, default, meaning) and a working example for the Iris components you name; \"React\" gives the iris-react kit, \"bb\" the bb: live data shapes.",
+    instructions: docsIndex.text,
     ...params(
       z.object({ components: z.array(z.string().min(1).max(40)).min(1).max(10) }),
       { type: "object", properties: { components: { type: "array", items: { type: "string", minLength: 1, maxLength: 40 }, minItems: 1, maxItems: 10, description: 'Component names, e.g. ["Chart", "Table"]' } }, required: ["components"], additionalProperties: false },
@@ -467,18 +466,25 @@ export default async function plugin(bb: BbPluginApi) {
     execute: validated(z.object({ components: z.array(z.string().min(1).max(40)).min(1).max(10) }), async ({ components }) => ({ content: [{ type: "text", text: docsFor(components) }] })),
   });
 
-  for (const section of exampleSections) {
-    bb.agents.registerTool({
-      name: section.tool,
-      description: `Returns working Iris examples for ${section.groups.join(", ")} components.`,
-      instructions: section.text,
-      parameters: { type: "object", properties: {}, additionalProperties: false },
-      presentation: { label: { pending: "Reading Iris examples", completed: "Read Iris examples" }, suppress: true },
-      async execute() {
-        return { content: [{ type: "text", text: examplesForGroups(section.groups) }] };
-      },
-    });
-  }
+  const families = GROUPS.filter((g) => CATALOG.some((c) => c.group === g));
+  bb.agents.registerTool({
+    name: "iris_examples",
+    description: "Returns working Iris examples for every component in the families you name.",
+    instructions: examplesIndex.text,
+    parameters: {
+      type: "object",
+      properties: { families: { type: "array", items: { type: "string", enum: [...families] }, minItems: 1, maxItems: 6, description: 'Component families, e.g. ["Planning", "Charts"]' } },
+      required: ["families"],
+      additionalProperties: false,
+    },
+    presentation: { label: { pending: "Reading Iris examples", completed: "Read Iris examples" }, suppress: true },
+    async execute(input: unknown) {
+      const asked = Array.isArray((input as { families?: unknown })?.families) ? ((input as { families: unknown[] }).families.filter((f) => typeof f === "string") as string[]) : [];
+      const known = asked.filter((f) => (families as string[]).includes(f));
+      if (!known.length) return { content: [{ type: "text", text: `Name one or more families: ${families.join(", ")}` }], isError: true };
+      return { content: [{ type: "text", text: examplesForGroups(known) }] };
+    },
+  });
 
   bb.agents.registerTool({
     name: "iris_ask",
@@ -528,7 +534,7 @@ export default async function plugin(bb: BbPluginApi) {
   // ---------- instructions ----------
 
   const personThreads = new Set<string>();
-  const toolNames = ["iris_check", "iris_ask", ...sections.map((s) => s.tool)];
+  const toolNames = ["iris_check", "iris_ask", "iris_docs", "iris_examples"];
   bb.agents.configure((context) => {
     const trial = context.pluginMetadata?.iris === "trial";
     // Every top-level thread is one a person reads, whoever started it (the person, a side chat,
@@ -612,7 +618,7 @@ export default async function plugin(bb: BbPluginApi) {
     });
   }
 
-  bb.log.info(`Iris loaded: ${CATALOG.length} components, ${sections.length} reference sections, stance ${stance}`);
+  bb.log.info(`Iris loaded: ${CATALOG.length} components, stance ${stance}`);
 }
 
 function summarize(value: unknown): string {

@@ -5,12 +5,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { isPluginSource, loadPluginData } from "../core/plugin-data";
 import { isBbSource } from "../core/bb-data";
-import { experimental_copyToClipboard, experimental_useAppPanel, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_copyToClipboard, experimental_useAppPanel, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
 import { toast } from "sonner";
 import type { ElementNode } from "../core/ast";
 import { findComponent } from "../core/catalog";
 import { IrisError } from "../core/evaluate";
 import { CardRuntime, compile, type LoadResult, type Program } from "../core/program";
+import { MAX_LINK_SOURCE, PLAYGROUND_URL, playLink } from "../shared/playground";
 import type { RpcContract } from "../shared/rpc";
 import { EnvContext, type IrisEnv, type IrisMode, useActions } from "./env";
 import { usePalette } from "./palette";
@@ -216,9 +217,13 @@ function hasLiveCard(nodes: Program["nodes"]): boolean {
   return false;
 }
 
+/** The site itself draws this toolbar too; there the button would only reopen the page. */
+const ON_PLAYGROUND = typeof location !== "undefined" && PLAYGROUND_URL.startsWith(`${location.origin}/`);
+
 function Toolbar(p: { source: string; language: string; showSource: boolean; onToggleSource: () => void; canReset: boolean; onReset: () => void; threadId: string | null; streaming: boolean }) {
   const panel = experimental_useAppPanel();
   const rpc = useRpc<RpcContract>();
+  const navigate = useBbNavigate();
   const pin = usePin(p.threadId);
   const pinnable = p.threadId !== null && !p.streaming && !/-(app|react)$/.test(p.language);
   const pinned = pinnable && pin?.source === p.source;
@@ -232,6 +237,13 @@ function Toolbar(p: { source: string; language: string; showSource: boolean; onT
   };
   const copy = async () => {
     if (await experimental_copyToClipboard({ text: `\`\`\`${p.language}\n${p.source.trim()}\n\`\`\`` })) toast.success("Copied the card's source");
+  };
+  // The playground runs ```iris cards only; pages and apps need bb's sandbox bridge.
+  const shareable = !ON_PLAYGROUND && !p.streaming && p.language === "iris" && p.source.trim().length > 0 && p.source.length <= MAX_LINK_SOURCE;
+  const openInPlayground = () => {
+    navigate.openUrl(PLAYGROUND_URL + playLink(p.source.trim()));
+    // A card's files and bb data stay on this machine; the playground draws it without them.
+    if (/\bload\(/.test(p.source)) toast("Opened in the playground. Files and bb data this card loads stay here, so it shows them as pending.");
   };
   const btn = "grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground";
   return (
@@ -250,6 +262,11 @@ function Toolbar(p: { source: string; language: string; showSource: boolean; onT
       {pinnable ? (
         <button type="button" className={cn(btn, pinned && "bg-state-active text-foreground")} onClick={togglePin} title={pinned ? "Unpin" : "Pin beside the conversation"} aria-label={pinned ? "Unpin this card" : "Pin this card beside the conversation"} aria-pressed={pinned}>
           <Glyph name={pinned ? "pin-off" : "pin"} size={14} />
+        </button>
+      ) : null}
+      {shareable ? (
+        <button type="button" className={btn} onClick={openInPlayground} title="Open in the web playground" aria-label="Open in the web playground">
+          <Glyph name="external-link" size={14} />
         </button>
       ) : null}
       {p.threadId && !p.streaming ? (

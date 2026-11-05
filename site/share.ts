@@ -2,22 +2,10 @@
 // small browser helpers that never throw (storage can be blocked, the clipboard refused).
 import { toast } from "./sdk-shim";
 
+export { decode, encode, playLink } from "../shared/playground";
+
 export const REPO = "https://github.com/vburojevic/bb-plugin-iris";
 export const INSTALL = 'bb plugin install "git:https://github.com/vburojevic/bb-plugin-iris.git@^1.0.0"';
-
-export function encode(text: string) {
-  return btoa(unescape(encodeURIComponent(text))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-export function decode(code: string) {
-  try {
-    return decodeURIComponent(escape(atob(code.replace(/-/g, "+").replace(/_/g, "/"))));
-  } catch {
-    return null;
-  }
-}
-
-export const playLink = (source: string) => `#/play?c=${encode(source)}`;
 
 export const store = {
   get(area: "local" | "session", key: string): string | null {

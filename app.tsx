@@ -3,6 +3,7 @@
 // component gallery.
 import "./app.css";
 import { definePluginApp, type ExperimentalCodeFenceRendererProps, type PluginPendingInteractionProps } from "@get-bb/plugin-sdk/app";
+import { PLAYGROUND_URL } from "./shared/playground";
 import { useCallback, useState } from "react";
 import { AppFrame } from "./ui/app-frame";
 import { IrisBlock } from "./ui/block";
@@ -111,7 +112,7 @@ export default definePluginApp((app) => {
   app.commands.register({
     id: "iris-playground",
     title: "Iris: open the playground in the browser",
-    run: () => void window.open("https://vburojevic.github.io/bb-plugin-iris/#/play", "_blank", "noopener,noreferrer"),
+    run: () => void window.open(`${PLAYGROUND_URL}#/play`, "_blank", "noopener,noreferrer"),
   });
   app.slots.navPanel({ id: "gallery", title: PLUGIN_ID === "iris" ? "Iris" : `Iris (${PLUGIN_ID})`, icon: `${PLUGIN_ID}/mark`, path: "gallery", component: GalleryPage });
 });

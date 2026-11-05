@@ -22,11 +22,15 @@ export function TestsView({ props }: ViewProps) {
   const [showAll, setShowAll] = useState(props.show === "all");
   const [expanded, setExpanded] = useState(false);
   if (isPendingValue(props.results)) return <Shimmer className="h-28" />;
-  const tests = normalizeTests(props.results);
-  const passed = tests.filter((t) => t.status === "passed").length;
+  const tests = props.results == null ? [] : normalizeTests(props.results);
   const failed = tests.filter((t) => t.status === "failed");
-  const skipped = tests.filter((t) => t.status === "skipped").length;
-  const total = tests.length || 1;
+  // Totals given as props win: an agent often lists only the failures of a much larger run.
+  const count = (v: unknown, rows: number) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.max(Math.round(v), rows) : rows);
+  const passed = count(props.passed, tests.filter((t) => t.status === "passed").length);
+  const failedCount = count(props.failed, failed.length);
+  const skipped = count(props.skipped, tests.filter((t) => t.status === "skipped").length);
+  const runTotal = passed + failedCount + skipped;
+  const total = runTotal || 1;
   const others = showAll ? tests.filter((t) => t.status !== "failed") : [];
   const PASS_CAP = 8;
   const shownOthers = expanded ? others : others.slice(0, PASS_CAP);
@@ -35,13 +39,13 @@ export function TestsView({ props }: ViewProps) {
     <div className="min-w-0">
       <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
         <Count label="Passed" value={passed} color={env.palette.tone.good} />
-        <Count label="Failed" value={failed.length} color={failed.length ? env.palette.tone.bad : undefined} />
+        <Count label="Failed" value={failedCount} color={failedCount ? env.palette.tone.bad : undefined} />
         {skipped ? <Count label="Skipped" value={skipped} /> : null}
-        <span className="ml-auto text-xs text-muted-foreground">{str(props.title) ?? `${tests.length} tests`}</span>
+        <span className="ml-auto text-xs text-muted-foreground">{str(props.title) ?? `${runTotal.toLocaleString("en-US")} tests`}</span>
       </div>
       <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-muted">
         <div className="iris-bar h-full" style={{ width: `${(passed / total) * 100}%`, background: env.palette.tone.good }} />
-        <div className="iris-bar h-full" style={{ width: `${(failed.length / total) * 100}%`, background: env.palette.tone.bad }} />
+        <div className="iris-bar h-full" style={{ width: `${(failedCount / total) * 100}%`, background: env.palette.tone.bad }} />
       </div>
       {listed.length ? (
         <ul className="mt-3 [&>li+li]:border-t [&>li+li]:border-border/70">
@@ -76,13 +80,13 @@ export function TestsView({ props }: ViewProps) {
         </button>
       ) : null}
       {!listed.length && !others.length ? (
-        tests.length ? (
+        runTotal && !failedCount ? (
         <div className="mt-3 flex items-center gap-2 text-[13px] text-muted-foreground">
           <Glyph name="party-popper" size={15} />
           Every test passed
         </div>
         ) : (
-          <div className="mt-3 text-xs text-muted-foreground">No tests in this report</div>
+          <div className="mt-3 text-xs text-muted-foreground">{runTotal ? "The failures aren't listed" : "No tests in this report"}</div>
         )
       ) : null}
       {tests.length > failed.length && !showAll ? (

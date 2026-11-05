@@ -140,12 +140,15 @@ export const PROJECT = [
     group: "Project",
     summary: "A test run: counts, failures first with messages and file links. Reads vitest, jest, JUnit XML, Swift Testing and similar reports.",
     props: {
-      results: p.any("A loaded report (load(\"$BB_THREAD_STORAGE/tests.json\")) or a list of {name, status: passed|failed|skipped, message?, file?, line?, duration?}", { required: true }),
+      results: p.any("A loaded report (load(\"$BB_THREAD_STORAGE/tests.json\")) or a list of {name, status: passed|failed|skipped, message?, file?, line?, duration?}; may list only the failures"),
+      passed: p.num("Total passed, when results lists only some tests (often just the failures)"),
+      failed: p.num("Total failed, when results lists only some"),
+      skipped: p.num("Total skipped, when results lists only some"),
       title: p.str("Caption"),
       show: p.oneOf(["failed", "all"], "Which tests to list", { def: "failed" }),
     },
     children: "none",
-    example: `<Tests results={[\n  { name: "parses tags", status: "passed" },\n  { name: "keeps the last good tree", status: "failed", message: "expected 3 nodes, got 2", file: "core/parse.test.ts", line: 88 },\n]} />`,
+    example: `<Tests passed={142} results={[\n  { name: "keeps the last good tree", status: "failed", message: "expected 3 nodes, got 2", file: "core/parse.test.ts", line: 88 },\n  { name: "streams a half-closed tag", status: "failed", message: "timeout after 5000 ms", file: "core/parse.test.ts", line: 131 },\n]} />`,
     aliases: ["TestResults", "TestRun"],
   }),
   component({

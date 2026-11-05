@@ -11,7 +11,7 @@ A public, generic bb plugin: agents write ```iris blocks and bb draws them as li
 - `site/css/iris.css` is captured from a running bb. After adding Tailwind classes, reload Iris in the dev bb and run `scripts/capture-site-css.mjs` against it.
 
 ## Every change ships (owner, 2026-11-05)
-A change to what the plugin ships is done only when it has been released in full. Changes that ship nothing (AGENTS.md, evals, tests, scripts) land on main without a release. That means all of the steps below, every time, not only the tag.
+A change to what the plugin ships is done only when it has been released in full: all of the steps below, every time, not only the tag. Changes that ship nothing (AGENTS.md, evals, tests, scripts) land on main without a release.
 1. Gates: `npm run release:check` (tests, typecheck and the eval gate) passes. Every user-visible change has a screenshot from the dev bb or the site.
 2. Version: bump `version` in package.json and package-lock.json. Patch for fixes, minor for features. Commit as "Iris X.Y.Z".
 3. Docs: README, PLUGIN_OVERVIEW.md and the website (`site/landing.tsx`) describe every new feature and current numbers (component count, token cost).

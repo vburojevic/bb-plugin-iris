@@ -53,7 +53,7 @@ export function check(source: string, options: RuntimeOptions = {}): CheckReport
   const runtime = new CardRuntime(program, { ...options, now: options.now ?? (() => Date.parse("2026-01-01T12:00:00Z")) });
   for (const [name, err] of runtime.initErrors) add("error", `<state ${name}>: ${err.message}`, err.start ?? 0);
   const outline: string[] = [];
-  walk(program.nodes, runtime, runtime.globals, 0, outline, (err) => add("error", err.message, err.start ?? 0));
+  walk(program.nodes, runtime, runtime.globals, 0, outline, (err) => add("error", err.message, err.start ?? 0), (message, at) => add("warning", message, at));
 
   // Move every input to its extremes and see what breaks.
   for (const variant of inputVariants(program, runtime)) {
@@ -152,7 +152,29 @@ function literalCheck(spec: ComponentSpec, name: string, prop: PropSpec, v: unkn
 }
 
 /** Evaluates everything the renderer would, writing a readable outline. */
-function walk(nodes: Node[], rt: CardRuntime, scope: Scope, depth: number, out: string[], fail: (e: IrisError) => void) {
+/** Notes on what won't fit a chat column (about 680 px wide, 360 on a phone), from the evaluated props. */
+const CHAT_PX = 680;
+function layoutHints(name: string, props: Record<string, unknown>, n: ElementNode): string[] {
+  const out: string[] = [];
+  const kids = n.children.filter((c) => c.kind !== "text" || c.value.trim()).length;
+  const text = (v: unknown) => (typeof v === "string" ? v : typeof v === "number" ? String(v) : "");
+  const childText = n.children.map((c) => (c.kind === "text" ? c.value : "")).join("").trim();
+  if (name === "Row" && kids > 4) out.push(`puts ${kids} items side by side: at chat width each gets about ${Math.floor(CHAT_PX / kids)} px. Use <Grid columns={3}> or split it into two Rows.`);
+  if (name === "Grid" && typeof props.columns === "number" && props.columns > 4) out.push(`has ${props.columns} columns: tiles get narrow at chat width. Use 3 or 4.`);
+  if (name === "Table") {
+    const cols = Array.isArray(props.columns) ? props.columns.length : Array.isArray(props.rows) && props.rows[0] && typeof props.rows[0] === "object" && !Array.isArray(props.rows[0]) ? Object.keys(props.rows[0] as object).length : 0;
+    if (cols > 6) out.push(`has ${cols} columns: about 5 fit the chat width before it scrolls, and phones stack each row. Keep the columns that matter, or use DataGrid for wide data.`);
+  }
+  if (name === "Metric" && text(props.value).length > 16) out.push(`value "${text(props.value).slice(0, 40)}" is long for a Metric and wraps; keep the number in value and put words in note or unit.`);
+  if (name === "Badge" && (text(props.children) || childText).length > 28) out.push("text is long for a Badge: keep it to one to three words.");
+  if (name === "Card" && text(props.title).length > 70) out.push("title is long and wraps: move detail into subtitle.");
+  if (name === "Tabs" && kids > 6) out.push(`has ${kids} tabs: they scroll sideways at chat width. Group them, or use Details.`);
+  if (name === "Chart" && Array.isArray(props.data) && props.data.length > 40 && (props.type === "bar" || props.type === "hbar")) out.push(`draws ${props.data.length} bars: labels thin out. Aggregate them, or use a line chart.`);
+  if (name === "Decision" && Array.isArray(props.criteria) && props.criteria.length > 6) out.push(`weighs ${props.criteria.length} criteria: past 6 the sliders crowd out the ranking. Keep the ones that decide it.`);
+  return out;
+}
+
+function walk(nodes: Node[], rt: CardRuntime, scope: Scope, depth: number, out: string[], fail: (e: IrisError) => void, hint?: (message: string, at: number) => void) {
   const pad = "  ".repeat(depth);
   for (const n of nodes) {
     if (n.kind === "text") {
@@ -186,11 +208,12 @@ function walk(nodes: Node[], rt: CardRuntime, scope: Scope, depth: number, out: 
     const { props, errors } = rt.props(n, scope);
     for (const e of errors.values()) fail(e);
     if (n.name === "") {
-      walk(n.children, rt, scope, depth, out, fail);
+      walk(n.children, rt, scope, depth, out, fail, hint);
       continue;
     }
     if (!spec) continue;
     out.push(`${pad}${describe(spec, props)}`);
+    if (hint) for (const h of layoutHints(spec.name, props, n)) hint(`<${spec.name}> ${h}`, n.start);
     for (const problem of CONTENT_CHECKS[spec.name]?.(props) ?? []) fail(new IrisError(`<${spec.name}> ${problem}`, n.start, n.end));
     for (const [k, v] of Object.entries(props)) {
       if (isElementValue(v)) renderValue(v, rt, depth + 1, out, fail);
@@ -208,7 +231,7 @@ function walk(nodes: Node[], rt: CardRuntime, scope: Scope, depth: number, out: 
         // Render functions (Table column render, tone) run per row; try the first row.
       }
     }
-    if (spec.children !== "raw") walk(n.children, rt, scope, depth + 1, out, fail);
+    if (spec.children !== "raw") walk(n.children, rt, scope, depth + 1, out, fail, hint);
   }
 }
 

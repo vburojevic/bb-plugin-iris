@@ -130,3 +130,15 @@ describe("loading data", () => {
     }
   });
 });
+
+describe("layout hints", () => {
+  const warnings = (src: string) => check(src).issues.filter((i) => i.severity === "warning").map((i) => i.message);
+  it("warns when a card won't fit the chat column", () => {
+    expect(warnings(`<Row>${'<Metric label="a" value={1} />'.repeat(6)}</Row>`).join(" ")).toContain("6 items side by side");
+    expect(warnings(`<Table rows={[{a:1,b:2,c:3,d:4,e:5,f:6,g:7,h:8}]} />`).join(" ")).toContain("8 columns");
+    expect(warnings(`<Metric label="Status" value="Waiting on the review from the platform team" />`).join(" ")).toContain("long for a Metric");
+  });
+  it("stays quiet on cards that fit", () => {
+    expect(warnings(`<Card title="Release"><Row><Metric label="a" value={1} /><Metric label="b" value={2} /></Row><Table rows={[{a:1,b:2}]} /></Card>`)).toEqual([]);
+  });
+});

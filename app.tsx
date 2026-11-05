@@ -7,6 +7,7 @@ import { useCallback, useState } from "react";
 import { AppFrame } from "./ui/app-frame";
 import { IrisBlock } from "./ui/block";
 import { GalleryPage } from "./ui/gallery";
+import { PinnedInfoSection, PinnedSection } from "./ui/pins";
 import { Glyph } from "./ui/views/kit";
 
 function Fence({ code, language, status, index, message }: ExperimentalCodeFenceRendererProps) {
@@ -79,5 +80,8 @@ export default definePluginApp((app) => {
     availability: "action",
     component: ({ threadId, params }) => <CardTab threadId={threadId} params={params} />,
   });
+  // A pinned card shows in the thread context card where bb has it on, and in the thread's Info tab everywhere.
+  app.slots.experimental_threadContextCardSection({ id: "iris-pinned", title: "Pinned card", group: "iris", component: ({ threadId }) => <PinnedSection threadId={threadId} /> });
+  app.slots.experimental_threadInfoSection({ id: "iris-pinned-info", group: "iris", component: ({ threadId }) => <PinnedInfoSection threadId={threadId} /> });
   app.slots.navPanel({ id: "gallery", title: PLUGIN_ID === "iris" ? "Iris" : `Iris (${PLUGIN_ID})`, icon: `${PLUGIN_ID}/mark`, path: "gallery", component: GalleryPage });
 });

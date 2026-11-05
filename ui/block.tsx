@@ -14,6 +14,7 @@ import { CardRuntime, compile, type LoadResult, type Program } from "../core/pro
 import type { RpcContract } from "../shared/rpc";
 import { EnvContext, type IrisEnv, type IrisMode, useActions } from "./env";
 import { usePalette } from "./palette";
+import { setPin, usePin } from "./pin-store";
 import { InlineError, renderNodes } from "./render";
 import { Glyph, cn } from "./views/kit";
 import { BlockContext } from "./views/layout";
@@ -217,6 +218,14 @@ function hasLiveCard(nodes: Program["nodes"]): boolean {
 
 function Toolbar(p: { source: string; language: string; showSource: boolean; onToggleSource: () => void; canReset: boolean; onReset: () => void; threadId: string | null; streaming: boolean }) {
   const panel = experimental_useAppPanel();
+  const rpc = useRpc<RpcContract>();
+  const pin = usePin(p.threadId);
+  const pinnable = p.threadId !== null && !p.streaming && !/-(app|react)$/.test(p.language);
+  const pinned = pinnable && pin?.source === p.source;
+  const togglePin = () => {
+    if (!p.threadId) return;
+    void setPin(rpc, p.threadId, pinned ? null : { source: p.source, title: titleOf(p.source) });
+  };
   const open = () => {
     const ok = panel.openTab({ tab: { id: "iris-card", context: { kind: "thread" }, availability: "action" }, params: { source: p.source, language: p.language }, title: titleOf(p.source) });
     if (!ok) toast.error("The side panel isn't available here");
@@ -238,6 +247,11 @@ function Toolbar(p: { source: string; language: string; showSource: boolean; onT
       <button type="button" className={btn} onClick={copy} title="Copy" aria-label="Copy source">
         <Glyph name="copy" size={14} />
       </button>
+      {pinnable ? (
+        <button type="button" className={cn(btn, pinned && "bg-state-active text-foreground")} onClick={togglePin} title={pinned ? "Unpin" : "Pin beside the conversation"} aria-label={pinned ? "Unpin this card" : "Pin this card beside the conversation"} aria-pressed={pinned}>
+          <Glyph name={pinned ? "pin-off" : "pin"} size={14} />
+        </button>
+      ) : null}
       {p.threadId && !p.streaming ? (
         <button type="button" className={btn} onClick={open} title="Open in side panel" aria-label="Open in side panel">
           <Glyph name="panel-right-open" size={14} />

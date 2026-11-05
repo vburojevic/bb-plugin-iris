@@ -516,6 +516,10 @@ Cards read bb's own live data with `load("bb:<source>")`, scoped to the card's t
 </Card>
 ```
 
+### Pin a card beside the conversation
+
+Hover any card in a thread and press the pin button: the card stays in view while the chat scrolls on, still live. It shows in the thread's Info tab, and in the thread context card when that is on in bb (Settings, Experiments). One card per thread; pinning another replaces it, and the pin follows the thread to your other devices.
+
 ## For plugin authors: live data in Iris cards
 
 Any bb plugin can feed live data to Iris cards without Iris knowing about it. Serve read-only JSON (or CSV) under the `/iris/` prefix of your plugin's HTTP routes:

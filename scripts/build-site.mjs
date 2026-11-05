@@ -27,7 +27,7 @@ await build({
   jsx: "automatic",
   loader: { ".css": "text", ".json": "json" },
   alias: { "@get-bb/plugin-sdk/app": "./site/sdk-shim.tsx", sonner: "./site/sonner-shim.ts" },
-  define: { __BB_PLUGIN_ID__: '"iris"', "process.env.NODE_ENV": '"production"' },
+  define: { __BB_PLUGIN_ID__: '"iris"', __IRIS_VERSION__: JSON.stringify(JSON.parse(await readFile(join(root, "package.json"), "utf8")).version), "process.env.NODE_ENV": '"production"' },
   chunkNames: "js/[name]-[hash]",
   logLevel: "warning",
 });

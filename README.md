@@ -521,6 +521,12 @@ Cards read bb's own live data with `load("bb:<source>")`, scoped to the card's t
 
 Hover any card in a thread and press the pin button: the card stays in view while the chat scrolls on, still live. It shows in the thread's Info tab, and in the thread context card when that is on in bb (Settings, Experiments). One card per thread; pinning another replaces it, and the pin follows the thread to your other devices.
 
+### Ask for a card, or take one to the browser
+
+- **Show as an Iris card.** In a message's menu, this asks the agent to redo that answer as a card. Select part of a message first to ask about just that part. The composer has the same command.
+- **Open in the web playground.** A card's toolbar opens it in the [playground](https://vburojevic.github.io/bb-plugin-iris/#/play), ready to edit and share. The card's source travels after the `#` in the link, so no server sees it. Files and bb data the card loads stay on your Mac, so they show as pending there.
+- **Iris: open the playground** in bb's command palette opens an empty editor.
+
 ## For plugin authors: live data in Iris cards
 
 Any bb plugin can feed live data to Iris cards without Iris knowing about it. Serve read-only JSON (or CSV) under the `/iris/` prefix of your plugin's HTTP routes:

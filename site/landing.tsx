@@ -277,6 +277,30 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
         </div>
       </section>
 
+      <section className="site-section" aria-labelledby="keep-title">
+        <div className="site-wrap">
+          <SectionHead id="keep-title" kicker="Beyond the reply" title="Keep a card, ask for one, take it anywhere." />
+          <ul className="site-facts">
+            <li>
+              <Glyph name="pin" size={18} />
+              <b>Pin it beside the chat.</b> A pinned card stays live next to the conversation while the thread scrolls on: a build, a pull request, context use.
+            </li>
+            <li>
+              <Glyph name="message-square-plus" size={18} />
+              <b>Ask for a card.</b> One click on any message asks the agent to show that answer as a card.
+            </li>
+            <li>
+              <Glyph name="external-link" size={18} />
+              <b>Open it in the browser.</b> Any card opens in this playground. Its source travels in the link and never reaches a server.
+            </li>
+            <li>
+              <Glyph name="feather" size={18} />
+              <b>Light on context.</b> About 3,500 tokens per session: the rules and an index of every component. Details load only when an agent needs them.
+            </li>
+          </ul>
+        </div>
+      </section>
+
       <section className="site-section" aria-labelledby="trust-title">
         <div className="site-wrap">
           <SectionHead id="trust-title" kicker="Built to be trusted" title="Safe, checked and measured." />
@@ -290,12 +314,12 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
               <b>No network of their own.</b> Cards can't make requests, and apps run in a sandbox with a no-network policy. Maps and photos go through Iris's server, and you can turn that off.
             </li>
             <li>
-              <Glyph name="scan-search" size={18} />
-              <b>Checked first.</b> Agents verify each block with iris_check before you see it.
+              <Glyph name="send" size={18} />
+              <b>You confirm every send.</b> When an app wants to send a message or answer for you, Iris shows the exact text in a bar the app can't reach, and waits for your click.
             </li>
             <li>
-              <Glyph name="gauge" size={18} />
-              <b>Measured.</b> Every release passes an eval suite of real chat moments.
+              <Glyph name="scan-search" size={18} />
+              <b>Checked and measured.</b> Agents verify each block with iris_check before you see it, and every release passes an eval suite of real chat moments.
             </li>
           </ul>
         </div>
@@ -347,7 +371,9 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
 
       <footer className="site-footer">
         <div className="site-wrap">
-          <span>Iris is open source under Apache-2.0.</span>
+          <span>
+            Iris is open source under Apache-2.0. <a href={`${REPO}/releases/tag/v${__IRIS_VERSION__}`}>Version {__IRIS_VERSION__}</a>
+          </span>
           <span>
             <a href={REPO}>GitHub</a> · <a href="https://getbb.app">bb</a>
           </span>

@@ -43,7 +43,8 @@ await cp(join(root, "site", "samples"), join(out, "samples"), { recursive: true 
 await cp(join(root, "core", "parse.ts"), join(out, "samples", "parse.ts"));
 await cp(join(root, "docs", "social-preview.png"), join(out, "social-preview.png"));
 await mkdir(join(out, "media"), { recursive: true });
-await cp(join(root, "docs", "demo.webp"), join(out, "media", "demo.webp"));
+await cp(join(root, "docs", "demo.mp4"), join(out, "media", "demo.mp4"));
+await cp(join(root, "docs", "demo-poster.webp"), join(out, "media", "demo-poster.webp"));
 
 // Before first paint: the saved (or default) theme's CSS and light or dark, so a visit never flashes
 // bb's neutral palette before the site's own. Same names and defaults as site/themes.ts.

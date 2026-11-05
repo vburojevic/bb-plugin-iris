@@ -91,8 +91,8 @@ body { background: var(--background); color: var(--foreground); font-family: var
 .site-install-copy { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; height: 32px; padding: 0 10px; border-radius: 8px; font-size: 12.5px; color: var(--foreground); background: var(--card); box-shadow: var(--site-ring); }
 .site-install:hover .site-install-copy { background: var(--state-hover); }
 .site-demo-wrap { margin-top: 56px; }
-.site-demo { margin: 0 auto; max-width: 780px; }
-.site-demo img { display: block; width: 100%; height: auto; border-radius: 16px; box-shadow: var(--site-ring), 0 40px 80px -40px rgb(0 0 0 / .55); background: var(--card); }
+.site-demo { margin: 0 auto; max-width: 768px; }
+.site-demo img, .site-demo video { display: block; width: 100%; height: auto; border-radius: 16px; box-shadow: var(--site-ring), 0 40px 80px -40px rgb(0 0 0 / .55); background: var(--card); }
 .site-demo figcaption { margin-top: 14px; font-size: 13px; color: var(--muted-foreground); }
 
 .site-section { padding: 96px 0 0; }

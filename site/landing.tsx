@@ -127,6 +127,26 @@ function SectionHead({ id, kicker, title, children }: { id: string; kicker: stri
   );
 }
 
+/** The recorded demo: plays muted on a loop, or waits for a click when the visitor prefers less motion. */
+function DemoVideo() {
+  const calm = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  return (
+    <video
+      src="media/demo.mp4"
+      poster="media/demo-poster.webp"
+      width={768}
+      height={744}
+      autoPlay={!calm}
+      controls={calm}
+      muted
+      loop
+      playsInline
+      preload="auto"
+      aria-label="A bb thread where an agent answers with Iris cards: the person hovers a latency chart, drags a what-if slider, and tunes the weights of a decision until the ranking changes"
+    />
+  );
+}
+
 export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: ThemeName) => void }) {
   const families = GROUPS.map((g) => ({ group: g, items: CATALOG.filter((c) => c.group === g) })).filter((f) => f.items.length);
   return (
@@ -156,7 +176,7 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
         </div>
         <div className="site-wrap site-demo-wrap">
           <figure className="site-demo">
-            <img src="media/demo.webp" width={760} height={880} alt="A bb thread where an agent answers with Iris cards: a latency chart with a hover readout, a what-if slider, a decision whose weights change the ranking, and a test run" />
+            <DemoVideo />
             <figcaption>A real bb thread: an agent answers with Iris cards, and the person explores them.</figcaption>
           </figure>
         </div>

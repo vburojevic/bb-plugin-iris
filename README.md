@@ -32,9 +32,9 @@
 **Iris** is a [bb](https://getbb.app) plugin that lets agents answer with live, interactive UI instead of walls of text. An agent writes a short ```` ```iris ```` block, and bb draws it as a real card inside the reply: charts you can hover, sliders that recompute, tables you can sort, test runs that fill in while they run, pickers that wait for your answer. Every card wears your bb theme and follows it when you switch.
 
 <p align="center">
-  <img src="docs/demo.webp" alt="A bb thread where an agent answers with Iris cards: a latency chart with a hover readout, a what-if slider that moves a projection, a decision whose weights change the ranking, and a test run" width="760">
+  <a href="https://vburojevic.github.io/bb-plugin-iris/"><img src="docs/demo.webp" alt="A bb thread where an agent answers with Iris cards: the person hovers a latency chart, drags a what-if slider, and tunes the weights of a decision until the ranking changes" width="768"></a>
   <br>
-  <sub>A real bb thread, recorded at 60 fps: an agent answers three questions with Iris cards, and the person explores them.</sub>
+  <sub>A real bb thread at 60 fps: the person hovers a chart, drags a what-if slider and tunes a decision. <a href="https://vburojevic.github.io/bb-plugin-iris/">Watch it in full resolution</a>.</sub>
 </p>
 
 ## Install
@@ -580,7 +580,7 @@ bb plugin install . && bb plugin dev
 
 Develop against the one installed Iris: install the checkout once (`bb plugin install .`) and run `bb plugin dev`, which rebuilds and reloads on every save. Don't install extra copies under other ids.
 
-The playground is the real gallery with bb's SDK swapped for a stand-in (`site/`). `node scripts/build-site.mjs` builds it into `site-dist/`; `scripts/capture-site-css.mjs` refreshes bb's CSS from a running bb, `scripts/capture-atlas.mjs` re-shoots the component pictures from the built site, `npx tsx scripts/readme-atlas.ts` rewrites the atlas above, and `node scripts/readme-icons.mjs` redraws the feature icons.
+The playground is the real gallery with bb's SDK swapped for a stand-in (`site/`). `node scripts/build-site.mjs` builds it into `site-dist/`; `scripts/capture-site-css.mjs` refreshes bb's CSS from a running bb, `scripts/capture-atlas.mjs` re-shoots the component pictures from the built site, `npx tsx scripts/readme-atlas.ts` rewrites the atlas above, `node scripts/readme-icons.mjs` redraws the feature icons, and `scripts/record-demo.mjs` with `scripts/encode-demo.sh` re-records the demo frame by frame from a separate dev bb.
 
 ## License
 

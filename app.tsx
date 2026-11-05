@@ -1,0 +1,83 @@
+// Iris frontend: renders ```iris, ```iris-app and ```iris-react blocks in chat, the waiting
+// pickers agents open with iris_ask, the side-panel view of a card, and the
+// component gallery.
+import "./app.css";
+import { definePluginApp, type ExperimentalCodeFenceRendererProps, type PluginPendingInteractionProps } from "@get-bb/plugin-sdk/app";
+import { useCallback, useState } from "react";
+import { AppFrame } from "./ui/app-frame";
+import { IrisBlock } from "./ui/block";
+import { GalleryPage } from "./ui/gallery";
+import { Glyph } from "./ui/views/kit";
+
+function Fence({ code, language, status, index, message }: ExperimentalCodeFenceRendererProps) {
+  const streaming = status === "streaming";
+  const stateKey = `${message.id}#${language}#${index}`;
+  if (language.endsWith("-app") || language.endsWith("-react")) return <AppFrame source={code} streaming={streaming} threadId={message.threadId} stateKey={stateKey} kind={language.endsWith("-react") ? "react" : "html"} />;
+  return <IrisBlock source={code} streaming={streaming} threadId={message.threadId} mode="fence" stateKey={stateKey} language={language} />;
+}
+
+/** What iris_ask sends: the picker's markup (or an HTML or React app) and its title. */
+interface AskPayload {
+  source?: string;
+  html?: string;
+  react?: string;
+  title?: string;
+}
+
+function AskPicker({ interaction, submit, cancel }: PluginPendingInteractionProps) {
+  const payload = (interaction.payload ?? {}) as AskPayload;
+  const [sent, setSent] = useState(false);
+  const answer = useCallback(
+    (value: unknown) => {
+      if (sent) return;
+      setSent(true);
+      submit(JSON.parse(JSON.stringify(value ?? null))).catch(() => setSent(false));
+    },
+    [sent, submit],
+  );
+  return (
+    <div className="iris-picker max-h-[min(70vh,640px)] overflow-y-auto px-1 pb-1" aria-label={interaction.title}>
+      <div className="flex justify-end px-1">
+        <button type="button" onClick={() => void cancel()} className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-state-hover hover:text-foreground">
+          <Glyph name="x" size={12} />
+          Skip
+        </button>
+      </div>
+      {payload.html || payload.react ? (
+        <AppFrame source={payload.react ?? payload.html ?? ""} streaming={false} threadId={interaction.threadId} stateKey={null} submit={answer} kind={payload.react ? "react" : "html"} />
+      ) : (
+        <IrisBlock source={payload.source ?? ""} streaming={false} threadId={interaction.threadId} mode="picker" stateKey={null} submit={answer} bare />
+      )}
+    </div>
+  );
+}
+
+function CardTab({ threadId, params }: { threadId: string; params: unknown }) {
+  const p = (params ?? {}) as { source?: string; language?: string };
+  if (!p.source) return <div className="p-6 text-sm text-muted-foreground">This card is no longer available.</div>;
+  return (
+    <div className="h-full overflow-y-auto p-4">
+      {p.language?.endsWith("-app") || p.language?.endsWith("-react") ? <AppFrame source={p.source} streaming={false} threadId={threadId} stateKey={null} kind={p.language.endsWith("-react") ? "react" : "html"} /> : <IrisBlock source={p.source} streaming={false} threadId={threadId} mode="panel" stateKey={null} bare />}
+    </div>
+  );
+}
+
+declare const __BB_PLUGIN_ID__: string | undefined;
+const PLUGIN_ID = typeof __BB_PLUGIN_ID__ === "string" ? __BB_PLUGIN_ID__ : "iris";
+/** A dev copy (bb-plugin-iris-dev-*) renders ```<its id> blocks so it never collides with the live Iris. */
+const LANG = PLUGIN_ID === "iris" ? "iris" : PLUGIN_ID;
+
+export default definePluginApp((app) => {
+  app.slots.experimental_codeFenceRenderer({ id: "iris", languages: [LANG, `${LANG}-app`, `${LANG}-react`], component: Fence });
+  app.slots.pendingInteraction({ id: "iris-ask", component: AskPicker });
+  app.slots.experimental_tab({
+    id: "iris-card",
+    title: "Iris card",
+    icon: `${PLUGIN_ID}/mark`,
+    layout: "flush",
+    context: { kind: "thread" },
+    availability: "action",
+    component: ({ threadId, params }) => <CardTab threadId={threadId} params={params} />,
+  });
+  app.slots.navPanel({ id: "gallery", title: PLUGIN_ID === "iris" ? "Iris" : `Iris (${PLUGIN_ID})`, icon: `${PLUGIN_ID}/mark`, path: "gallery", component: GalleryPage });
+});

@@ -1,0 +1,250 @@
+[
+ {
+  "id": "status-sprint",
+  "category": "status",
+  "prompt": "Give me a status update on the checkout redesign. Facts: 7 of 11 tasks done (cart page, address form, shipping options, tax calc, promo codes, order summary, receipts). In progress: payment sheet (Sam, 60%), Apple Pay (Lee, 30%). Not started: guest checkout, analytics events. Blocked: none. Last week we finished 3 tasks; the week before 2. Release target is Nov 21.",
+  "expect": [
+   "Status",
+   "Steps",
+   "Progress",
+   "Metric",
+   "Board",
+   "Forecast"
+  ]
+ },
+ {
+  "id": "status-multi-workstream",
+  "category": "status",
+  "prompt": "Where do the four workstreams stand? Mobile app: on track, 80%, owner Ana, due Nov 15. API v2: at risk, 55%, owner Ben, due Nov 12, waiting on auth review. Docs site: done. Billing migration: blocked, 20%, owner Cy, due Dec 1, waiting for the payment provider's sandbox keys.",
+  "expect": [
+   "Status",
+   "Board",
+   "Table"
+  ]
+ },
+ {
+  "id": "status-overnight",
+  "category": "status",
+  "prompt": "Summarize what happened overnight in this repo: 5 commits landed on main (2 bug fixes, a dependency bump, a new export feature, a test refactor), 1 PR was opened and is waiting for review, CI failed once on the e2e job and passed on retry, and 2 issues were closed.",
+  "expect": [
+   "Timeline",
+   "Commits",
+   "Steps",
+   "Card",
+   "Metric",
+   "List"
+  ]
+ },
+ {
+  "id": "status-eta",
+  "category": "status",
+  "prompt": "How long until the migration finishes? It started 3 days ago with 4,800 records to move. Day 1 moved 900, day 2 moved 1,150, day 3 moved 1,020. About 1,730 remain.",
+  "expect": [
+   "Forecast",
+   "Chart",
+   "Progress",
+   "Metric",
+   "Estimate"
+  ]
+ },
+ {
+  "id": "status-plan-progress",
+  "category": "status",
+  "prompt": "We're working through this plan: 1. Extract the parser (done) 2. Add streaming support (done) 3. Port the renderer (in progress) 4. Add tests for edge cases (todo) 5. Update docs (todo). Tell me where we are.",
+  "expect": [
+   "Steps",
+   "Plan",
+   "Progress"
+  ]
+ },
+ {
+  "id": "proof-tests",
+  "category": "proof",
+  "prompt": "I ran the test suite. The vitest JSON report is saved at $BB_THREAD_STORAGE/tests.json (142 passed, 2 failed: 'parse > handles empty input' and 'render > keeps focus after update', 3 skipped). Report the run to me.",
+  "expect": [
+   "Tests"
+  ]
+ },
+ {
+  "id": "proof-acceptance",
+  "category": "proof",
+  "prompt": "Is the dark-mode feature done? Criteria: toggle in settings (passed, screenshot at $BB_THREAD_STORAGE/shots/toggle.png), follows system setting (passed), persists across restarts (passed), charts readable in dark (failed: axis labels too dim, screenshot at $BB_THREAD_STORAGE/shots/chart-dark.png), print styles unaffected (not tested).",
+  "expect": [
+   "Acceptance"
+  ]
+ },
+ {
+  "id": "proof-before-after",
+  "category": "proof",
+  "prompt": "I fixed the header layout bug. Before and after screenshots are at $BB_THREAD_STORAGE/before.png and $BB_THREAD_STORAGE/after.png. Show me the fix.",
+  "expect": [
+   "Compare",
+   "CompareGrid",
+   "Gallery"
+  ]
+ },
+ {
+  "id": "proof-screens-matrix",
+  "category": "proof",
+  "prompt": "I re-rendered 6 screens after the redesign and saved before and after shots as $BB_THREAD_STORAGE/before/<name>.png and $BB_THREAD_STORAGE/after/<name>.png for: home, search, detail, cart, profile, settings. Three changed visibly (home, cart, settings); the rest are identical. Show me.",
+  "expect": [
+   "CompareGrid",
+   "Compare",
+   "Gallery"
+  ]
+ },
+ {
+  "id": "proof-perf",
+  "category": "proof",
+  "prompt": "I optimized the list rendering. hyperfine results: before 412 ms mean, after 138 ms mean for 'render 1k rows'; before 1,880 ms, after 590 ms for 'render 10k rows'; before 95 ms, after 92 ms for 'initial mount'. Report it.",
+  "expect": [
+   "Benchmark",
+   "Chart",
+   "Table"
+  ]
+ },
+ {
+  "id": "ci-pr-state",
+  "category": "ci",
+  "prompt": "What's the state of my pull request on this branch? Is it ready to merge?",
+  "expect": [
+   "PullRequest"
+  ]
+ },
+ {
+  "id": "ci-pipeline-failed",
+  "category": "ci",
+  "prompt": "The CI run failed. I saved `gh run view 4821 --json name,displayTitle,status,conclusion,jobs,url` to $BB_THREAD_STORAGE/run.json. Jobs: lint passed, unit tests passed, e2e failed at step 'checkout flow', build passed. Tell me what failed.",
+  "expect": [
+   "Pipeline"
+  ]
+ },
+ {
+  "id": "ci-changes",
+  "category": "ci",
+  "prompt": "What did I change on this branch so far?",
+  "expect": [
+   "Changes",
+   "Commits"
+  ]
+ },
+ {
+  "id": "ci-release",
+  "category": "ci",
+  "prompt": "Track the 3.2.0 release for me. I'm writing its state to $BB_THREAD_STORAGE/release.json as it moves: tag pushed, iOS build 512 uploaded and processing, Android build 512 in review, web deployed to staging, production deploy waiting for approval.",
+  "expect": [
+   "Release",
+   "Status",
+   "Steps",
+   "Provenance"
+  ]
+ },
+ {
+  "id": "ci-logs",
+  "category": "ci",
+  "prompt": "The build failed. The full output is at $BB_THREAD_STORAGE/build.log (exit code 2). The error is a type error in src/api/client.ts line 88. Show me.",
+  "expect": [
+   "Logs",
+   "StackTrace",
+   "Findings"
+  ]
+ },
+ {
+  "id": "data-compare-options",
+  "category": "data",
+  "prompt": "Help me pick a database for the new service. Postgres: mature, great tooling, needs ops. SQLite with Litestream: simplest, single node, cheap. DynamoDB: scales without ops, awkward queries, vendor lock-in. We care most about simple ops, then query flexibility, then cost.",
+  "expect": [
+   "Decision",
+   "Table"
+  ]
+ },
+ {
+  "id": "data-breakdown",
+  "category": "data",
+  "prompt": "Where did the disk space go? I measured: node_modules folders 38 GB across 41 projects, Xcode DerivedData 24 GB, Docker images 19 GB, simulator runtimes 15 GB, caches 6 GB, everything else 12 GB. The disk is 500 GB with 41 GB free.",
+  "expect": [
+   "SegmentedBar",
+   "Chart",
+   "Table",
+   "Metric"
+  ]
+ },
+ {
+  "id": "data-costs",
+  "category": "data",
+  "prompt": "How much have we spent on the model evals this month against the $300 budget? Spend by day so far: Nov 1 $22, Nov 2 $41, Nov 3 $18, Nov 4 $63. Split: grading $58, agent runs $79, embeddings $7.",
+  "expect": [
+   "Budget",
+   "Metric",
+   "Progress",
+   "Chart"
+  ]
+ },
+ {
+  "id": "data-trend",
+  "category": "data",
+  "prompt": "Our p95 API latency for the last 8 releases was 640, 655, 610, 720, 590, 560, 540, 515 ms. Release 4 shipped the new cache, which got rolled back and re-landed in release 5. What's the trend?",
+  "expect": [
+   "Chart",
+   "Sparkline",
+   "Metric"
+  ]
+ },
+ {
+  "id": "data-approve-plan",
+  "category": "data",
+  "prompt": "Here is the plan I want you to approve: 1. Add a feature flag (low risk, 1 h) 2. Migrate the settings table (high risk, 3 h, files db/migrations/042.sql) 3. Ship the new settings screen behind the flag (medium risk, 4 h) 4. Remove the old screen after a week (low risk, 1 h). Lay it out for my approval.",
+  "expect": [
+   "Plan",
+   "Steps"
+  ]
+ },
+ {
+  "id": "progress-prs",
+  "category": "progress",
+  "prompt": "You are coordinating a stack of four pull requests for a settings redesign while workers fix review comments. Since your last message: #7254 Settings was fixed in 895b857 and you replied on the PR; the spec change is committed on the proposal branch; #7206 Calendar is still being reworked by a worker (header controls moving into the toolbar), you are waiting for its screenshots; #7255 Resources has one new review finding about records that haven't synced yet. Write your update to the person now.",
+  "expect": [
+   "Status",
+   "Steps",
+   "Table",
+   "Board",
+   "Threads"
+  ]
+ },
+ {
+  "id": "progress-workers",
+  "category": "progress",
+  "prompt": "Three worker threads you started just reported back. Search filters: done, PR #88 open, 64 tests pass. Export to CSV: done, PR #89 open, 41 tests pass, one flaky test retried. Bulk edit: failed, the worker hit a type error in src/grid/selection.ts it couldn't resolve and stopped. Tell the person where things stand and what you'll do next.",
+  "expect": [
+   "Status",
+   "Table",
+   "Steps",
+   "Board",
+   "Threads"
+  ]
+ },
+ {
+  "id": "progress-review-findings",
+  "category": "progress",
+  "prompt": "The reviewer's second round on your branch came back and you've handled it: missing null check in parser.ts (fixed), race in the cache refresh (fixed, with a new test), naming of the config flag (declined: matches the existing API), slow regex on large inputs (fixed, 40x faster), docs typo (fixed). Report back to the person.",
+  "expect": [
+   "Findings",
+   "Table",
+   "Steps",
+   "Status",
+   "Checklist"
+  ]
+ },
+ {
+  "id": "progress-migration-run",
+  "category": "progress",
+  "prompt": "You're midway through migrating 6 services to the new logging library. Done: auth, billing, search. In progress: notifications (tests running). Not started: reporting, admin. Billing needed an extra adapter for its structured fields. Post a quick progress update before continuing.",
+  "expect": [
+   "Steps",
+   "Status",
+   "Progress",
+   "Table",
+   "Board"
+  ]
+ }
+]

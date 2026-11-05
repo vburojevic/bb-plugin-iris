@@ -1,0 +1,865 @@
+{
+ "testEngine": {
+  "name": "axe-core",
+  "version": "4.14.0"
+ },
+ "testRunner": {
+  "name": "axe"
+ },
+ "timestamp": "2026-11-03T21:48:28.664Z",
+ "url": "https://shop.example.com/checkout",
+ "inapplicable": [],
+ "passes": [
+  {
+   "id": "aria-allowed-role",
+   "impact": null,
+   "tags": [
+    "cat.aria",
+    "best-practice"
+   ],
+   "help": "ARIA role should be appropriate for the element",
+   "nodes": []
+  },
+  {
+   "id": "aria-command-name",
+   "impact": null,
+   "tags": [
+    "cat.aria",
+    "wcag2a",
+    "wcag412",
+    "TTv5",
+    "TT6.a",
+    "EN-301-549",
+    "EN-9.4.1.2",
+    "ACT",
+    "RGAAv4",
+    "RGAA-11.9.1"
+   ],
+   "help": "ARIA commands must have an accessible name",
+   "nodes": []
+  },
+  {
+   "id": "aria-deprecated-role",
+   "impact": null,
+   "tags": [
+    "cat.aria",
+    "wcag2a",
+    "wcag412",
+    "EN-301-549",
+    "EN-9.4.1.2",
+    "RGAAv4",
+    "RGAA-7.1.1"
+   ],
+   "help": "Deprecated ARIA roles must not be used",
+   "nodes": []
+  },
+  {
+   "id": "aria-hidden-body",
+   "impact": null,
+   "tags": [
+    "cat.aria",
+    "wcag2a",
+    "wcag131",
+    "wcag412",
+    "EN-301-549",
+    "EN-9.1.3.1",
+    "EN-9.4.1.2",
+    "RGAAv4",
+    "RGAA-10.8.1"
+   ],
+   "help": "aria-hidden=\"true\" must not be present on the document body",
+   "nodes": []
+  },
+  {
+   "id": "aria-required-attr",
+   "impact": null,
+   "tags": [
+    "cat.aria",
+    "wcag2a",
+    "wcag412",
+    "EN-301-549",
+    "EN-9.4.1.2",
+    "RGAAv4",
+    "RGAA-7.1.1"
+   ],
+   "help": "Required ARIA attributes must be provided",
+   "nodes": []
+  },
+  {
+   "id": "aria-roles",
+   "impact": null,
+   "tags": [
+    "cat.aria",
+    "wcag2a",
+    "wcag412",
+    "EN-301-549",
+    "EN-9.4.1.2",
+    "RGAAv4",
+    "RGAA-7.1.1"
+   ],
+   "help": "ARIA roles used must conform to valid values",
+   "nodes": []
+  },
+  {
+   "id": "avoid-inline-spacing",
+   "impact": null,
+   "tags": [
+    "cat.structure",
+    "wcag21aa",
+    "wcag1412",
+    "EN-301-549",
+    "EN-9.1.4.12",
+    "ACT"
+   ],
+   "help": "Inline text spacing must be adjustable with custom stylesheets",
+   "nodes": []
+  },
+  {
+   "id": "bypass",
+   "impact": null,
+   "tags": [
+    "cat.keyboard",
+    "wcag2a",
+    "wcag241",
+    "section508",
+    "section508.22.o",
+    "TTv5",
+    "TT9.a",
+    "EN-301-549",
+    "EN-9.2.4.1",
+    "RGAAv4",
+    "RGAA-12.7.1"
+   ],
+   "help": "Page must have means to bypass repeated blocks",
+   "nodes": []
+  },
+  {
+   "id": "color-contrast",
+   "impact": "serious",
+   "tags": [
+    "cat.color",
+    "wcag2aa",
+    "wcag143",
+    "TTv5",
+    "TT13.c",
+    "EN-301-549",
+    "EN-9.1.4.3",
+    "ACT",
+    "RGAAv4",
+    "RGAA-3.2.1"
+   ],
+   "help": "Elements must meet minimum color contrast ratio thresholds",
+   "nodes": []
+  },
+  {
+   "id": "document-title",
+   "impact": null,
+   "tags": [
+    "cat.text-alternatives",
+    "wcag2a",
+    "wcag242",
+    "TTv5",
+    "TT12.a",
+    "EN-301-549",
+    "EN-9.2.4.2",
+    "ACT",
+    "RGAAv4",
+    "RGAA-8.5.1"
+   ],
+   "help": "Documents must have <title> element to aid in navigation",
+   "nodes": []
+  },
+  {
+   "id": "empty-heading",
+   "impact": null,
+   "tags": [
+    "cat.name-role-value",
+    "best-practice"
+   ],
+   "help": "Headings should not be empty",
+   "nodes": []
+  },
+  {
+   "id": "form-field-multiple-labels",
+   "impact": null,
+   "tags": [
+    "cat.forms",
+    "wcag2a",
+    "wcag332",
+    "TTv5",
+    "TT5.c",
+    "EN-301-549",
+    "EN-9.3.3.2",
+    "RGAAv4",
+    "RGAA-11.2.1"
+   ],
+   "help": "Form field must not have multiple label elements",
+   "nodes": []
+  },
+  {
+   "id": "heading-order",
+   "impact": "moderate",
+   "tags": [
+    "cat.semantics",
+    "best-practice"
+   ],
+   "help": "Heading levels should only increase by one",
+   "nodes": []
+  },
+  {
+   "id": "image-alt",
+   "impact": "critical",
+   "tags": [
+    "cat.text-alternatives",
+    "wcag2a",
+    "wcag111",
+    "section508",
+    "section508.22.a",
+    "TTv5",
+    "TT7.a",
+    "TT7.b",
+    "EN-301-549",
+    "EN-9.1.1.1",
+    "ACT",
+    "RGAAv4",
+    "RGAA-1.1.1"
+   ],
+   "help": "Images must have alternative text",
+   "nodes": []
+  },
+  {
+   "id": "image-redundant-alt",
+   "impact": "minor",
+   "tags": [
+    "cat.text-alternatives",
+    "best-practice"
+   ],
+   "help": "Alternative text of images should not be repeated as text",
+   "nodes": []
+  },
+  {
+   "id": "label-title-only",
+   "impact": null,
+   "tags": [
+    "cat.forms",
+    "best-practice"
+   ],
+   "help": "Form elements should have a visible label",
+   "nodes": []
+  },
+  {
+   "id": "label",
+   "impact": null,
+   "tags": [
+    "cat.forms",
+    "wcag2a",
+    "wcag412",
+    "section508",
+    "section508.22.n",
+    "TTv5",
+    "TT5.c",
+    "EN-301-549",
+    "EN-9.4.1.2",
+    "ACT",
+    "RGAAv4",
+    "RGAA-11.1.1"
+   ],
+   "help": "Form elements must have labels",
+   "nodes": []
+  },
+  {
+   "id": "landmark-banner-is-top-level",
+   "impact": null,
+   "tags": [
+    "cat.semantics",
+    "best-practice"
+   ],
+   "help": "Banner landmark should not be contained in another landmark",
+   "nodes": []
+  },
+  {
+   "id": "landmark-contentinfo-is-top-level",
+   "impact": null,
+   "tags": [
+    "cat.semantics",
+    "best-practice"
+   ],
+   "help": "Contentinfo landmark should not be contained in another landmark",
+   "nodes": []
+  },
+  {
+   "id": "landmark-main-is-top-level",
+   "impact": null,
+   "tags": [
+    "cat.semantics",
+    "best-practice"
+   ],
+   "help": "Main landmark should not be contained in another landmark",
+   "nodes": []
+  },
+  {
+   "id": "landmark-no-duplicate-banner",
+   "impact": null,
+   "tags": [
+    "cat.semantics",
+    "best-practice"
+   ],
+   "help": "Document should not have more than one banner landmark",
+   "nodes": []
+  },
+  {
+   "id": "landmark-no-duplicate-contentinfo",
+   "impact": null,
+   "tags": [
+    "cat.semantics",
+    "best-practice"
+   ],
+   "help": "Document should not have more than one contentinfo landmark",
+   "nodes": []
+  },
+  {
+   "id": "landmark-no-duplicate-main",
+   "impact": null,
+   "tags": [
+    "cat.semantics",
+    "best-practice"
+   ],
+   "help": "Document should not have more than one main landmark",
+   "nodes": []
+  },
+  {
+   "id": "landmark-one-main",
+   "impact": null,
+   "tags": [
+    "cat.semantics",
+    "best-practice"
+   ],
+   "help": "Document should have one main landmark",
+   "nodes": []
+  },
+  {
+   "id": "landmark-unique",
+   "impact": null,
+   "tags": [
+    "cat.semantics",
+    "best-practice"
+   ],
+   "help": "Landmarks should have a unique role or role/label/title (i.e. accessible name) combination",
+   "nodes": []
+  },
+  {
+   "id": "link-name",
+   "impact": "serious",
+   "tags": [
+    "cat.name-role-value",
+    "wcag2a",
+    "wcag244",
+    "wcag412",
+    "section508",
+    "section508.22.a",
+    "TTv5",
+    "TT6.a",
+    "EN-301-549",
+    "EN-9.2.4.4",
+    "EN-9.4.1.2",
+    "ACT",
+    "RGAAv4",
+    "RGAA-6.2.1"
+   ],
+   "help": "Links must have discernible text",
+   "nodes": []
+  },
+  {
+   "id": "nested-interactive",
+   "impact": null,
+   "tags": [
+    "cat.keyboard",
+    "wcag2a",
+    "wcag412",
+    "TTv5",
+    "TT6.a",
+    "EN-301-549",
+    "EN-9.4.1.2",
+    "RGAAv4",
+    "RGAA-7.1.1"
+   ],
+   "help": "Interactive controls must not be nested",
+   "nodes": []
+  },
+  {
+   "id": "page-has-heading-one",
+   "impact": null,
+   "tags": [
+    "cat.semantics",
+    "best-practice"
+   ],
+   "help": "Page should contain a level-one heading",
+   "nodes": []
+  },
+  {
+   "id": "region",
+   "impact": null,
+   "tags": [
+    "cat.keyboard",
+    "best-practice",
+    "RGAAv4",
+    "RGAA-9.2.1"
+   ],
+   "help": "All page content should be contained by landmarks",
+   "nodes": []
+  }
+ ],
+ "incomplete": [
+  {
+   "id": "color-contrast",
+   "impact": "serious",
+   "tags": [
+    "cat.color",
+    "wcag2aa",
+    "wcag143"
+   ],
+   "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+   "help": "Elements must meet minimum color contrast ratio thresholds",
+   "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/color-contrast?application=axeAPI",
+   "nodes": [
+    {
+     "any": [],
+     "all": [],
+     "none": [],
+     "impact": "serious",
+     "html": "<span class=\"brand\">Acme</span>",
+     "target": [
+      ".brand"
+     ],
+     "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background image",
+     "box": {
+      "x": 58,
+      "y": 20,
+      "width": 66,
+      "height": 20
+     }
+    }
+   ]
+  }
+ ],
+ "violations": [
+  {
+   "id": "button-name",
+   "impact": "critical",
+   "tags": [
+    "cat.name-role-value",
+    "wcag2a",
+    "wcag412",
+    "section508",
+    "section508.22.a",
+    "TTv5",
+    "TT6.a",
+    "EN-301-549",
+    "EN-9.4.1.2",
+    "ACT",
+    "RGAAv4",
+    "RGAA-11.9.1"
+   ],
+   "description": "Ensure buttons have discernible text",
+   "help": "Buttons must have discernible text",
+   "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/button-name?application=axeAPI",
+   "nodes": [
+    {
+     "any": [
+      {
+       "id": "button-has-visible-text",
+       "impact": "critical",
+       "message": "Element does not have inner text that is visible to screen readers"
+      },
+      {
+       "id": "aria-label",
+       "impact": "critical",
+       "message": "aria-label attribute does not exist or is empty"
+      },
+      {
+       "id": "aria-labelledby",
+       "impact": "critical",
+       "message": "aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty"
+      },
+      {
+       "id": "non-empty-title",
+       "impact": "critical",
+       "message": "Element has no title attribute"
+      },
+      {
+       "id": "implicit-label",
+       "impact": "critical",
+       "message": "Element does not have an implicit (wrapped) <label>"
+      },
+      {
+       "id": "explicit-label",
+       "impact": "critical",
+       "message": "Element does not have an explicit <label>"
+      },
+      {
+       "id": "presentational-role",
+       "impact": "critical",
+       "message": "Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+      }
+     ],
+     "all": [],
+     "none": [],
+     "impact": "critical",
+     "html": "<button class=\"cart\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"><circle cx=\"8\" cy=\"8\" r=\"5\" fill=\"#1d1d1f\"></circle></svg></button>",
+     "target": [
+      "button"
+     ],
+     "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+     "box": {
+      "x": 588,
+      "y": 14,
+      "width": 32,
+      "height": 32
+     }
+    }
+   ]
+  },
+  {
+   "id": "color-contrast",
+   "impact": "serious",
+   "tags": [
+    "cat.color",
+    "wcag2aa",
+    "wcag143",
+    "TTv5",
+    "TT13.c",
+    "EN-301-549",
+    "EN-9.1.4.3",
+    "ACT",
+    "RGAAv4",
+    "RGAA-3.2.1"
+   ],
+   "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+   "help": "Elements must meet minimum color contrast ratio thresholds",
+   "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/color-contrast?application=axeAPI",
+   "nodes": [
+    {
+     "any": [
+      {
+       "id": "color-contrast",
+       "impact": "serious",
+       "message": "Element has insufficient color contrast of 1.97 (foreground color: #b8b8bf, background color: #ffffff, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1"
+      }
+     ],
+     "all": [],
+     "none": [],
+     "impact": "serious",
+     "html": "<p class=\"hint\">We never store your card number.</p>",
+     "target": [
+      ".hint"
+     ],
+     "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.97 (foreground color: #b8b8bf, background color: #ffffff, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1",
+     "box": {
+      "x": 20,
+      "y": 115,
+      "width": 600,
+      "height": 19
+     }
+    },
+    {
+     "any": [
+      {
+       "id": "color-contrast",
+       "impact": "serious",
+       "message": "Element has insufficient color contrast of 2.42 (foreground color: #ffffff, background color: #7ea6f6, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1"
+      }
+     ],
+     "all": [],
+     "none": [],
+     "impact": "serious",
+     "html": "<div class=\"pay\" role=\"button\">Pay $48.00</div>",
+     "target": [
+      ".pay"
+     ],
+     "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 2.42 (foreground color: #ffffff, background color: #7ea6f6, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1",
+     "box": {
+      "x": 20,
+      "y": 364,
+      "width": 113,
+      "height": 42
+     }
+    },
+    {
+     "any": [
+      {
+       "id": "color-contrast",
+       "impact": "serious",
+       "message": "Element has insufficient color contrast of 2.57 (foreground color: #a1a1a6, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+      }
+     ],
+     "all": [],
+     "none": [],
+     "impact": "serious",
+     "html": "<footer>Questions? <a href=\"#\"></a> Read our terms.</footer>",
+     "target": [
+      "footer"
+     ],
+     "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 2.57 (foreground color: #a1a1a6, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+     "box": {
+      "x": 0,
+      "y": 456,
+      "width": 640,
+      "height": 37
+     }
+    }
+   ]
+  },
+  {
+   "id": "heading-order",
+   "impact": "moderate",
+   "tags": [
+    "cat.semantics",
+    "best-practice"
+   ],
+   "description": "Ensure the order of headings is semantically correct",
+   "help": "Heading levels should only increase by one",
+   "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/heading-order?application=axeAPI",
+   "nodes": [
+    {
+     "any": [
+      {
+       "id": "heading-order",
+       "impact": "moderate",
+       "message": "Heading order invalid"
+      }
+     ],
+     "all": [],
+     "none": [],
+     "impact": "moderate",
+     "html": "<h4>Shipping</h4>",
+     "target": [
+      "h4:nth-child(3)"
+     ],
+     "failureSummary": "Fix any of the following:\n  Heading order invalid",
+     "box": {
+      "x": 20,
+      "y": 150,
+      "width": 600,
+      "height": 20
+     }
+    }
+   ]
+  },
+  {
+   "id": "html-has-lang",
+   "impact": "serious",
+   "tags": [
+    "cat.language",
+    "wcag2a",
+    "wcag311",
+    "TTv5",
+    "TT11.a",
+    "EN-301-549",
+    "EN-9.3.1.1",
+    "ACT",
+    "RGAAv4",
+    "RGAA-8.3.1"
+   ],
+   "description": "Ensure every HTML document has a lang attribute",
+   "help": "<html> element must have a lang attribute",
+   "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/html-has-lang?application=axeAPI",
+   "nodes": [
+    {
+     "any": [
+      {
+       "id": "has-lang",
+       "impact": "serious",
+       "message": "The <html> element does not have a lang attribute"
+      }
+     ],
+     "all": [],
+     "none": [],
+     "impact": "serious",
+     "html": "<html>",
+     "target": [
+      "html"
+     ],
+     "failureSummary": "Fix any of the following:\n  The <html> element does not have a lang attribute",
+     "box": {
+      "x": 0,
+      "y": 0,
+      "width": 640,
+      "height": 494
+     }
+    }
+   ]
+  },
+  {
+   "id": "image-alt",
+   "impact": "critical",
+   "tags": [
+    "cat.text-alternatives",
+    "wcag2a",
+    "wcag111",
+    "section508",
+    "section508.22.a",
+    "TTv5",
+    "TT7.a",
+    "TT7.b",
+    "EN-301-549",
+    "EN-9.1.1.1",
+    "ACT",
+    "RGAAv4",
+    "RGAA-1.1.1"
+   ],
+   "description": "Ensure <img> elements have alternative text or a role of none or presentation",
+   "help": "Images must have alternative text",
+   "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/image-alt?application=axeAPI",
+   "nodes": [
+    {
+     "any": [
+      {
+       "id": "has-alt",
+       "impact": "critical",
+       "message": "Element does not have an alt attribute"
+      },
+      {
+       "id": "aria-label",
+       "impact": "critical",
+       "message": "aria-label attribute does not exist or is empty"
+      },
+      {
+       "id": "aria-labelledby",
+       "impact": "critical",
+       "message": "aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty"
+      },
+      {
+       "id": "non-empty-title",
+       "impact": "critical",
+       "message": "Element has no title attribute"
+      },
+      {
+       "id": "presentational-role",
+       "impact": "critical",
+       "message": "Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+      }
+     ],
+     "all": [],
+     "none": [],
+     "impact": "critical",
+     "html": "<img src=\"data:image/gif;base64,R0lGODlhAQABAAAAACw=\">",
+     "target": [
+      "header > img"
+     ],
+     "failureSummary": "Fix any of the following:\n  Element does not have an alt attribute\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+     "box": {
+      "x": 20,
+      "y": 16,
+      "width": 28,
+      "height": 28
+     }
+    }
+   ]
+  },
+  {
+   "id": "image-redundant-alt",
+   "impact": "minor",
+   "tags": [
+    "cat.text-alternatives",
+    "best-practice"
+   ],
+   "description": "Ensure image alternative is not repeated as text",
+   "help": "Alternative text of images should not be repeated as text",
+   "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/image-redundant-alt?application=axeAPI",
+   "nodes": [
+    {
+     "any": [],
+     "all": [],
+     "none": [
+      {
+       "id": "duplicate-img-label",
+       "impact": "minor",
+       "message": "Element contains <img> element with alt text that duplicates existing text"
+      }
+     ],
+     "impact": "minor",
+     "html": "<img alt=\"Secure checkout\" width=\"12\" height=\"12\" src=\"data:image/gif;base64,R0lGODlhAQABAAAAACw=\">",
+     "target": [
+      "img[alt=\"Secure checkout\"]"
+     ],
+     "failureSummary": "Fix all of the following:\n  Element contains <img> element with alt text that duplicates existing text",
+     "box": {
+      "x": 120,
+      "y": 419,
+      "width": 113,
+      "height": 19
+     }
+    }
+   ]
+  },
+  {
+   "id": "link-name",
+   "impact": "serious",
+   "tags": [
+    "cat.name-role-value",
+    "wcag2a",
+    "wcag244",
+    "wcag412",
+    "section508",
+    "section508.22.a",
+    "TTv5",
+    "TT6.a",
+    "EN-301-549",
+    "EN-9.2.4.4",
+    "EN-9.4.1.2",
+    "ACT",
+    "RGAAv4",
+    "RGAA-6.2.1"
+   ],
+   "description": "Ensure links have discernible text",
+   "help": "Links must have discernible text",
+   "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/link-name?application=axeAPI",
+   "nodes": [
+    {
+     "any": [
+      {
+       "id": "has-visible-text",
+       "impact": "serious",
+       "message": "Element does not have text that is visible to screen readers"
+      },
+      {
+       "id": "aria-label",
+       "impact": "serious",
+       "message": "aria-label attribute does not exist or is empty"
+      },
+      {
+       "id": "aria-labelledby",
+       "impact": "serious",
+       "message": "aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty"
+      },
+      {
+       "id": "non-empty-title",
+       "impact": "serious",
+       "message": "Element has no title attribute"
+      }
+     ],
+     "all": [],
+     "none": [
+      {
+       "id": "focusable-no-name",
+       "impact": "serious",
+       "message": "Element is in tab order and does not have accessible text"
+      }
+     ],
+     "impact": "serious",
+     "html": "<a href=\"#\"></a>",
+     "target": [
+      "footer > a"
+     ],
+     "failureSummary": "Fix all of the following:\n  Element is in tab order and does not have accessible text\n\nFix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute",
+     "box": {
+      "x": 84,
+      "y": 467,
+      "width": 0,
+      "height": 14
+     }
+    }
+   ]
+  }
+ ]
+}

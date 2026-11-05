@@ -1,0 +1,19 @@
+{
+  "at": "2026-11-04T10:58:43.555Z",
+  "model": "claude-opus-5-5",
+  "cases": 24,
+  "score": 95.2,
+  "rates": {
+    "hasIris": 100,
+    "checkClean": 100,
+    "expected": 92,
+    "noTable": 100
+  },
+  "byCategory": {
+    "ci": 98,
+    "data": 94,
+    "progress": 86.3,
+    "proof": 98,
+    "status": 98
+  }
+}

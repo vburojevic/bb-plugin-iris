@@ -1,0 +1,290 @@
+/*
+ * Iris styles beyond Tailwind utilities. bb appends this file unscoped, so
+ * every rule sits under [data-iris-root]. Every color is a theme token or is
+ * derived from one (ui/palette.ts sets --iris-accent from the theme's primary).
+ * No gradients, no rainbow: one accent, quiet surfaces.
+ */
+
+/* A card that is alive (live, waiting on you, or still streaming) shows a thin accent line. */
+[data-iris-root] .iris-edge {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: -1px;
+  height: 1.5px;
+  border-radius: 2px;
+  background: var(--iris-accent, var(--primary));
+  opacity: 0;
+  transition: opacity 400ms ease;
+  pointer-events: none;
+}
+[data-iris-root] .iris-card[data-state="live"] > .iris-edge,
+[data-iris-root] .iris-card[data-state="waiting"] > .iris-edge {
+  opacity: 1;
+}
+[data-iris-root] .iris-card[data-state="live"] > .iris-edge {
+  animation: iris-breathe 2.8s ease-in-out infinite;
+}
+[data-iris-root][data-streaming] .iris-card > .iris-edge {
+  opacity: 0.7;
+  animation: iris-breathe 1.4s ease-in-out infinite;
+}
+[data-iris-root] .iris-card[data-state="waiting"] {
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--iris-accent, var(--primary)) 38%, var(--border)), 0 16px 36px -24px rgb(0 0 0 / 0.45);
+}
+
+/* Card icon: a hairline ring in the border color, the accent while the card is alive. */
+[data-iris-root] .iris-glyph {
+  background: var(--border);
+}
+[data-iris-root] .iris-glyph-alive,
+[data-iris-root] .iris-card[data-state="live"] .iris-glyph,
+[data-iris-root] .iris-card[data-state="waiting"] .iris-glyph {
+  background: var(--iris-accent, var(--primary));
+}
+
+[data-iris-root] .iris-waitchip {
+  background: color-mix(in oklab, var(--iris-accent, var(--primary)) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--iris-accent, var(--primary)) 40%, transparent);
+}
+[data-iris-root] .iris-pulse {
+  animation: iris-pulse 1.8s ease-in-out infinite;
+}
+[data-iris-root] .iris-spin {
+  animation: iris-spin 1s linear infinite;
+}
+
+/* Picked options and the top pick carry the accent ring. */
+[data-iris-root] .iris-picked {
+  box-shadow: 0 0 0 1.5px var(--iris-accent);
+  background: color-mix(in oklab, var(--iris-accent) 7%, transparent);
+}
+[data-iris-root] .iris-top-pick {
+  box-shadow: 0 0 0 1.5px var(--iris-accent);
+}
+
+/* Loading placeholders. */
+[data-iris-root] .iris-shimmer {
+  background: var(--muted);
+  animation: iris-breathe 1.6s ease-in-out infinite;
+}
+
+/* Bars and arcs ease into their new size when inputs move. */
+[data-iris-root] .iris-bar {
+  transition: width 260ms cubic-bezier(0.2, 0.8, 0.2, 1), height 260ms cubic-bezier(0.2, 0.8, 0.2, 1), stroke-dasharray 260ms ease, y 260ms ease, x 260ms ease;
+}
+
+/* Sliders in theme colors. */
+[data-iris-root] .iris-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 20px;
+  background: transparent;
+  cursor: pointer;
+}
+[data-iris-root] .iris-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--iris-accent) var(--iris-fill, 50%), var(--muted) var(--iris-fill, 50%));
+}
+[data-iris-root] .iris-range::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--muted);
+}
+[data-iris-root] .iris-range::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--iris-accent);
+}
+[data-iris-root] .iris-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: 0 0 0 1.5px var(--iris-accent), 0 1px 3px rgb(0 0 0 / 0.25);
+}
+[data-iris-root] .iris-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: 0 0 0 1.5px var(--iris-accent), 0 1px 3px rgb(0 0 0 / 0.25);
+}
+[data-iris-root] .iris-range:focus-visible {
+  outline: none;
+}
+[data-iris-root] .iris-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--iris-accent) 40%, transparent);
+}
+
+/* Horizontal chip rows scroll without a visible bar. */
+[data-iris-root] .iris-scroll-x {
+  scrollbar-width: none;
+}
+[data-iris-root] .iris-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+/* Prose inside cards: tighter than a chat message. */
+[data-iris-root] .iris-prose > :first-child {
+  margin-top: 0;
+}
+[data-iris-root] .iris-prose > :last-child {
+  margin-bottom: 0;
+}
+
+/* Clickable Mermaid nodes. */
+[data-iris-root] .iris-diagram g.node:hover > *:first-child,
+[data-iris-root] .iris-diagram g.node:focus-visible > *:first-child {
+  filter: brightness(1.12);
+  stroke: var(--iris-accent) !important;
+}
+[data-iris-root] .iris-diagram g.node:focus-visible {
+  outline: none;
+}
+
+[data-iris-root] .iris-readout {
+  filter: drop-shadow(0 6px 14px rgb(0 0 0 / 0.18));
+}
+
+[data-iris-root] .iris-tools {
+  box-shadow: 0 0 0 1px var(--border);
+}
+[data-iris-root] .iris-card .iris-tools {
+  box-shadow: none;
+  background: transparent;
+}
+
+@keyframes iris-flow {
+  to {
+    background-position: 200% 0;
+  }
+}
+@keyframes iris-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+@keyframes iris-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes iris-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-iris-root] .iris-edge,
+  [data-iris-root] .iris-glyph-alive,
+  [data-iris-root] .iris-pulse,
+  [data-iris-root] .iris-spin,
+  [data-iris-root] .iris-shimmer {
+    animation: none !important;
+  }
+  [data-iris-root] .iris-bar {
+    transition: none !important;
+  }
+}
+
+/* Math: KaTeX sits in the card's text color; display formulas scroll, never overflow. */
+[data-iris-root] .iris-math-display .katex-display {
+  margin: 0.25em 0;
+}
+[data-iris-root] .iris-math .katex {
+  font-size: 1.12em;
+}
+
+/* Live progress: a bar that is moving breathes gently. */
+[data-iris-root] .iris-progress-run {
+  animation: iris-breathe 1.8s ease-in-out infinite;
+}
+[data-iris-root] .iris-progress-indeterminate {
+  animation: iris-sweep 1.6s ease-in-out infinite;
+}
+@keyframes iris-sweep {
+  from {
+    left: -33%;
+  }
+  to {
+    left: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-iris-root] .iris-progress-run,
+  [data-iris-root] .iris-progress-indeterminate {
+    animation: none !important;
+/* Learning: a step or question eases in; flashcards flip in 3D. */
+[data-iris-root] .iris-step-in {
+  animation: iris-step-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+[data-iris-root] .iris-spin-slow {
+  animation: iris-spin 1.6s linear infinite;
+}
+[data-iris-root] .iris-flip {
+  perspective: 1200px;
+}
+[data-iris-root] .iris-flip-inner {
+  transform-style: preserve-3d;
+  transition: transform 420ms cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+[data-iris-root] .iris-flip[data-flipped] .iris-flip-inner {
+  transform: rotateY(180deg);
+}
+[data-iris-root] .iris-flip-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+[data-iris-root] .iris-flip-back {
+  transform: rotateY(180deg);
+}
+[data-iris-root] .iris-flip:hover .iris-flip-face {
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 22%, transparent);
+}
+@keyframes iris-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-iris-root] .iris-step-in,
+  [data-iris-root] .iris-spin-slow {
+    animation: none !important;
+  }
+  [data-iris-root] .iris-flip-inner {
+    transition: none !important;
+  }
+}
+
+@keyframes iris-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-iris-root] .iris-edge,
+  [data-iris-root] .iris-progress-run {
+    animation: none !important;
+  }
+}
+
+/* TerminalReplay: the cursor blinks while a session plays. */
+[data-iris-root] .iris-caret {
+  animation: iris-caret 1s steps(1) infinite;
+}
+@keyframes iris-caret {
+  50% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-iris-root] .iris-caret {
+    animation: none !important;
+  }
+}

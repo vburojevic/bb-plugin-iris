@@ -1,0 +1,293 @@
+import { useMemo, useState } from "react";
+import { defaultCompare, isElementValue, isFnValue, isPendingValue, toText } from "../../core/evaluate";
+import { useEnv } from "../env";
+import { toneColor, tooClose } from "../palette";
+import type { ViewProps } from "../render";
+import { renderElementValue } from "../render";
+import { Glyph, Shimmer, cn, fmt, num, str } from "./kit";
+import { SparkPath } from "./spark";
+
+interface Column {
+  key: string;
+  label: string;
+  format?: unknown;
+  align?: "left" | "right" | "center";
+  width?: number;
+  tone?: unknown;
+  render?: unknown;
+  /** The long text column: takes the room left and truncates, so every column stays in view. */
+  fluid?: boolean;
+}
+
+function normalizeRows(rows: unknown, columns: unknown): { rows: Record<string, unknown>[]; cols: Column[] } {
+  let list: unknown[] = Array.isArray(rows) ? rows : rows && typeof rows === "object" ? Object.values(rows) : [];
+  const colSpecs = Array.isArray(columns) ? columns : null;
+  // A list of lists: the columns name the positions.
+  if (list.length && Array.isArray(list[0])) {
+    const names = colSpecs ? colSpecs.map((c) => (typeof c === "string" ? c : toText((c as Column).key ?? (c as Column).label))) : (list[0] as unknown[]).map((_, k) => `Column ${k + 1}`);
+    list = list.map((r) => Object.fromEntries(names.map((n, k) => [n, (r as unknown[])[k]])));
+  }
+  const objects = list.map((r) => (r && typeof r === "object" && !Array.isArray(r) ? (r as Record<string, unknown>) : { value: r }));
+  const keys = colSpecs
+    ? colSpecs
+    : [...objects.slice(0, 50).reduce((s, r) => {
+        Object.keys(r).forEach((k) => s.add(k));
+        return s;
+      }, new Set<string>())];
+  const cols: Column[] = keys.map((c) => {
+    if (typeof c === "string") return { key: c, label: humanize(c) };
+    const o = c as Partial<Column> & { key?: unknown };
+    const key = toText(o.key ?? o.label);
+    return { key, label: str(o.label) ?? humanize(key), format: o.format, align: o.align, width: num(o.width), tone: o.tone, render: o.render };
+  });
+  for (const c of cols) {
+    if (!c.align) {
+      const sample = objects.slice(0, 20).map((r) => r[c.key]).filter((v) => v != null);
+      c.align = sample.length && sample.every((v) => typeof v === "number") ? "right" : "left";
+    }
+  }
+  // The left-aligned plain-text column with the longest values gives way first when space runs short.
+  // Prose (values with spaces) gives way before IDs, hashes and dates of the same length.
+  const avgLength = (c: Column) => {
+    const sample = objects.slice(0, 50).map((r) => r[c.key]).filter((v) => typeof v === "string") as string[];
+    if (!sample.length) return 0;
+    const prose = sample.filter((v) => v.includes(" ")).length / sample.length;
+    return (sample.reduce((n, v) => n + v.length, 0) / sample.length) * (prose >= 0.5 ? 2 : 1);
+  };
+  const fluid = cols.filter((c) => c.align === "left" && !c.width && !c.render && !c.format).sort((a, b) => avgLength(b) - avgLength(a))[0];
+  const rawLength = (c: Column) => {
+    const sample = objects.slice(0, 50).map((r) => r[c.key]).filter((v) => typeof v === "string") as string[];
+    return sample.length ? sample.reduce((n, v) => n + v.length, 0) / sample.length : 0;
+  };
+  if (fluid && rawLength(fluid) >= 16) fluid.fluid = true;
+  return { rows: objects, cols };
+}
+
+function humanize(key: string): string {
+  const spaced = key.replace(/[_-]+/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2").trim();
+  return spaced ? spaced[0].toUpperCase() + spaced.slice(1) : key;
+}
+
+export function TableView({ props }: ViewProps) {
+  const env = useEnv();
+  const pending = isPendingValue(props.rows);
+  const { rows, cols } = useMemo(() => (pending ? { rows: [], cols: [] } : normalizeRows(props.rows, props.columns)), [props.rows, props.columns, pending]);
+  const initialSort = str(props.sort);
+  const [sort, setSort] = useState<{ key: string; dir: 1 | -1 } | null>(initialSort ? { key: initialSort.replace(/^-/, ""), dir: initialSort.startsWith("-") ? -1 : 1 } : null);
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
+  const pageSize = Math.max(5, num(props.pageSize) ?? 25);
+  const searchable = props.search === true || (props.search !== false && rows.length > 8);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let out = q ? rows.filter((r) => cols.some((c) => toText(r[c.key]).toLowerCase().includes(q))) : rows;
+    if (sort) out = [...out].sort((a, b) => sort.dir * defaultCompare(a[sort.key], b[sort.key]));
+    return out;
+  }, [rows, cols, query, sort]);
+  if (pending) return <Shimmer className="h-32" />;
+  const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const shown = filtered.slice(page * pageSize, page * pageSize + pageSize);
+  const clickable = props.onRowClick != null;
+  const toggleSort = (key: string) => {
+    setPage(0);
+    setSort((s) => (s?.key !== key ? { key, dir: 1 } : s.dir === 1 ? { key, dir: -1 } : null));
+  };
+  return (
+    <div className="min-w-0">
+      {searchable ? (
+        <div className="mb-2 flex items-center gap-2">
+          <label className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-full bg-muted/60 px-3 text-[13px] ring-1 ring-border focus-within:ring-foreground/30">
+            <Glyph name="search" size={14} className="text-muted-foreground" />
+            <input value={query} onChange={(e) => (setQuery(e.target.value), setPage(0))} placeholder="Filter rows" className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted-foreground" aria-label="Filter rows" />
+          </label>
+          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+            {filtered.length === rows.length ? `${rows.length} rows` : `${filtered.length} of ${rows.length}`}
+          </span>
+        </div>
+      ) : null}
+      <div className="iris-scroll-x -mx-1 overflow-x-auto px-1">
+        <table className={cn("w-full border-collapse text-[13px] tabular-nums", props.dense ? "[&_td]:py-1" : "[&_td]:py-1.5")}>
+          <thead>
+            <tr>
+              {cols.map((c) => (
+                <th key={c.key} scope="col" className={cn("whitespace-nowrap border-b border-border px-2 pb-1.5 text-xs font-medium text-muted-foreground first:pl-0 last:pr-0", c.align === "right" ? "text-right" : c.align === "center" ? "text-center" : "text-left")} style={c.width ? { width: c.width } : undefined}>
+                  <button type="button" onClick={() => toggleSort(c.key)} className={cn("inline-flex items-center gap-1 hover:text-foreground", sort?.key === c.key && "text-foreground")} aria-sort={sort?.key === c.key ? (sort.dir === 1 ? "ascending" : "descending") : "none"}>
+                    {c.label}
+                    {sort?.key === c.key ? <Glyph name={sort.dir === 1 ? "arrow-up" : "arrow-down"} size={11} /> : null}
+                  </button>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((r, k) => (
+              <tr key={k} className={cn("group", clickable && "cursor-pointer")} onClick={clickable ? () => env.run(props.onRowClick, [r]) : undefined}>
+                {cols.map((c) => (
+                  <Cell key={c.key} col={c} row={r} />
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {!shown.length ? <div className="py-4 text-center text-xs text-muted-foreground">{query ? "No rows match" : "No rows"}</div> : null}
+      {pages > 1 ? (
+        <div className="mt-2 flex items-center justify-end gap-1 text-xs text-muted-foreground">
+          <span className="mr-2 tabular-nums">
+            Page {page + 1} of {pages}
+          </span>
+          <button type="button" className="rounded-md px-2 py-1 hover:bg-state-hover disabled:opacity-40" disabled={page === 0} onClick={() => setPage(page - 1)} aria-label="Previous page">
+            <Glyph name="chevron-left" size={14} />
+          </button>
+          <button type="button" className="rounded-md px-2 py-1 hover:bg-state-hover disabled:opacity-40" disabled={page >= pages - 1} onClick={() => setPage(page + 1)} aria-label="Next page">
+            <Glyph name="chevron-right" size={14} />
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function Cell({ col, row }: { col: Column; row: Record<string, unknown> }) {
+  const env = useEnv();
+  const value = row[col.key];
+  let tone: unknown = col.tone;
+  let content: React.ReactNode;
+  try {
+    if (isFnValue(col.tone)) tone = env.runtime.interp.call(col.tone, [value, row]);
+    if (isFnValue(col.render)) content = renderElementValue(env.runtime.interp.call(col.render, [value, row]));
+    else if (isElementValue(value)) content = renderElementValue(value);
+    else content = col.format ? fmt(value, col.format) : value == null ? "" : typeof value === "number" ? fmt(value, "number") : toText(value);
+  } catch (e) {
+    content = <span className="text-destructive">{e instanceof Error ? e.message : String(e)}</span>;
+  }
+  const color = typeof tone === "string" && tone in env.palette.tone ? env.palette.tone[tone as keyof typeof env.palette.tone] : undefined;
+  return (
+    <td title={col.fluid && typeof content === "string" ? content : undefined} className={cn(col.fluid ? "w-full min-w-[8rem] max-w-0" : "max-w-[28rem]", "truncate border-b border-border/60 px-2 align-top first:pl-0 last:pr-0 group-last:border-b-0 group-hover:bg-state-hover/50", col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "")} style={color ? { color } : undefined}>
+      {content}
+    </td>
+  );
+}
+
+export function JsonView({ props }: ViewProps) {
+  if (isPendingValue(props.value)) return <Shimmer className="h-24" />;
+  return (
+    <div className="min-w-0 overflow-x-auto rounded-lg bg-muted/40 p-2.5 font-mono text-[12px] leading-relaxed ring-1 ring-border">
+      {str(props.label) ? <div className="mb-1 font-sans text-xs text-muted-foreground">{str(props.label)}</div> : null}
+      <JsonNode value={props.value} depth={0} open={num(props.depth) ?? 2} />
+    </div>
+  );
+}
+
+function JsonNode({ value, depth, open, name }: { value: unknown; depth: number; open: number; name?: string }) {
+  const [expanded, setExpanded] = useState(depth < open);
+  const label = name !== undefined ? <span className="text-muted-foreground">{name}: </span> : null;
+  if (value === null || typeof value !== "object") {
+    const cls = typeof value === "string" ? "text-[color:var(--ansi-10,var(--success))]" : typeof value === "number" ? "text-[color:var(--ansi-12,var(--primary))]" : "text-[color:var(--ansi-13,var(--primary))]";
+    return (
+      <div className="truncate">
+        {label}
+        <span className={cls}>{typeof value === "string" ? JSON.stringify(value) : String(value)}</span>
+      </div>
+    );
+  }
+  const entries = Array.isArray(value) ? value.map((v, k) => [String(k), v] as const) : Object.entries(value);
+  const brackets = Array.isArray(value) ? ["[", "]"] : ["{", "}"];
+  return (
+    <div>
+      <button type="button" onClick={() => setExpanded(!expanded)} className="inline-flex items-center gap-1 hover:text-foreground" aria-expanded={expanded}>
+        <Glyph name="chevron-right" size={11} className={cn("text-muted-foreground transition-transform", expanded && "rotate-90")} />
+        {label}
+        <span className="text-muted-foreground">
+          {brackets[0]}
+          {!expanded ? ` ${entries.length} ${Array.isArray(value) ? "items" : "keys"} ${brackets[1]}` : ""}
+        </span>
+      </button>
+      {expanded ? (
+        <div className="ml-4 border-l border-border pl-2">
+          {entries.slice(0, 500).map(([k, v]) => (
+            <JsonNode key={k} name={k} value={v} depth={depth + 1} open={open} />
+          ))}
+          {entries.length > 500 ? <div className="text-muted-foreground">{entries.length - 500} more</div> : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export function SegmentedBarView({ props }: ViewProps) {
+  const { palette } = useEnv();
+  const parts = (Array.isArray(props.parts) ? props.parts : []) as { label?: unknown; value?: unknown; tone?: unknown }[];
+  const values = parts.map((p) => Math.max(0, num(p.value) ?? 0));
+  const total = num(props.total) ?? values.reduce((a, b) => a + b, 0);
+  // Toned parts keep their meaning; untoned parts are the accent first, then quiet neutrals.
+  // When a toned part already looks like the accent (an amber theme with a warn part), skip the accent.
+  const toned = parts.map((p) => toneColor(palette, p.tone)).filter((c): c is string => Boolean(c));
+  let untoned = toned.some((c) => tooClose(c, palette.accent)) ? 1 : 0;
+  const neutralAt = (n: number) => (n === 0 ? palette.accent : `color-mix(in oklab, ${palette.tone.neutral} ${Math.max(28, 70 - n * 14)}%, transparent)`);
+  const colors = parts.map((p) => (typeof p.tone === "string" && p.tone in palette.tone ? palette.tone[p.tone as keyof typeof palette.tone] : neutralAt(untoned++)));
+  const color = (_p: { tone?: unknown }, k: number) => colors[k];
+  return (
+    <div className="min-w-0">
+      <div className="flex h-2.5 gap-0.5 overflow-hidden rounded-full bg-muted" role="img" aria-label={parts.map((p, k) => `${toText(p.label)} ${values[k]}`).join(", ")}>
+        {parts.map((p, k) => (values[k] > 0 ? <div key={k} className="iris-bar h-full first:rounded-l-full last:rounded-r-full" style={{ width: `${(values[k] / (total || 1)) * 100}%`, background: color(p, k) }} /> : null))}
+      </div>
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+        {parts.map((p, k) => (
+          <span key={k} className="inline-flex items-center gap-1.5">
+            <span className="size-2 rounded-full" style={{ background: color(p, k) }} />
+            <span className="text-muted-foreground">{toText(p.label)}</span>
+            <span className="tabular-nums">{fmt(values[k], props.format)}</span>
+            {total ? <span className="tabular-nums text-muted-foreground">{Math.round((values[k] / total) * 100)}%</span> : null}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function SparklineView({ props }: ViewProps) {
+  const { palette } = useEnv();
+  const values = Array.isArray(props.values) ? props.values.map(Number).filter(Number.isFinite) : [];
+  const tone = typeof props.tone === "string" && props.tone in palette.tone ? palette.tone[props.tone as keyof typeof palette.tone] : palette.accent;
+  return <SparkPath values={values} color={tone} width={num(props.width) ?? 96} height={24} area={props.area !== false} className="inline-block align-middle" />;
+}
+
+export function CalendarHeatmapView({ props }: ViewProps) {
+  const { palette } = useEnv();
+  const counts = new Map<string, number>();
+  if (Array.isArray(props.days)) for (const d of props.days as { date?: unknown; value?: unknown }[]) counts.set(toText(d.date), num(d.value) ?? 0);
+  else if (props.days && typeof props.days === "object") for (const [k, v] of Object.entries(props.days)) counts.set(k, num(v) ?? 0);
+  const weeks = Math.max(4, Math.min(53, num(props.weeks) ?? 26));
+  const dates = [...counts.keys()].sort();
+  const end = dates.length ? new Date(`${dates[dates.length - 1]}T00:00:00Z`) : new Date();
+  const endDay = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate() + (6 - end.getUTCDay())));
+  const max = Math.max(1, ...counts.values());
+  const color = palette.accent;
+  const cells: { date: string; value: number }[] = [];
+  for (let k = weeks * 7 - 1; k >= 0; k--) {
+    const d = new Date(endDay.getTime() - k * 86_400_000);
+    const key = d.toISOString().slice(0, 10);
+    cells.push({ date: key, value: counts.get(key) ?? 0 });
+  }
+  const total = [...counts.values()].reduce((a, b) => a + b, 0);
+  return (
+    <div className="min-w-0">
+      <div className="iris-scroll-x overflow-x-auto">
+        <div className="grid w-max grid-flow-col gap-[3px]" style={{ gridTemplateRows: "repeat(7, 11px)" }}>
+          {cells.map((c) => (
+            <div
+              key={c.date}
+              title={`${c.date}: ${c.value}`}
+              className="size-[11px] rounded-[3px]"
+              style={{ background: c.value ? `color-mix(in oklab, ${color} ${Math.round(25 + (c.value / max) * 75)}%, transparent)` : "var(--muted)" }}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="mt-1.5 text-xs text-muted-foreground">
+        {total.toLocaleString("en-US")} {str(props.label)?.toLowerCase() ?? "events"} in {weeks} weeks
+      </div>
+    </div>
+  );
+}

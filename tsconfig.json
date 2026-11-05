@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "lib": [
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "types": [
+      "node"
+    ],
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@iris/ui": [
+        "./ui/chunk-api.ts"
+      ]
+    },
+    "noEmit": true,
+    "skipLibCheck": false,
+    "resolveJsonModule": true
+  },
+  "include": [
+    "site",
+    "server.ts",
+    "app.tsx",
+    "components",
+    "lib",
+    "hooks",
+    "core",
+    "chunks",
+    "ui",
+    "shared",
+    "chunks",
+    "tests"
+  ]
+}

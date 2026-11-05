@@ -1,0 +1,9 @@
+dist/*
+!dist/chunks/
+node_modules/
+.DS_Store
+
+# Eval run output (the baseline is committed)
+evals/results/
+site-dist/
+readme-preview.html

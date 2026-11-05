@@ -280,7 +280,7 @@ export const KIT_HELPERS = {
   useStored: "useStored(key, initial): like useState, but the value is saved with the card and comes back when the chat reloads.",
   useTheme: "useTheme(): { series: string[] (chart colors), tone: { neutral, info, good, warn, bad }, dark: boolean }, live with the theme.",
   fmt: 'fmt(value, format): formats a number the way the components do, e.g. fmt(0.42, "percent").',
-  iris: "iris.insert(text) / iris.send(text) / iris.copy(text) / iris.openUrl(url) / iris.submit(value): the bridge; each works only from a click.",
+  iris: "iris.insert(text) / iris.send(text) / iris.copy(text) / iris.openUrl(url) / iris.submit(value): the bridge; each works only from a click, and send and submit first show the person the exact text to confirm.",
 } as const;
 
 export const KIT_EXPORTS: readonly string[] = [...KIT.map((k) => k.name), ...Object.keys(KIT_HELPERS)];

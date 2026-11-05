@@ -11,6 +11,7 @@ import {
   GlobeLock, ImageOff, Images, Lock, MapPin, MapPinOff, Route,
   ArrowLeft, Flag, Shuffle,
   StepBack, StepForward, MessageSquare, MessageSquarePlus, ListVideo, RotateCw, Maximize, Volume2, VolumeX, FolderTree, FileCode, FileText, FileImage, Type, ZoomIn, ZoomOut, ChevronUp,
+  Send, ShieldCheck,
   type IconNode,
 } from "lucide";
 import { loadChunk } from "./chunks";
@@ -28,6 +29,7 @@ const CORE: Record<string, IconNode> = {
   GlobeLock, ImageOff, Images, Lock, MapPin, MapPinOff, Route,
   ArrowLeft, Flag, Shuffle,
   StepBack, StepForward, MessageSquare, MessageSquarePlus, ListVideo, RotateCw, Maximize, Volume2, VolumeX, FolderTree, FileCode, FileText, FileImage, Type, ZoomIn, ZoomOut, ChevronUp,
+  Send, ShieldCheck,
 };
 
 let all: Record<string, IconNode> | null = null;

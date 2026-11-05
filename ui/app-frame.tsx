@@ -29,14 +29,15 @@ const TOKENS = [
   ...Array.from({ length: 16 }, (_, k) => `--ansi-${k}`),
 ];
 
-// A sandboxed page may send, insert, copy, open a link or answer a picker only right after the
-// person used the page itself. The browser gives no event for a click inside a frame, so the
-// parent infers it: the page has focus, the window holds a live user activation, and no input
-// in bb's own window could have given that activation (so it came from inside a frame).
-// send and a picker answer spend the activation; copy, insert and openUrl are only rate-limited.
+// Sending a message or answering a picker speaks for the person, so a page only asks: Iris draws
+// a confirmation outside the frame, with the exact text, and only a click there sends it. The
+// page can't reach that bar, cover it or click it.
+// Insert, copy and open a link are smaller, so a page may do them only right after the person
+// used the page itself. The browser gives no event for a click inside a frame, so the parent
+// infers it: the page has focus, the window holds a live user activation, and no input in bb's
+// own window could have given that activation (so it came from inside a frame). They are rate-limited.
 const activation = () => (navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation;
 let lastHostGesture = -Infinity;
-let spent = false;
 let lastAction = -Infinity;
 if (typeof window !== "undefined") {
   const mark = () => {
@@ -53,24 +54,28 @@ if (typeof window !== "undefined") {
 const HOST_GESTURE_MS = 5500;
 
 type Gate = "ok" | "unsupported" | "no-click" | "spent";
-function gate(frame: HTMLIFrameElement | null, spends: boolean): Gate {
+function gate(frame: HTMLIFrameElement | null): Gate {
   const ua = activation();
   if (!ua) return "unsupported";
   if (frame === null || document.activeElement !== frame || !ua.isActive) return "no-click";
   if (performance.now() - lastHostGesture < HOST_GESTURE_MS) return "no-click";
-  if (spends && spent) return "spent";
-  if (!spends && performance.now() - lastAction < 400) return "spent";
+  if (performance.now() - lastAction < 400) return "spent";
   lastAction = performance.now();
-  if (spends) {
-    spent = true;
-    // The spent activation re-arms once it expires, so each new click inside a page can send once.
-    const rearm = setInterval(() => {
-      if (activation()?.isActive) return;
-      spent = false;
-      clearInterval(rearm);
-    }, 200);
-  }
   return "ok";
+}
+
+/** What a page asked to send, waiting for the person's click on the bar Iris draws. */
+type Pending = { kind: "send" | "submit"; preview: string; run: () => void; at: number };
+/** The bar's buttons wake after this long, so a page can't pop it up under a click already on its way. */
+const ARM_MS = 600;
+
+function previewOf(value: unknown): string {
+  if (typeof value === "string") return value;
+  try {
+    return JSON.stringify(value, null, 2) ?? String(value);
+  } catch {
+    return String(value);
+  }
 }
 
 let lastNotice = -Infinity;
@@ -121,6 +126,14 @@ export function AppFrame({ source, streaming, threadId, stateKey, submit, kind =
   const [stuck, setStuck] = useState(false);
   const [storage, setStorage] = useState<Record<string, string> | null>(stateKey ? null : {});
   const [chunk, setChunk] = useState<ReactChunk | Error | null>(null);
+  const [pending, setPending] = useState<Pending | null>(null);
+  const pendingRef = useRef<Pending | null>(null);
+  const quietUntil = useRef(0);
+  const ask = (p: Pending | null, quiet = 0) => {
+    pendingRef.current = p;
+    if (quiet) quietUntil.current = performance.now() + quiet;
+    setPending(p);
+  };
   const runtime = useMemo(() => new CardRuntime(compile("")), []);
   const actions = useActions({ runtime, threadId, submit });
   const env = useMemo<IrisEnv>(() => ({ runtime, palette, mode: "fence", threadId, source, streaming, submit, ...actions }), [runtime, palette, threadId, source, streaming, submit, actions]);
@@ -163,6 +176,11 @@ export function AppFrame({ source, streaming, threadId, stateKey, submit, kind =
   const shown = prepared && "problems" in prepared ? prepared.problems : errors;
 
   useEffect(() => setErrors([]), [doc]);
+  // A new page never inherits the old page's waiting request.
+  useEffect(() => {
+    pendingRef.current = null;
+    setPending(null);
+  }, [doc]);
 
   useEffect(() => {
     setAlive(false);
@@ -200,18 +218,27 @@ export function AppFrame({ source, streaming, threadId, stateKey, submit, kind =
         // Read-only: the shape of one of our own icons, from our own bundle.
         const target = e.source as Window;
         loadIconNode(data).then((node) => target.postMessage({ __irisIcon: { key: data, node } }, "*"), () => undefined);
-      } else if (type === "submit") {
-        // Like actions below: only a click inside the page may answer.
-        const g = gate(frame.current, true);
-        if (g !== "ok") return denied(g);
-        if (submit) submit(data);
-        else actions.report(new Error("iris.submit() works only inside an iris_ask picker"));
+      } else if (type === "submit" || (type === "action" && (data as { kind?: unknown } | null)?.kind === "send")) {
+        // Speaking for the person waits for their click on Iris's own bar. One request at a time:
+        // a page can't swap the text under a waiting bar or stack a pile of them.
+        if (type === "submit" && !submit) return actions.report(new Error("iris.submit() works only inside an iris_ask picker"));
+        if (pendingRef.current || performance.now() < quietUntil.current) return;
+        const value = type === "submit" ? data : (data as { args?: unknown[] }).args?.[0];
+        const text = previewOf(value);
+        if (!text.trim()) return;
+        ask({
+          kind: type === "submit" ? "submit" : "send",
+          preview: text.length > 4000 ? `${text.slice(0, 4000)}…` : text,
+          run: type === "submit" ? () => submit?.(data) : () => actions.perform([{ $iris: "action", kind: "send", args: [text] }]),
+          at: performance.now(),
+        });
       } else if (type === "action") {
         const a = data as { kind: string; args: unknown[] };
-        // A page can't send, copy or open anything on its own, only in answer to a click.
-        const g = gate(frame.current, a.kind === "send");
+        // A page can't copy, insert or open anything on its own, only in answer to a click.
+        if (!["insert", "copy", "openUrl"].includes(a.kind)) return;
+        const g = gate(frame.current);
         if (g !== "ok") return denied(g);
-        if (["send", "insert", "copy", "openUrl"].includes(a.kind)) actions.perform([{ $iris: "action", kind: a.kind as "send", args: a.args }]);
+        actions.perform([{ $iris: "action", kind: a.kind as "insert", args: a.args }]);
       } else if (type === "storage" && stateKey) {
         clearTimeout(saveTimer);
         const snapshot = JSON.stringify(data).length < 200_000 ? (data as Record<string, string>) : null;
@@ -251,6 +278,17 @@ export function AppFrame({ source, streaming, threadId, stateKey, submit, kind =
         ) : (
           placeholder
         )}
+        {pending ? (
+          <ConfirmBar
+            pending={pending}
+            app={kind === "react" ? "app" : "page"}
+            onSend={() => {
+              ask(null);
+              pending.run();
+            }}
+            onCancel={() => ask(null, 3000)}
+          />
+        ) : null}
         {doc && stuck && !alive ? (
           <div role="status" className="iris-error my-1 flex items-start gap-2 rounded-md bg-muted/50 px-2.5 py-1.5 text-xs text-muted-foreground ring-1 ring-border">
             <Glyph name="monitor-off" size={13} className="mt-px shrink-0" />
@@ -264,6 +302,34 @@ export function AppFrame({ source, streaming, threadId, stateKey, submit, kind =
         ))}
       </div>
     </EnvContext.Provider>
+  );
+}
+
+function ConfirmBar({ pending, app, onSend, onCancel }: { pending: Pending; app: string; onSend: () => void; onCancel: () => void }) {
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    setArmed(false);
+    const t = setTimeout(() => setArmed(true), Math.max(0, ARM_MS - (performance.now() - pending.at)));
+    return () => clearTimeout(t);
+  }, [pending]);
+  const what = pending.kind === "submit" ? `This ${app} wants to send this answer` : `This ${app} wants to send this message as you`;
+  return (
+    <div role="group" aria-label={what} className="iris-confirm mt-1.5 rounded-[12px] bg-muted/50 px-3 py-2.5 text-[13px] ring-1 ring-border">
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Glyph name="shield-check" size={13} className="shrink-0" />
+        {what}
+      </div>
+      <div className="mt-1.5 max-h-40 overflow-y-auto whitespace-pre-wrap break-words rounded-lg bg-card px-2.5 py-1.5 ring-1 ring-border [overflow-wrap:anywhere]">{pending.preview}</div>
+      <div className="mt-2 flex justify-end gap-1.5">
+        <button type="button" onClick={onCancel} className="inline-flex h-8 items-center rounded-full px-3.5 text-[13px] font-medium text-muted-foreground ring-1 ring-border hover:bg-state-hover hover:text-foreground">
+          Don't send
+        </button>
+        <button type="button" disabled={!armed} onClick={onSend} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-foreground px-3.5 text-[13px] font-medium text-background hover:opacity-90 disabled:opacity-45">
+          <Glyph name="send" size={13} />
+          Send
+        </button>
+      </div>
+    </div>
   );
 }
 

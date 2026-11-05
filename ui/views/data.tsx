@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { defaultCompare, isElementValue, isFnValue, isPendingValue, toText } from "../../core/evaluate";
 import { useEnv } from "../env";
 import { toneColor, tooClose } from "../palette";
 import type { ViewProps } from "../render";
 import { renderElementValue } from "../render";
 import { Glyph, Shimmer, cn, fmt, num, str } from "./kit";
+import { InlineMarkdown, hasInlineMarkdown } from "./inline-md";
 import { SparkPath } from "./spark";
 
 interface Column {
@@ -15,8 +16,10 @@ interface Column {
   width?: number;
   tone?: unknown;
   render?: unknown;
-  /** The long text column: takes the room left and truncates, so every column stays in view. */
+  /** The longest text column: takes the room left over. */
   fluid?: boolean;
+  /** Prose: wraps over as many lines as it needs instead of being cut to one. */
+  wrap?: boolean;
 }
 
 function normalizeRows(rows: unknown, columns: unknown): { rows: Record<string, unknown>[]; cols: Column[] } {
@@ -60,6 +63,14 @@ function normalizeRows(rows: unknown, columns: unknown): { rows: Record<string, 
     return sample.length ? sample.reduce((n, v) => n + v.length, 0) / sample.length : 0;
   };
   if (fluid && rawLength(fluid) >= 16) fluid.fluid = true;
+  // Sentences wrap; short values, IDs and paths stay on one line.
+  for (const c of cols) {
+    if (c.render || c.format || c.align !== "left") continue;
+    const sample = objects.slice(0, 50).map((r) => r[c.key]).filter((v) => typeof v === "string") as string[];
+    if (!sample.length) continue;
+    const prose = sample.filter((v) => /\s/.test(v.trim())).length / sample.length;
+    if (prose >= 0.5 && rawLength(c) >= 28) c.wrap = true;
+  }
   return { rows: objects, cols };
 }
 
@@ -78,6 +89,22 @@ export function TableView({ props }: ViewProps) {
   const [page, setPage] = useState(0);
   const pageSize = Math.max(5, num(props.pageSize) ?? 25);
   const searchable = props.search === true || (props.search !== false && rows.length > 8);
+  // Narrow places (a phone, a side panel) get one block per row instead of columns that can't fit.
+  const box = useRef<HTMLDivElement | null>(null);
+  const table = useRef<HTMLTableElement | null>(null);
+  const [width, setWidth] = useState(0);
+  const [need, setNeed] = useState(0);
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    setWidth(el.getBoundingClientRect().width);
+    const ro = new ResizeObserver(([e]) => setWidth(e.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [pending]);
+  useLayoutEffect(() => {
+    if (table.current) setNeed(table.current.offsetWidth);
+  });
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     let out = q ? rows.filter((r) => cols.some((c) => toText(r[c.key]).toLowerCase().includes(q))) : rows;
@@ -92,8 +119,11 @@ export function TableView({ props }: ViewProps) {
     setPage(0);
     setSort((s) => (s?.key !== key ? { key, dir: 1 } : s.dir === 1 ? { key, dir: -1 } : null));
   };
+  // Stack only when the columns really don't fit: the table, laid out at full width even while
+  // hidden, reports how wide it has to be.
+  const stacked = width > 0 && cols.length >= 3 && need > width + 4;
   return (
-    <div className="min-w-0">
+    <div className="min-w-0" ref={box}>
       {searchable ? (
         <div className="mb-2 flex items-center gap-2">
           <label className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-full bg-muted/60 px-3 text-[13px] ring-1 ring-border focus-within:ring-foreground/30">
@@ -105,8 +135,9 @@ export function TableView({ props }: ViewProps) {
           </span>
         </div>
       ) : null}
-      <div className="iris-scroll-x -mx-1 overflow-x-auto px-1">
-        <table className={cn("w-full border-collapse text-[13px] tabular-nums", props.dense ? "[&_td]:py-1" : "[&_td]:py-1.5")}>
+      {stacked ? <StackedRows cols={cols} rows={shown} onRowClick={clickable ? (r) => env.run(props.onRowClick, [r]) : null} /> : null}
+      <div className={cn("iris-scroll-x -mx-1 overflow-x-auto px-1", stacked && "pointer-events-none invisible absolute h-0 overflow-hidden")} style={stacked ? { width } : undefined} aria-hidden={stacked || undefined}>
+        <table ref={table} className={cn("w-full border-collapse text-[13px] tabular-nums", props.dense ? "[&_td]:py-1" : "[&_td]:py-1.5")}>
           <thead>
             <tr>
               {cols.map((c) => (
@@ -148,7 +179,7 @@ export function TableView({ props }: ViewProps) {
   );
 }
 
-function Cell({ col, row }: { col: Column; row: Record<string, unknown> }) {
+function useCellContent(col: Column, row: Record<string, unknown>): { content: React.ReactNode; color: string | undefined; value: unknown } {
   const env = useEnv();
   const value = row[col.key];
   let tone: unknown = col.tone;
@@ -158,14 +189,68 @@ function Cell({ col, row }: { col: Column; row: Record<string, unknown> }) {
     if (isFnValue(col.render)) content = renderElementValue(env.runtime.interp.call(col.render, [value, row]));
     else if (isElementValue(value)) content = renderElementValue(value);
     else content = col.format ? fmt(value, col.format) : value == null ? "" : typeof value === "number" ? fmt(value, "number") : toText(value);
+    if (typeof content === "string" && hasInlineMarkdown(content)) content = <InlineMarkdown text={content} />;
   } catch (e) {
     content = <span className="text-destructive">{e instanceof Error ? e.message : String(e)}</span>;
   }
   const color = typeof tone === "string" && tone in env.palette.tone ? env.palette.tone[tone as keyof typeof env.palette.tone] : undefined;
+  return { content, color, value };
+}
+
+function Cell({ col, row }: { col: Column; row: Record<string, unknown> }) {
+  const { content, color, value } = useCellContent(col, row);
   return (
-    <td title={col.fluid && typeof content === "string" ? content : undefined} className={cn(col.fluid ? "w-full min-w-[8rem] max-w-0" : "max-w-[28rem]", "truncate border-b border-border/60 px-2 align-top first:pl-0 last:pr-0 group-last:border-b-0 group-hover:bg-state-hover/50", col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "")} style={color ? { color } : undefined}>
+    <td
+      title={!col.wrap && typeof value === "string" && value.length > 40 ? value : undefined}
+      className={cn(
+        col.wrap ? "whitespace-normal leading-snug" : col.fluid ? "w-full max-w-0 truncate" : "max-w-[28rem] truncate",
+        "border-b border-border/60 px-2 align-top first:pl-0 last:pr-0 group-last:border-b-0 group-hover:bg-state-hover/50",
+        col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "",
+      )}
+      style={{ ...(color ? { color } : {}), ...(col.wrap ? { minWidth: col.fluid ? "14rem" : "9rem", maxWidth: col.fluid ? undefined : "24rem", textWrap: "pretty", overflowWrap: "anywhere" } : {}) }}
+    >
       {content}
     </td>
+  );
+}
+
+/** One block per row: the row's main text first, then every other column as a label and its value. */
+function StackedRows({ cols, rows, onRowClick }: { cols: Column[]; rows: Record<string, unknown>[]; onRowClick: ((r: Record<string, unknown>) => void) | null }) {
+  const lead = cols.find((c) => c.fluid) ?? cols.find((c) => c.wrap) ?? cols.find((c) => c.align === "left") ?? cols[0];
+  const index = cols[0] !== lead && cols[0].align === "right" && /^(#|no\.?|n|rank)$/i.test(cols[0].label) ? cols[0] : null;
+  const rest = cols.filter((c) => c !== lead && c !== index);
+  return (
+    <ul className="divide-y divide-border/60">
+      {rows.map((r, k) => (
+        <li key={k} className={cn("py-2.5 first:pt-0.5", onRowClick && "cursor-pointer")} onClick={onRowClick ? () => onRowClick(r) : undefined}>
+          <div className="flex gap-2 text-[13px] leading-snug" style={{ overflowWrap: "anywhere" }}>
+            {index ? <StackedValue col={index} row={r} className="shrink-0 tabular-nums text-muted-foreground" /> : null}
+            <StackedValue col={lead} row={r} className="min-w-0" />
+          </div>
+          {rest.length ? (
+            <dl className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]">
+              {rest.map((c) => (
+                <div key={c.key} className="flex min-w-0 max-w-full items-baseline gap-1.5">
+                  <dt className="shrink-0 text-muted-foreground">{c.label}</dt>
+                  <dd className="min-w-0" style={{ overflowWrap: "anywhere" }}>
+                    <StackedValue col={c} row={r} />
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function StackedValue({ col, row, className }: { col: Column; row: Record<string, unknown>; className?: string }) {
+  const { content, color } = useCellContent(col, row);
+  return (
+    <span className={className} style={color ? { color } : undefined}>
+      {content}
+    </span>
   );
 }
 

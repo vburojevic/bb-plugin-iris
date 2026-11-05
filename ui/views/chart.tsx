@@ -278,6 +278,15 @@ function Cartesian({ props, model, type, width, height, brush }: { props: Record
   // Labels of x annotations drop to a second (third...) line when they would overlap another label,
   // including a y annotation's label at the right edge; labels with no room left inside the plot are hidden.
   const labelRow = new Map<number, number>();
+  /** True when an x annotation's label goes left of its line: when it doesn't fit on the right and the left has room, or more room. */
+  const labelLeft = (x: number, w: number) => x + w > W - R && (x - w >= L || x - L > W - R - x);
+  /** An x annotation's label, shortened with an ellipsis when it fits on neither side of its line. */
+  const xLabel = (x: number, label: string) => {
+    let text = truncate(label, 40);
+    const room = Math.max(x - L, W - R - x) - 6;
+    while (text.length > 4 && textWidth(text) > room) text = `${text.slice(0, -2).trimEnd()}…`;
+    return text;
+  };
   {
     const ROW = 14;
     const maxRows = Math.max(1, Math.floor((plotH - 10) / ROW));
@@ -289,13 +298,13 @@ function Cartesian({ props, model, type, width, height, brush }: { props: Record
       boxes.push({ x0: W - R - w, x1: W - R, y0: yv - 16, y1: yv - 2 });
     }
     annotations
-      .map((a, k) => ({ k, idx: a.x != null && !horizontal ? model.xs.findIndex((x) => toText(x) === toText(a.x)) : -1, label: truncate(toText(a.label), 40) }))
+      .map((a, k) => ({ k, idx: a.x != null && !horizontal ? model.xs.findIndex((x) => toText(x) === toText(a.x)) : -1, label: toText(a.label) }))
       .filter((e) => e.idx >= 0)
       .sort((p, q) => p.idx - q.idx)
       .forEach((e) => {
         const x = pos(e.idx);
-        const w = textWidth(e.label) + 6;
-        const [x0, x1] = x > L + plotW * 0.6 ? [x - w, x] : [x, x + w];
+        const w = textWidth(xLabel(x, e.label)) + 6;
+        const [x0, x1] = labelLeft(x, w) ? [x - w, x] : [x, x + w];
         for (let r = 0; r < maxRows; r++) {
           const y0 = T + r * ROW;
           const y1 = y0 + ROW;
@@ -439,13 +448,15 @@ function Cartesian({ props, model, type, width, height, brush }: { props: Record
         const color = toneColor(env.palette, a.tone) ?? "var(--muted-foreground)";
         if (idx >= 0 && !horizontal) {
           const x = pos(idx);
-          const right = x > L + plotW * 0.6;
+          const shown = xLabel(x, toText(a.label));
+          const right = labelLeft(x, textWidth(shown) + 6);
           return (
             <g key={k}>
               <line x1={x} x2={x} y1={T} y2={T + plotH} stroke={color} strokeDasharray="3 3" />
               {(labelRow.get(k) ?? 0) >= 0 ? (
                 <text x={right ? x - 6 : x + 6} y={T + 10 + (labelRow.get(k) ?? 0) * 14} textAnchor={right ? "end" : "start"} className="text-[11px]" fill={color}>
-                  {truncate(toText(a.label), 40)}
+                  {shown !== toText(a.label) ? <title>{toText(a.label)}</title> : null}
+                  {shown}
                 </text>
               ) : (
                 <title>{toText(a.label)}</title>

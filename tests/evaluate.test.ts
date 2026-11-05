@@ -81,8 +81,11 @@ describe("check", () => {
     expect(r.issues.some((i) => i.when?.includes("n = 3"))).toBe(true);
   });
   it("flags a bad enum value", () => {
-    const r = check(`<Badge tone="success">ok</Badge>`);
+    const r = check(`<Badge tone="sparkly">ok</Badge>`);
     expect(r.issues[0].message).toContain("good");
+  });
+  it("reads tone synonyms as their tone", () => {
+    for (const t of ["success", "warning", "danger", "error", "information"]) expect(check(`<Badge tone="${t}">ok</Badge>`).issues.filter((i) => i.severity === "error"), t).toEqual([]);
   });
 });
 

@@ -193,7 +193,7 @@ function useCellContent(col: Column, row: Record<string, unknown>): { content: R
   } catch (e) {
     content = <span className="text-destructive">{e instanceof Error ? e.message : String(e)}</span>;
   }
-  const color = typeof tone === "string" && tone in env.palette.tone ? env.palette.tone[tone as keyof typeof env.palette.tone] : undefined;
+  const color = toneColor(env.palette, tone) ?? undefined;
   return { content, color, value };
 }
 
@@ -310,7 +310,7 @@ export function SegmentedBarView({ props }: ViewProps) {
   const toned = parts.map((p) => toneColor(palette, p.tone)).filter((c): c is string => Boolean(c));
   let untoned = toned.some((c) => tooClose(c, palette.accent)) ? 1 : 0;
   const neutralAt = (n: number) => (n === 0 ? palette.accent : `color-mix(in oklab, ${palette.tone.neutral} ${Math.max(28, 70 - n * 14)}%, transparent)`);
-  const colors = parts.map((p) => (typeof p.tone === "string" && p.tone in palette.tone ? palette.tone[p.tone as keyof typeof palette.tone] : neutralAt(untoned++)));
+  const colors = parts.map((p) => (toneColor(palette, p.tone) ?? neutralAt(untoned++)));
   const color = (_p: { tone?: unknown }, k: number) => colors[k];
   return (
     <div className="min-w-0">
@@ -334,7 +334,7 @@ export function SegmentedBarView({ props }: ViewProps) {
 export function SparklineView({ props }: ViewProps) {
   const { palette } = useEnv();
   const values = Array.isArray(props.values) ? props.values.map(Number).filter(Number.isFinite) : [];
-  const tone = typeof props.tone === "string" && props.tone in palette.tone ? palette.tone[props.tone as keyof typeof palette.tone] : palette.accent;
+  const tone = toneColor(palette, props.tone) ?? palette.accent;
   return <SparkPath values={values} color={tone} width={num(props.width) ?? 96} height={24} area={props.area !== false} className="inline-block align-middle" />;
 }
 

@@ -2,6 +2,7 @@
 // are drawn, so 10,000+ rows scroll smoothly; the work (filter, sort, group,
 // pivot, stats) happens in core/grid.ts over row indexes.
 
+import { toneColor } from "../palette";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { isElementValue, isFnValue, isPendingValue, toText } from "../../core/evaluate";
 import { AGGS, type Agg, type GridColumn, type GridData, type PivotSpec, columnStats, groupRows, normalizeGrid, pivot, pivotToCsv, query, rowsToCsv, searchIndex, suggestGroupKey, toCsv } from "../../core/grid";
@@ -414,7 +415,7 @@ function GridCell({ col, row }: { col: GridColumn; row: Record<string, unknown> 
   } catch (e) {
     content = <span className="text-destructive">{e instanceof Error ? e.message : String(e)}</span>;
   }
-  const color = typeof tone === "string" && tone in env.palette.tone ? env.palette.tone[tone as keyof typeof env.palette.tone] : undefined;
+  const color = toneColor(env.palette, tone) ?? undefined;
   return (
     <div role="gridcell" className={cn("flex min-w-0 items-center px-2.5", col.align === "right" ? "justify-end" : col.align === "center" ? "justify-center" : "")} style={color ? { color } : undefined}>
       <span className="truncate" title={typeof content === "string" && content.length > 24 ? content : undefined}>

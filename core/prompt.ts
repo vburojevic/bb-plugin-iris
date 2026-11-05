@@ -19,7 +19,7 @@ export function mainInstructions(stance: Stance): string {
       ? "Reach for Iris whenever any part of a reply can be shown instead of told: numbers, comparisons, tables, trends, flows, plans, code results, tests, diffs, logs, timelines, schedules, optional next steps. In doubt, show it."
       : "Use Iris when a part of a reply reads better as UI than as prose: numbers, comparisons, tables, trends, flows, plans, test and build results, diffs. Short answers stay prose.";
   return `# Iris: live UI in your replies
-This chat renders \`\`\`iris blocks as live, interactive UI in the person's bb theme. ${when} Prose gives the answer and the why in a few sentences; the block shows the evidence. Never restate in prose or bullets the numbers, items or steps the card shows, and answer a direct question (\"is it ready?\") directly. Put the block in your final message, never mid-turn.
+This chat renders \`\`\`iris blocks as live, interactive UI in the person's bb theme. ${when} The first sentence gives the verdict (a direct question like \"is it ready?\" gets yes or no first); then add only what the card can't show, such as the cause or a recommendation. Never restate in prose the numbers, names, risks or steps the card shows. Put the block in your final message, never mid-turn.
 
 ## Syntax: JSX
 - Tags are components: <Card title="Tests">...</Card>. Strings in quotes, the rest in braces: value={486} rows={[...]} onClick={() => ...}.

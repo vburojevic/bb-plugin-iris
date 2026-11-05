@@ -1,6 +1,7 @@
 // Math: TeX typeset by KaTeX, loaded on demand. FunctionPlot: y = f(x) curves
 // drawn as SVG, sampled through the interpreter, with sliders for parameters.
 
+import { toneColor } from "../palette";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { isFnValue, isPendingValue, toText } from "../../core/evaluate";
 import { hasDelimiters, splitMath } from "../../core/math";
@@ -152,7 +153,7 @@ export function FunctionPlotView({ props }: ViewProps) {
 
   const curves: Curve[] = (Array.isArray(props.fns) ? props.fns : props.fns != null ? [props.fns] : []).map((f, k) => {
     const o: Record<string, unknown> = f && typeof f === "object" && !isFnValue(f) ? (f as Record<string, unknown>) : { fn: f };
-    const tone = typeof o.tone === "string" && o.tone in palette.tone ? palette.tone[o.tone as keyof typeof palette.tone] : undefined;
+    const tone = toneColor(palette, o.tone) ?? undefined;
     return { fn: o.fn ?? o.f ?? o.y, label: str(o.label) ?? `${NAMES[k] ?? `f${k + 1}`}(x)`, color: tone ?? palette.series[k % palette.series.length], dashed: o.dashed === true };
   });
 
@@ -249,7 +250,7 @@ export function FunctionPlotView({ props }: ViewProps) {
     if (x == null) return [];
     const y = num(o.y) ?? (curves[0] ? valueAt(curves[0], x) : null);
     if (y == null) return [];
-    const tone = typeof o.tone === "string" && o.tone in palette.tone ? palette.tone[o.tone as keyof typeof palette.tone] : "var(--foreground)";
+    const tone = toneColor(palette, o.tone) ?? "var(--foreground)";
     return [{ x, y, label: str(o.label), color: tone }];
   });
 

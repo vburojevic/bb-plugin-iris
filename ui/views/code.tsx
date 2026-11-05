@@ -1,3 +1,4 @@
+import { toneColor } from "../palette";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Markdown, experimental_Diff as HostDiff, experimental_SourceCode as SourceCode, useRpc } from "@get-bb/plugin-sdk/app";
 import { isPendingValue, toText } from "../../core/evaluate";
@@ -356,7 +357,7 @@ function TreeRow({ node, depth, open, onClick }: { node: TreeNode; depth: number
   const env = useEnv();
   const [expanded, setExpanded] = useState(depth < open);
   const folder = node.children.length > 0;
-  const color = typeof node.tone === "string" && node.tone in env.palette.tone ? env.palette.tone[node.tone as keyof typeof env.palette.tone] : undefined;
+  const color = toneColor(env.palette, node.tone) ?? undefined;
   const activate = () => {
     if (folder) return setExpanded(!expanded);
     if (onClick != null) env.run(onClick, [{ label: node.label, path: node.leafPath ?? node.path }]);

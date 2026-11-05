@@ -9,6 +9,7 @@
 //   destructive, pulled into the same band so they sit calmly beside the series.
 // - When the theme changes, every card recomputes within a frame.
 
+import { normalizeTone } from "../core/tones";
 import { useEffect, useState } from "react";
 
 export type Tone = "neutral" | "info" | "good" | "warn" | "bad";
@@ -271,7 +272,8 @@ export function assignColors(p: Palette, tones: (unknown | undefined)[]): string
 }
 
 export function toneColor(p: Palette, tone: unknown): string | undefined {
-  return typeof tone === "string" && tone in p.tone ? p.tone[tone as Tone] : undefined;
+  const t = normalizeTone(tone);
+  return t && t in p.tone ? p.tone[t as Tone] : undefined;
 }
 
 const rampCache = new Map<string, string[]>();

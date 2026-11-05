@@ -1,3 +1,4 @@
+import { toneColor } from "../ui/palette";
 // VideoPlayer and AudioPlayer (chunk "assets"). Rules live in core/players.ts.
 // Media streams from a bb preview URL with byte ranges (chunks/file-access.ts);
 // the controls are Iris's own so they follow the theme. Without a thread the
@@ -316,7 +317,7 @@ export function VideoPlayerView({ props }: ViewProps) {
   const spans = useMemo(() => chapterSpans(chapters.items, duration), [chapters.items, duration]);
   const chapterAt = activeIndex(chapters.items, t);
   const noteAt = activeIndex(notes.items, t);
-  const noteColor = (n: TimedNote) => (n.tone && n.tone in palette.tone ? palette.tone[n.tone as keyof typeof palette.tone] : accent);
+  const noteColor = (n: TimedNote) => (toneColor(palette, n.tone) ?? accent);
   const step = (d: 1 | -1) => {
     if (!el) return;
     el.pause();

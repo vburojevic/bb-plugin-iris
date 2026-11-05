@@ -1,6 +1,7 @@
 // Charts drawn as SVG in the theme's colors. One component, eight kinds, with a
 // hover readout, annotations and a table view of the same numbers.
 
+import { toneColor } from "../palette";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { isPendingValue, toText } from "../../core/evaluate";
 import { useEnv } from "../env";
@@ -435,7 +436,7 @@ function Cartesian({ props, model, type, width, height, brush }: { props: Record
       {/* annotations */}
       {annotations.map((a, k) => {
         const idx = a.x != null ? model.xs.findIndex((x) => toText(x) === toText(a.x)) : -1;
-        const color = typeof a.tone === "string" && a.tone in env.palette.tone ? env.palette.tone[a.tone as keyof typeof env.palette.tone] : "var(--muted-foreground)";
+        const color = toneColor(env.palette, a.tone) ?? "var(--muted-foreground)";
         if (idx >= 0 && !horizontal) {
           const x = pos(idx);
           const right = x > L + plotW * 0.6;

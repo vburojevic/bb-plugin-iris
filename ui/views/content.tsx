@@ -1,3 +1,4 @@
+import { normalizeTone } from "../../core/tones";
 import { useState, type ReactNode } from "react";
 import { isElementValue, isPendingValue, toText } from "../../core/evaluate";
 import { formatValue } from "../../core/format";
@@ -30,7 +31,7 @@ export function HeadingView({ props, text }: ViewProps) {
 const TONE_ICON: Record<string, string> = { info: "info", good: "circle-check", warn: "triangle-alert", bad: "circle-x", neutral: "lightbulb" };
 
 export function CalloutView({ props, children, text }: ViewProps) {
-  const tone = str(props.tone) ?? "info";
+  const tone = normalizeTone(props.tone) ?? "info";
   const color = useTone(tone);
   return (
     <div

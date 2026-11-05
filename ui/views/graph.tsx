@@ -2,6 +2,7 @@
 // from an on-demand chunk, drawn as SVG. Pan by dragging the background, zoom
 // with a pinch or the buttons, drag nodes, click one for its detail.
 
+import { toneColor } from "../palette";
 import { useEffect, useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { isPendingValue, toText } from "../../core/evaluate";
 import { loadChunk } from "../chunks";
@@ -252,8 +253,8 @@ export function GraphView({ props }: ViewProps) {
   };
 
   const groups = useMemo(() => [...new Set(graph.nodes.map((n) => n.group).filter((g): g is string => !!g))], [graph]);
-  const colorOf = (n: GNode) => (n.tone && n.tone in palette.tone ? palette.tone[n.tone as keyof typeof palette.tone] : n.group ? palette.series[groups.indexOf(n.group) % palette.series.length] : palette.series[0]);
-  const edgeColor = (e: GEdge) => (e.tone && e.tone in palette.tone ? palette.tone[e.tone as keyof typeof palette.tone] : "var(--muted-foreground)");
+  const colorOf = (n: GNode) => (toneColor(palette, n.tone) ?? (n.group ? palette.series[groups.indexOf(n.group) % palette.series.length] : palette.series[0]));
+  const edgeColor = (e: GEdge) => (toneColor(palette, e.tone) ?? "var(--muted-foreground)");
   const focus = hovered ?? picked;
   const near = useMemo(() => {
     if (!focus) return null;

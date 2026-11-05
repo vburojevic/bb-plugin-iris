@@ -1,3 +1,4 @@
+import { toneColor } from "../palette";
 import { useMemo, useState } from "react";
 import { toText } from "../../core/evaluate";
 import { useEnv } from "../env";
@@ -134,7 +135,7 @@ export function TimelineView({ props }: ViewProps) {
   return (
     <ol className="min-w-0">
       {items.map((e, k) => {
-        const color = typeof e.tone === "string" && e.tone in env.palette.tone ? env.palette.tone[e.tone as keyof typeof env.palette.tone] : "var(--muted-foreground)";
+        const color = toneColor(env.palette, e.tone) ?? "var(--muted-foreground)";
         return (
           <li key={k} className="relative grid grid-cols-[4.5rem_0.75rem_minmax(0,1fr)] gap-x-3 pb-3 last:pb-0">
             <time className="pt-px text-right text-xs tabular-nums text-muted-foreground">{toText(e.time)}</time>
@@ -265,7 +266,7 @@ function ReadOnlyBoard({ props }: ViewProps) {
               <span className="tabular-nums text-muted-foreground">{cards.length}</span>
             </div>
             {cards.map((c, k) => {
-              const color = typeof c.tone === "string" && c.tone in env.palette.tone ? env.palette.tone[c.tone as keyof typeof env.palette.tone] : undefined;
+              const color = toneColor(env.palette, c.tone) ?? undefined;
               return (
                 <div key={k} className="rounded-lg bg-card px-2.5 py-2 text-[13px] shadow-[0_0_0_1px_var(--border)]" style={color ? { boxShadow: `inset 3px 0 0 ${color}, 0 0 0 1px var(--border)` } : undefined}>
                   <div className="leading-snug">{toText(c.title)}</div>
@@ -427,7 +428,7 @@ export function CalendarView({ props }: ViewProps) {
             <div key={k} className={cn("min-h-[3.75rem] bg-card p-1", !date && "bg-muted/40")}>
               {date ? <div className={cn("mb-0.5 inline-grid size-5 place-items-center rounded-full tabular-nums", date === today ? "bg-foreground text-background" : "text-muted-foreground")}>{d}</div> : null}
               {evs.slice(0, 3).map((e, j) => {
-                const color = typeof e.tone === "string" && e.tone in env.palette.tone ? env.palette.tone[e.tone as keyof typeof env.palette.tone] : env.palette.accent;
+                const color = toneColor(env.palette, e.tone) ?? env.palette.accent;
                 return (
                   <div key={j} className="mb-0.5 truncate rounded px-1 py-px text-[11px]" style={{ background: `color-mix(in oklab, ${color} 18%, transparent)` }} title={toText(e.title)}>
                     {toText(e.title)}

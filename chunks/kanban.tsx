@@ -1,3 +1,4 @@
+import { toneColor } from "../ui/palette";
 // Board with editable (chunk "interact"): the read-only Board's columns and
 // cards, plus dragging cards within and between columns (a long press on
 // touch), keyboard moves (Space lifts, arrows move, Space drops, Escape puts
@@ -386,7 +387,7 @@ function CardTile(p: {
 }) {
   const { palette } = useEnv();
   const tone = p.card.raw.tone;
-  const color = typeof tone === "string" && tone in palette.tone ? palette.tone[tone as keyof typeof palette.tone] : undefined;
+  const color = toneColor(palette, tone) ?? undefined;
   const ring = p.lifted ? `0 0 0 2px ${palette.accent}` : "0 0 0 1px var(--border)";
   return (
     <div

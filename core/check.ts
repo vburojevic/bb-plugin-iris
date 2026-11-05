@@ -2,6 +2,7 @@
 // required prop present, every expression evaluated, and every input moved to
 // its extremes. Used by the iris_check tool, `bb iris check`, and tests.
 
+import { normalizeTone } from "./tones";
 import type { ElementNode, Node } from "./ast";
 import { findComponent, ALL_TAG_NAMES, type ComponentSpec, type PropSpec } from "./catalog";
 import { IrisError, Scope, isActionValue, isElementValue, isFnValue, isPendingValue, toText } from "./evaluate";
@@ -138,7 +139,7 @@ function checkProps(n: ElementNode, spec: ComponentSpec, add: (s: Issue["severit
 }
 
 function literalCheck(spec: ComponentSpec, name: string, prop: PropSpec, v: unknown, at: number, add: (s: Issue["severity"], m: string, at: number) => void) {
-  if ((prop.type === "enum" || prop.type === "tone") && prop.values && typeof v === "string" && !prop.values.includes(v)) {
+  if ((prop.type === "enum" || prop.type === "tone") && prop.values && typeof v === "string" && !prop.values.includes(v) && !(prop.type === "tone" && normalizeTone(v))) {
     const hint = didYouMean(v, prop.values);
     add("error", `<${spec.name} ${name}="${v}">: use one of ${prop.values.join(", ")}${hint ? ` (did you mean ${hint}?)` : ""}`, at);
   }

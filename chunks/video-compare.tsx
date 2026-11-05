@@ -1,3 +1,4 @@
+import { toneColor } from "../ui/palette";
 // VideoCompare (chunk "compare"): two videos on one timeline. Both stream
 // through bb preview leases as VideoPlayer's do (useMediaSource); the shared
 // controls come from chunks/players.tsx and the timing rules from
@@ -272,7 +273,7 @@ export function VideoCompareView({ props }: ViewProps) {
   const ready = !!a && !!b && hi > lo;
   const name = `${mediaName(videos[0].src)} and ${mediaName(videos[1].src)}`;
   const span = Math.max(0, hi - lo);
-  const noteColor = (n: TimedNote) => (n.tone && n.tone in palette.tone ? palette.tone[n.tone as keyof typeof palette.tone] : accent);
+  const noteColor = (n: TimedNote) => (toneColor(palette, n.tone) ?? accent);
   const noteAt = activeIndex(notes.items, t);
   const sample = ma.sample || mb.sample;
   const title = str(props.title);

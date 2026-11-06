@@ -212,6 +212,23 @@ export const DESIGN = [
     aliases: ["Typography", "FontSpecimen", "TypeScale", "Fonts"],
   }),
   component({
+    name: "MarkUp",
+    group: "Design",
+    summary:
+      "The person marks up an image: boxes, arrows and pins, each numbered with a note. The state is the list of marks [{n, kind, x, y, w?, h?, x2?, y2?, note}] in the image's own pixels. For \"show me what's wrong\" in an iris_ask picker; Annotate is for your own notes.",
+    props: {
+      bind: p.bind("State holding the marks list; start it as []"),
+      src: p.str("The image: a workspace or thread storage path, an https URL or a data: image", { required: true }),
+      label: p.str("What to mark, shown above the image"),
+      alt: p.str("Alt text for the image"),
+    },
+    children: "none",
+    example: `<state marks={[]} />
+<MarkUp bind="marks" label="Box what looks off" src="${phone}" />
+<Submit label="Send marks" />`,
+    aliases: ["MarkUpImage", "DrawOnImage", "ImageFeedback"],
+  }),
+  component({
     name: "Annotate",
     group: "Design",
     summary:

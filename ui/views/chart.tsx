@@ -372,6 +372,7 @@ function Cartesian({ props, model, type, width, height, brush }: { props: Record
       aria-label={`${type} chart of ${model.series.map((s) => s.label).join(", ")}`}
       style={brush ? { touchAction: "pan-y", cursor: "crosshair" } : undefined}
       onPointerMove={onMove}
+      data-iris-drag={brush ? "" : undefined}
       onPointerDown={onDown}
       onPointerUp={onUp}
       onPointerCancel={onUp}

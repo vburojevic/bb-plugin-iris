@@ -278,6 +278,7 @@ export function EditableBoardView({ props, node }: ViewProps) {
                     editing={editing === id}
                     locked={locked}
                     setEl={(el) => void (el ? cardEls.current.set(id, el) : cardEls.current.delete(id))}
+                    data-iris-drag=""
                     onPointerDown={(e) => onPointerDown(e, board.cards[id])}
                     onKeyDown={(e) => onCardKey(e, board.cards[id])}
                     onBlur={() => lift?.id === id && focusId.current !== id && setLift(null)}

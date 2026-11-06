@@ -149,6 +149,22 @@ export function IrisBlock(props: BlockProps) {
     [runtime, palette, mode, threadId, source, streaming, props.submit, actions, runtime.version],
   );
 
+  // Drag surfaces (dividers, maps, drawing, boards) mark themselves data-iris-drag. Their touches
+  // stop here: bb's phone layout swipes between the thread and the thread list on a sideways drag,
+  // and would otherwise slide the whole view away under the person's finger.
+  useEffect(() => {
+    const el = frame.current;
+    if (!el) return;
+    const stop = (e: Event) => {
+      if ((e.target as Element | null)?.closest?.("[data-iris-drag]")) e.stopPropagation();
+    };
+    const kinds = ["touchstart", "touchmove", "touchend", "touchcancel"] as const;
+    for (const k of kinds) el.addEventListener(k, stop, { passive: true });
+    return () => {
+      for (const k of kinds) el.removeEventListener(k, stop);
+    };
+  }, []);
+
   const [showSource, setShowSource] = useState(false);
   const rootCard = firstCard(program.nodes);
   const tools = props.bare ? null : (

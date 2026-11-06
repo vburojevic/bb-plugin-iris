@@ -345,6 +345,7 @@ export function WhiteboardView({ props, node }: ViewProps) {
         role="group"
         aria-roledescription="whiteboard"
         aria-label={`${title ?? "Whiteboard"}: ${others.length} items. Tab to an item, arrow keys move it. Plus and minus zoom, 0 fits.`}
+        data-iris-drag=""
         onPointerDown={onBgDown}
         onPointerMove={onBgMove}
         onPointerUp={onBgUp}
@@ -417,6 +418,7 @@ export function WhiteboardView({ props, node }: ViewProps) {
                 tabIndex={0}
                 aria-label={`${i.text || "Empty note"}${groupOf(i.id, items, boxes) ? `, in ${byId.get(groupOf(i.id, items, boxes) ?? "")?.text ?? "a group"}` : ""}`}
                 aria-pressed={sel}
+                data-iris-drag=""
                 onPointerDown={(e) => startDrag(e, i.id, "move")}
                 onPointerMove={onDragMove}
                 onPointerUp={endDrag}

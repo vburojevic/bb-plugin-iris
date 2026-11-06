@@ -261,5 +261,5 @@ function ShaderCanvas({ prepared, lines, speed, running, title, onResult, snapsh
     if (running) gl.current?.draw(true);
   }, [running]);
 
-  return <canvas ref={canvas} role="img" aria-label={title ?? "Shader"} className="absolute inset-0 block size-full touch-none" />;
+  return <canvas ref={canvas} data-iris-drag="" role="img" aria-label={title ?? "Shader"} className="absolute inset-0 block size-full touch-none" />;
 }

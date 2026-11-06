@@ -216,6 +216,7 @@ function ZoneLine(p: { row: ZoneRow; narrow: boolean; labelW: number; trackW: nu
         aria-valuemax={DAY_MIN - duration}
         aria-valuenow={start}
         aria-valuetext={`${rangeText(row.tz, slotMs, duration)} in ${row.label}${ok ? "" : ", outside working hours"}`}
+        data-iris-drag=""
         onPointerDown={down}
         onPointerMove={moveTo}
         onPointerUp={up}

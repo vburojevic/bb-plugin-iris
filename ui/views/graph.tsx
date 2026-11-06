@@ -290,6 +290,7 @@ export function GraphView({ props }: ViewProps) {
             className="block cursor-grab touch-none select-none active:cursor-grabbing"
             role="img"
             aria-label={`${str(props.title) ?? "Graph"}: ${graph.nodes.length} nodes, ${graph.edges.length} edges`}
+            data-iris-drag=""
             onPointerDown={(e) => onDown(e)}
             onPointerMove={onMove}
             onPointerUp={onUp}

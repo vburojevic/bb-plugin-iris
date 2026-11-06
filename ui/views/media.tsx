@@ -593,6 +593,7 @@ function TileMap({ resolved, route, height, zoom, selected, onSelect }: { resolv
       tabIndex={0}
       role="application"
       aria-label={`Map of ${located.length} ${located.length === 1 ? "place" : "places"}. Arrow keys pan, plus and minus zoom, 0 fits.`}
+      data-iris-drag=""
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}

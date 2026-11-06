@@ -57,6 +57,8 @@ export function useWipeDrag(onMove: (percent: number) => void) {
 
   return {
     ref,
+    // The card keeps these touches from bb's own swipe between the thread and the thread list.
+    "data-iris-drag": "",
     onPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
       // The first finger owns the gesture; a second one (a pinch, a resting thumb) doesn't take it over.
       if (e.button !== 0 || gesture.current) return;

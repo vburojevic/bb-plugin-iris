@@ -210,6 +210,7 @@ export function Scrubber({
       aria-valuenow={Math.round(t)}
       aria-valuetext={formatTime(t)}
       className="group/scrub relative h-6 cursor-pointer touch-none select-none"
+      data-iris-drag=""
       onPointerDown={(e) => {
         if (!duration) return;
         e.currentTarget.setPointerCapture(e.pointerId);
@@ -589,6 +590,7 @@ function Waveform({ wave, t, duration, onSeek, accent, ticks }: { wave: Wave; t:
       aria-valuetext={formatTime(t)}
       className="relative cursor-pointer touch-none select-none"
       style={{ height: H }}
+      data-iris-drag=""
       onPointerDown={(e) => {
         if (!duration) return;
         e.currentTarget.setPointerCapture(e.pointerId);

@@ -11,6 +11,7 @@ import { BoardView, CalendarView, DecisionView, EstimateView, PlanView, RoadmapV
 import { ButtonView, ChecklistView, ColorInputView, DateInputView, InputView, RadioView, RatingView, SegmentedView, SelectView, SliderView, StepperView, TextAreaView, ToggleView } from "./inputs";
 import { ChoicesView, FollowUpsView, SubmitView } from "./pickers";
 import { VariantView, VariantsView } from "./variants";
+import { MarkUpView } from "./markup";
 import { GalleryView, HotspotsView, MapView, PhotoSearchView, ScreensView } from "./media";
 import { AnnotateView, DeviceFrameView, SwatchesView, TypeSpecimenView } from "./design";
 import { DataGridView } from "./grid";
@@ -42,7 +43,7 @@ export const VIEWS: Record<string, View> = {
   Input: InputView, TextArea: TextAreaView, DateInput: DateInputView, Rating: RatingView, Button: ButtonView,
   FollowUps: FollowUpsView, Choices: ChoicesView, Submit: SubmitView, Variants: VariantsView, Variant: VariantView, ColorInput: ColorInputView,
   Gallery: GalleryView, Screens: ScreensView, Hotspots: HotspotsView, Map: MapView, PhotoSearch: PhotoSearchView,
-  DeviceFrame: DeviceFrameView, Swatches: SwatchesView, TypeSpecimen: TypeSpecimenView, Annotate: AnnotateView,
+  DeviceFrame: DeviceFrameView, MarkUp: MarkUpView, Swatches: SwatchesView, TypeSpecimen: TypeSpecimenView, Annotate: AnnotateView,
   DataGrid: DataGridView, Math: MathView, FunctionPlot: FunctionPlotView, Graph: GraphView, LiveLog: LiveLogView, LiveProgress: LiveProgressView,
   Quiz: QuizView, Flashcards: FlashcardsView, Walkthrough: WalkthroughView, Timer: TimerView,
   Scene: SceneView, Shader: ShaderView,

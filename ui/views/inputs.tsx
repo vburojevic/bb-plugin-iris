@@ -5,7 +5,7 @@ import { useEnv } from "../env";
 import type { ViewProps } from "../render";
 import { Chip, Glyph, cn, fmt, num, str, useTone } from "./kit";
 
-function useBound(props: Record<string, unknown>): [unknown, (v: unknown) => void, string | undefined] {
+export function useBound(props: Record<string, unknown>): [unknown, (v: unknown) => void, string | undefined] {
   const env = useEnv();
   const name = str(props.bind);
   const value = name ? env.runtime.getState(name) : undefined;

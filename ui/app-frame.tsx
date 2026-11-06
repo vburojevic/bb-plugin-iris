@@ -225,21 +225,30 @@ export function AppFrame({ source, streaming, threadId, stateKey, submit, kind =
         const target = e.source as Window;
         loadIconNode(data).then((node) => target.postMessage({ __irisIcon: { key: data, node } }, "*"), () => undefined);
       } else if (type === "submit" || (type === "action" && (data as { kind?: unknown } | null)?.kind === "send")) {
-        // Speaking for the person waits for their click on Iris's own bar. One request at a time:
-        // a page can't swap the text under a waiting bar or stack a pile of them.
+        // Speaking for the person needs the person: a picker answer sent from a fresh click inside the
+        // page goes straight back to the agent that asked; anything else waits for a click on Iris's
+        // own bar. A newer request replaces a waiting one (the page's latest values win), and the bar
+        // re-arms, so the text it shows is always the text that goes.
         const once = (message: string) => {
           if (reported.current) return;
           reported.current = true;
           actions.report(new Error(message));
         };
         if (type === "submit" && !submit) return once("iris.submit() works only inside an iris_ask picker");
-        if (pendingRef.current || performance.now() < quietUntil.current) return;
+        // A real click inside the page counts even right after "Don't send"; only unprompted requests wait.
+        const direct = type === "submit" && Boolean(submit) && gate(frame.current) === "ok";
+        if (!direct && performance.now() < quietUntil.current) return;
         const value = type === "submit" ? data : (data as { args?: unknown[] }).args?.[0];
         const text = wireText(value);
         if (text === null || !text.trim()) return;
         if (text.length > MAX_SEND) return once(`A page can send at most ${MAX_SEND.toLocaleString("en-US")} characters at once`);
         // An answer goes out as the JSON shown, parsed back, so the agent gets exactly what the person read.
         const answer = type === "submit" && typeof value !== "string" ? JSON.parse(text) : value;
+        if (direct && submit) {
+          ask(null);
+          submit(answer);
+          return;
+        }
         ask({
           kind: type === "submit" ? "submit" : "send",
           text,
@@ -322,8 +331,9 @@ export function AppFrame({ source, streaming, threadId, stateKey, submit, kind =
 function ConfirmBar({ pending, app, onSend, onCancel }: { pending: Pending; app: string; onSend: () => void; onCancel: () => void }) {
   const [armed, setArmed] = useState(false);
   const sendRef = useRef<HTMLButtonElement | null>(null);
-  // Send wakes once the button has held still for ARM_MS: anything that moves it (a card above
-  // resizing, a scroll) puts it back to sleep, so it can't be slid under a click on its way.
+  // Send wakes once the button has held still for ARM_MS inside the card: a layout shift there puts
+  // it back to sleep, so it can't be slid under a click on its way. Scrolling moves the whole card
+  // and doesn't count, so the button never goes dim while the person scrolls to it.
   const settledAt = useRef(pending.at);
   useEffect(() => {
     setArmed(false);
@@ -331,8 +341,11 @@ function ConfirmBar({ pending, app, onSend, onCancel }: { pending: Pending; app:
     let last = "";
     let frame = 0;
     const tick = () => {
-      const r = sendRef.current?.getBoundingClientRect();
-      const where = r ? `${Math.round(r.left)},${Math.round(r.top)}` : "";
+      const btn = sendRef.current;
+      const host = btn?.closest("[data-iris-root]");
+      const r = btn?.getBoundingClientRect();
+      const h = host?.getBoundingClientRect();
+      const where = r && h ? `${Math.round(r.left - h.left)},${Math.round(r.top - h.top)}` : "";
       if (where !== last) {
         last = where;
         settledAt.current = Math.max(settledAt.current, performance.now());

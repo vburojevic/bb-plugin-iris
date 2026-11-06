@@ -235,7 +235,7 @@ export const PICKERS = [
   component({
     name: "Choices",
     group: "Pickers",
-    summary: "Optional next steps after a finished turn as tappable cards; the pick goes into the composer. Never for a question you need answered: use iris_ask for that.",
+    summary: "Optional next steps after a finished turn as tappable cards; the pick goes into the composer. Never for a question you need answered: use iris_ask for that. In an iris_ask picker with a <Submit>, a pick is kept as choice and sent with the other inputs.",
     props: {
       options: p.list("Options", "(string | {label, detail?, icon?, prompt?: text written into the composer})[]", { required: true }),
       title: p.str("Line above the options"),

@@ -237,4 +237,11 @@ describe("picker answers", () => {
     expect(rt.answers()).toEqual({ pick: "a" });
     expect(Object.keys(rt.snapshot())).toContain("@Quiz:30:round:abc");
   });
+
+  it("carry a note typed into an input whose state the agent forgot to declare", async () => {
+    const { CardRuntime, compile } = await import("../core/program");
+    const rt = new CardRuntime(compile(`<state pick="build" />\n<Radio bind="pick" options={["build", "spec"]} />\n<TextArea bind="note" />\n<Submit />`));
+    rt.setState("note", "Make the accent warmer");
+    expect(rt.answers()).toEqual({ pick: "build", note: "Make the accent warmer" });
+  });
 });

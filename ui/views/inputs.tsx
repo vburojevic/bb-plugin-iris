@@ -8,8 +8,10 @@ function useBound(props: Record<string, unknown>): [unknown, (v: unknown) => voi
   const env = useEnv();
   const name = str(props.bind);
   const value = name ? env.runtime.getState(name) : undefined;
+  // A bind with no matching <state> still keeps what the person enters (and sends it with the
+  // answer); iris_check tells the agent to declare it, but nothing typed is ever dropped.
   const set = (v: unknown) => {
-    if (name && env.runtime.hasState(name)) env.runtime.setState(name, v);
+    if (name) env.runtime.setState(name, v);
   };
   return [value, set, name];
 }
@@ -164,7 +166,8 @@ function OptionList({ props, multi }: { props: Record<string, unknown>; multi: b
   return (
     <fieldset className="min-w-0">
       {str(props.label) ? <legend className="mb-1.5 text-[12.5px] text-muted-foreground">{str(props.label)}</legend> : null}
-      <div className="flex flex-col gap-1.5" role={multi ? "group" : "radiogroup"}>
+      {/* Six or more short options sit in two columns when the card has room, so a long list stays scannable. */}
+      <div className={cn("grid gap-1.5", opts.length >= 6 && !opts.some((o) => o.detail || o.label.length > 32) && "@lg/iris:grid-cols-2")} role={multi ? "group" : "radiogroup"}>
         {opts.map((o) => {
           const on = picked(o);
           return (

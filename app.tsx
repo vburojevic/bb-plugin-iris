@@ -4,7 +4,7 @@
 import "./app.css";
 import { definePluginApp, type ExperimentalCodeFenceRendererProps, type PluginPendingInteractionProps } from "@get-bb/plugin-sdk/app";
 import { PLAYGROUND_URL } from "./shared/playground";
-import { useCallback, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { AppFrame } from "./ui/app-frame";
 import { IrisBlock } from "./ui/block";
 import { GalleryPage } from "./ui/gallery";
@@ -26,6 +26,15 @@ interface AskPayload {
   title?: string;
 }
 
+/** The alpha of a computed CSS color: rgb(), rgba(), or the "/ a" form of oklab, oklch and color(). */
+function alpha(color: string): number {
+  if (!color || color === "transparent") return 0;
+  const slash = color.match(/\/\s*([\d.]+)(%?)\s*\)$/);
+  if (slash) return Number(slash[1]) / (slash[2] ? 100 : 1);
+  const rgba = color.match(/^rgba\(.*,\s*([\d.]+)\s*\)$/);
+  return rgba ? Number(rgba[1]) : 1;
+}
+
 function AskPicker({ interaction, submit, cancel }: PluginPendingInteractionProps) {
   const payload = (interaction.payload ?? {}) as AskPayload;
   const [sent, setSent] = useState(false);
@@ -37,8 +46,55 @@ function AskPicker({ interaction, submit, cancel }: PluginPendingInteractionProp
     },
     [sent, submit],
   );
+  const box = useRef<HTMLDivElement>(null);
+  // The Send row pins to the bottom edge only when the request panel scrolls, painted in the color of
+  // the bb panel around it (read live, so it matches every theme) rather than a guessed token.
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    // bb's request panel is the one scroller (a second one inside it hid Send below the fold).
+    let scroller: HTMLElement = el;
+    for (let up = el.parentElement; up; up = up.parentElement) {
+      if (/auto|scroll/.test(getComputedStyle(up).overflowY)) {
+        scroller = up;
+        break;
+      }
+    }
+    // Painted again on every resize and theme change, so the pinned row never shows a stale color.
+    const paint = () => {
+      // bb's panels are often a translucent tint over the page, so stack every layer down to the
+      // first opaque one; a single translucent color would let options show through under Send.
+      const layers: string[] = [];
+      for (let up = el.parentElement; up; up = up.parentElement) {
+        const bg = getComputedStyle(up).backgroundColor;
+        const a = alpha(bg);
+        if (a <= 0) continue;
+        layers.push(a >= 1 ? bg : `linear-gradient(${bg}, ${bg})`);
+        if (a >= 1) break;
+      }
+      if (layers.length) el.style.setProperty("--iris-picker-bg", layers.join(", "));
+      // The pinned row reaches through the panel's padding so nothing peeks out below or beside it.
+      const pad = getComputedStyle(scroller);
+      el.style.setProperty("--iris-picker-x", `${(parseFloat(pad.paddingRight) || 0) + (parseFloat(getComputedStyle(el).paddingRight) || 0)}px`);
+      el.style.setProperty("--iris-picker-b", `${parseFloat(pad.paddingBottom) || 0}px`);
+    };
+    const measure = () => {
+      paint();
+      el.toggleAttribute("data-overflow", scroller.scrollHeight > scroller.clientHeight + 1);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(scroller);
+    ro.observe(el);
+    const themes = new MutationObserver(paint);
+    themes.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "style", "data-theme"] });
+    return () => {
+      ro.disconnect();
+      themes.disconnect();
+    };
+  }, []);
   return (
-    <div className="iris-picker max-h-[min(70vh,640px)] overflow-y-auto px-1 pb-1" aria-label={interaction.title}>
+    <div ref={box} className="iris-picker group/picker px-1" aria-label={interaction.title}>
       <div className="flex justify-end px-1">
         <button type="button" onClick={() => void cancel()} className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-state-hover hover:text-foreground">
           <Glyph name="x" size={12} />

@@ -336,6 +336,10 @@
   [data-iris-root] .iris-scroll-x > .iris-hit::after {
     inset: 0;
   }
+  /* Round swatches grow both ways, so they stay circles. */
+  [data-iris-root] .iris-scroll-x > .iris-swatch {
+    min-width: 36px;
+  }
   [data-iris-root] .iris-tools > button {
     width: 36px;
   }

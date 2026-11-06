@@ -1,8 +1,9 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { formatRatio, grade, normalizeBackgrounds, normalizeSwatches, parseColor, toHex } from "../../core/design";
 import { toText } from "../../core/evaluate";
 import { useEnv } from "../env";
 import type { ViewProps } from "../render";
-import { Chip, Glyph, cn, fmt, num, str } from "./kit";
+import { Chip, Glyph, cn, fmt, num, str, useTone } from "./kit";
 
 function useBound(props: Record<string, unknown>): [unknown, (v: unknown) => void, string | undefined] {
   const env = useEnv();
@@ -312,5 +313,136 @@ export function ButtonView({ props, text }: ViewProps) {
       {props.icon ? <Glyph name={props.icon} size={14} /> : null}
       {text}
     </button>
+  );
+}
+
+/**
+ * A typed color, opaque: "#FF7A3D", "ff7a3d", "rgb(...)" or "hsl(...)". Hex takes 6 digits while
+ * typing (so "#FF7" on its way to "#FF7A3D" never lands in the state) and 3 once the field is left.
+ */
+const readColor = (raw: string, done = false) => {
+  const t = raw.trim().replace(/^#/, "");
+  if (/^[0-9a-f]+$/i.test(t)) return t.length === 6 || (done && t.length === 3) ? parseColor(`#${t}`) : null;
+  return parseColor(raw.trim());
+};
+
+/** A color field: a swatch that opens the system picker, a hex field, presets, and contrast on the backgrounds it will sit on. */
+export function ColorInputView({ props }: ViewProps) {
+  const id = useId();
+  const [value, set] = useBound(props);
+  const rgb = parseColor(value);
+  const hex = rgb ? toHex(rgb) : "";
+  // The hex field keeps what is typed until it parses, so a half-typed color never reaches the state.
+  const [draft, setDraft] = useState<string | null>(null);
+  const presets = normalizeSwatches(props.presets).slice(0, 16).flatMap((s) => {
+    const c = parseColor(s.value);
+    return c ? [{ name: s.name, hex: toHex(c) }] : [];
+  });
+  // Graded only on the backgrounds given; none given means no grading, not white and black.
+  const onList = (Array.isArray(props.on) ? props.on : props.on == null || props.on === "" ? [] : [props.on]).filter((b) => b != null && b !== "");
+  const backgrounds = onList.length ? normalizeBackgrounds(onList).filter((b) => parseColor(b.value)).slice(0, 3) : [];
+  // A state this field can't read (a name, a token) still shows as typed rather than as blank.
+  const shownText = hex || (value == null ? "" : toText(value));
+  // The agent changed the color while a valid draft was held: the field follows the new color.
+  useEffect(() => {
+    if (draft == null) return;
+    const c = readColor(draft);
+    if (c && toHex(c) !== hex) setDraft(null);
+  }, [hex]); // eslint-disable-line react-hooks/exhaustive-deps
+  const presetIndex = presets.findIndex((s) => s.hex === hex);
+  const presetRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const pickPreset = (k: number, focus = false) => {
+    const next = (k + presets.length) % presets.length;
+    setDraft(null);
+    set(presets[next].hex);
+    if (focus) presetRefs.current[next]?.focus();
+  };
+  const invalid = draft != null && draft.trim() !== "" && !readColor(draft, true);
+  const bad = useTone("bad");
+  return (
+    <Field label={str(props.label)} htmlFor={id}>
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <label className="iris-hit relative grid size-8 shrink-0 cursor-pointer place-items-center rounded-lg shadow-[0_0_0_1px_var(--border)]" style={{ background: hex || "transparent" }} title="Pick a color">
+          {hex ? null : <Glyph name="pipette" size={14} className="text-muted-foreground" />}
+          <input type="color" aria-label={`${str(props.label) ?? "Color"} picker`} value={(hex || "#808080").toLowerCase()} onChange={(e) => set(e.target.value.toUpperCase())} className="absolute inset-0 size-full cursor-pointer opacity-0" />
+        </label>
+        <input
+          id={id}
+          value={draft ?? shownText}
+          placeholder="#RRGGBB"
+          spellCheck={false}
+          aria-invalid={invalid || undefined}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            const c = readColor(e.target.value);
+            if (c) set(toHex(c));
+          }}
+          onBlur={() => {
+            if (draft != null) {
+              const c = readColor(draft, true);
+              if (c) set(toHex(c));
+            }
+            setDraft(null);
+          }}
+          onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+          className="iris-field h-8 w-28 rounded-lg bg-card px-2.5 font-mono text-[13px] uppercase ring-1 ring-border outline-none focus-visible:ring-foreground/40"
+          style={invalid && bad ? { boxShadow: `0 0 0 1px ${bad}` } : undefined}
+        />
+        {rgb
+          ? backgrounds.map((b, k) => {
+              const bg = parseColor(b.value);
+              if (!bg) return null;
+              const g = grade(rgb, bg);
+              const verdict = g.aa ? { label: "AA", tone: "good" } : g.aaLarge ? { label: "AA Large", tone: "warn" } : { label: "Fails", tone: "bad" };
+              return (
+                <span key={k} className="inline-flex h-8 items-center gap-2 rounded-lg pr-2 shadow-[0_0_0_1px_var(--border)]" title={`${formatRatio(g.ratio)} on ${b.name}`}>
+                  <span className="grid h-full place-items-center rounded-l-lg px-2 text-[13px] font-semibold" style={{ background: b.value, color: hex }}>
+                    Aa
+                  </span>
+                  <span className="text-xs tabular-nums text-muted-foreground">
+                    {formatRatio(g.ratio)} on {b.name}
+                  </span>
+                  <Chip tone={verdict.tone}>{verdict.label}</Chip>
+                </span>
+              );
+            })
+          : null}
+      </div>
+      {presets.length ? (
+        <div
+          role="radiogroup"
+          aria-label="Presets"
+          onKeyDown={(e) => {
+            const from = presetIndex >= 0 ? presetIndex : 0;
+            const k = e.key === "ArrowRight" || e.key === "ArrowDown" ? from + 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? from - 1 : null;
+            if (k == null) return;
+            e.preventDefault();
+            pickPreset(k, true);
+          }}
+          className="iris-scroll-x -m-1 mt-1.5 flex gap-1.5 overflow-x-auto p-1"
+        >
+          {presets.map((s, k) => {
+            const on = k === presetIndex;
+            return (
+              <button
+                key={k}
+                ref={(el) => {
+                  presetRefs.current[k] = el;
+                }}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                tabIndex={on || (presetIndex < 0 && k === 0) ? 0 : -1}
+                aria-label={s.name === s.hex || /^#/.test(s.name) ? s.hex : `${s.name}, ${s.hex}`}
+                title={s.name}
+                onClick={() => pickPreset(k)}
+                className={cn("iris-hit iris-swatch size-7 shrink-0 rounded-full transition-shadow", on ? "shadow-[0_0_0_2px_var(--card),0_0_0_4px_var(--foreground)]" : "shadow-[0_0_0_1px_var(--border)] hover:shadow-[0_0_0_2px_var(--card),0_0_0_3px_var(--border)]")}
+                style={{ background: s.hex }}
+              />
+            );
+          })}
+        </div>
+      ) : null}
+    </Field>
   );
 }

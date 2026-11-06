@@ -170,6 +170,21 @@ export const INPUTS = [
     aliases: ["MultiSelect", "Checkboxes"],
   }),
   component({
+    name: "ColorInput",
+    group: "Inputs",
+    summary: "Pick a color: a swatch that opens the system picker, a hex field, optional presets, and the contrast on each background it will sit on. The state is an opaque hex string like \"#FF7A3D\" (alpha is dropped).",
+    props: {
+      bind: p.bind(),
+      label: p.str("Name"),
+      presets: p.list("Colors to pick with one tap", "(string | {name?, value})[]"),
+      on: p.any("Background(s) to grade contrast on (AA, AA Large or Fails): a color, or [{name, value}] up to 3"),
+    },
+    children: "none",
+    example: `<state warning="#E0A03A" />
+<ColorInput bind="warning" label="Warning" on={[{ name: "Surface", value: "#17110E" }, { name: "Card", value: "#221A15" }]} presets={["#E0A03A", "#F5B94A", "#FF8A3D", "#F2C94C", "#E8743B"]} />`,
+    aliases: ["ColorPicker", "ColorField", "ColorWell"],
+  }),
+  component({
     name: "Input",
     group: "Inputs",
     summary: "A one-line text field.",

@@ -2,7 +2,7 @@
 
 Agents answer with cards instead of long text. A status report comes back as metrics and a progress bar, proof that work is done as a checklist of criteria with their evidence, a comparison as a decision whose weights you can drag, and a test run as its failures with links to the lines. The answer stays in a sentence or two above the card.
 
-There are 122 components in 30 families: layout, charts, data grids, diagrams, code and diffs, test, coverage and lint reports, plans, boards, roadmaps, maps, media players, 3D scenes, math, spreadsheets, API inspectors, whiteboards and more. Every card takes its colors from your bb theme and follows it when you switch.
+There are 123 components in 30 families: layout, charts, data grids, diagrams, code and diffs, test, coverage and lint reports, plans, boards, roadmaps, maps, media players, 3D scenes, math, spreadsheets, API inspectors, whiteboards and more. Every card takes its colors from your bb theme and follows it when you switch.
 
 ## How it works
 

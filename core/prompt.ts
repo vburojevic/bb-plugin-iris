@@ -146,7 +146,14 @@ export function referenceSections(): ReferenceSection[] {
       }
     }
   }
-  sections.forEach((s, k) => (s.tool = k === 0 ? "iris_docs" : `iris_examples_${s.groups[0].toLowerCase()}`));
+  // A family too big for one section continues in the next, which gets a numbered name of its own.
+  const seen = new Map<string, number>();
+  sections.forEach((s, k) => {
+    const base = k === 0 ? "iris_docs" : `iris_examples_${s.groups[0].toLowerCase()}`;
+    const n = (seen.get(base) ?? 0) + 1;
+    seen.set(base, n);
+    s.tool = n === 1 ? base : `${base}_${n}`;
+  });
   return sections;
 }
 

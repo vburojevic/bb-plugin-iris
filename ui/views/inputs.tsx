@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import { toText } from "../../core/evaluate";
 import { useEnv } from "../env";
 import type { ViewProps } from "../render";
-import { Glyph, cn, fmt, num, str } from "./kit";
+import { Chip, Glyph, cn, fmt, num, str } from "./kit";
 
 function useBound(props: Record<string, unknown>): [unknown, (v: unknown) => void, string | undefined] {
   const env = useEnv();
@@ -21,6 +21,16 @@ interface Opt {
   label: string;
   detail?: string;
   icon?: unknown;
+  badges?: { label: string; tone?: unknown }[];
+}
+
+/** An option's badges: a list of labels or {label, tone}, for effort, impact, "Recommended" and the like. */
+function badges(raw: unknown): Opt["badges"] {
+  if (!Array.isArray(raw)) return undefined;
+  const out = raw
+    .map((b) => (b && typeof b === "object" ? { label: toText((b as Record<string, unknown>).label ?? (b as Record<string, unknown>).text), tone: (b as Record<string, unknown>).tone } : { label: toText(b) }))
+    .filter((b) => b.label);
+  return out.length ? out : undefined;
 }
 
 function options(raw: unknown): Opt[] {
@@ -28,7 +38,7 @@ function options(raw: unknown): Opt[] {
     if (o && typeof o === "object") {
       const x = o as Record<string, unknown>;
       const value = x.value ?? x.label;
-      return { value, label: toText(x.label ?? x.value), detail: str(x.detail), icon: x.icon };
+      return { value, label: toText(x.label ?? x.value), detail: str(x.detail), icon: x.icon, badges: badges(x.badges) };
     }
     return { value: o, label: toText(o) };
   });
@@ -157,27 +167,57 @@ export function SelectView({ props }: ViewProps) {
 function OptionList({ props, multi }: { props: Record<string, unknown>; multi: boolean }) {
   const [value, set] = useBound(props);
   const opts = options(props.options);
+  const numbered = props.numbered === true;
   const picked = (o: Opt) => (multi ? Array.isArray(value) && value.some((v) => same(v, o.value)) : same(o.value, value));
   const toggle = (o: Opt) => {
     if (!multi) return set(o.value);
     const cur = Array.isArray(value) ? value : [];
     set(cur.some((v) => same(v, o.value)) ? cur.filter((v) => !same(v, o.value)) : [...cur, o.value]);
   };
+  const count = multi ? opts.filter(picked).length : 0;
+  // A long multi-pick says how many are picked and offers all or none, so ten options stay quick to answer.
+  const tally = multi && opts.length >= 5;
+  // Six or more short, plain options sit in two columns when the card has room; options that carry a
+  // detail line or badges read better one per row.
+  const twoUp = opts.length >= 6 && !opts.some((o) => o.detail || o.badges || o.label.length > 32);
   return (
+    // The header is a plain row (a <legend> can't share a line with the tally), so the options' group takes its name from the label.
     <fieldset className="min-w-0">
-      {str(props.label) ? <legend className="mb-1.5 text-[12.5px] text-muted-foreground">{str(props.label)}</legend> : null}
-      {/* Six or more short options sit in two columns when the card has room, so a long list stays scannable. */}
-      <div className={cn("grid gap-1.5", opts.length >= 6 && !opts.some((o) => o.detail || o.label.length > 32) && "@lg/iris:grid-cols-2")} role={multi ? "group" : "radiogroup"}>
-        {opts.map((o) => {
+      {str(props.label) || tally ? (
+        <div className="mb-1.5 flex items-baseline justify-between gap-3">
+          <span className="text-[12.5px] text-muted-foreground">{str(props.label)}</span>
+          {tally ? (
+            <span className="flex shrink-0 items-baseline gap-2 text-xs text-muted-foreground">
+              <span className="tabular-nums" aria-live="polite" aria-label={`${count} of ${opts.length} picked`}>
+                {count} of {opts.length}
+              </span>
+              <button type="button" onClick={() => set(count === opts.length ? [] : opts.filter((o, i) => opts.findIndex((x) => same(x.value, o.value)) === i).map((o) => o.value))} className="iris-hit rounded px-1 font-medium text-foreground hover:bg-state-hover">
+                {count === opts.length ? "None" : "All"}
+              </button>
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+      <div className={cn("grid gap-1.5", twoUp && "@lg/iris:grid-cols-2")} role={multi ? "group" : "radiogroup"} aria-label={str(props.label)}>
+        {opts.map((o, i) => {
           const on = picked(o);
           return (
-            <button key={o.label} type="button" role={multi ? "checkbox" : "radio"} aria-checked={on} onClick={() => toggle(o)} className={cn("flex min-w-0 items-start gap-2.5 rounded-xl px-3 py-2 text-left ring-1 transition-shadow", on ? "iris-picked ring-transparent" : "ring-border hover:bg-state-hover")}>
+            <button key={`${i}:${o.label}`} type="button" role={multi ? "checkbox" : "radio"} aria-checked={on} onClick={() => toggle(o)} className={cn("flex min-w-0 items-start gap-2.5 rounded-xl px-3 py-2 text-left ring-1 transition-shadow", on ? "iris-picked ring-transparent" : "ring-border hover:bg-state-hover")}>
               <span className={cn("mt-0.5 grid size-4 shrink-0 place-items-center ring-[1.5px]", multi ? "rounded-[5px]" : "rounded-full", on ? "bg-foreground ring-foreground" : "ring-border")}>
                 {on ? multi ? <Glyph name="check" size={11} className="text-background" /> : <span className="size-1.5 rounded-full bg-background" /> : null}
               </span>
-              <span className="min-w-0">
-                <span className="block text-[13.5px]">{o.label}</span>
-                {o.detail ? <span className="block text-xs text-muted-foreground">{o.detail}</span> : null}
+              {numbered ? <span className="mt-px w-4 shrink-0 text-right text-[13px] tabular-nums text-muted-foreground">{i + 1}</span> : null}
+              {o.icon ? <Glyph name={o.icon} size={15} className="mt-0.5 shrink-0 text-muted-foreground" /> : null}
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="text-[13.5px]">{o.label}</span>
+                  {o.badges?.map((b, k) => (
+                    <Chip key={k} tone={b.tone}>
+                      {b.label}
+                    </Chip>
+                  ))}
+                </span>
+                {o.detail ? <span className="mt-0.5 block text-xs text-muted-foreground">{o.detail}</span> : null}
               </span>
             </button>
           );

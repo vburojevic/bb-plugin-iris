@@ -198,3 +198,40 @@ describe("catalog", () => {
     for (const s of referenceSections()) expect(s.text.length).toBeLessThanOrEqual(4096);
   });
 });
+
+describe("Screens", () => {
+  it("lays shots out as screens by columns, in order, and counts the gaps", async () => {
+    const { screenMatrix } = await import("../core/media");
+    const m = screenMatrix(
+      [
+        { screen: "Home", column: "iPhone", src: "a.png" },
+        { screen: "Home", column: "Mac", src: "b.png", status: "changed" },
+        { screen: "Settings", column: "iPhone", src: "c.png" },
+        { screen: "Settings", device: "iPad", src: "d.png" },
+        { column: "Mac" },
+      ],
+      ["Mac"],
+    );
+    expect(m.screens).toEqual(["Home", "Settings"]);
+    expect(m.columns).toEqual(["Mac", "iPhone", "iPad"]);
+    expect(m.cells).toEqual([
+      [1, 0, -1],
+      [-1, 2, 3],
+    ]);
+    expect(m.missing).toBe(2);
+    expect(m.shots[1].status).toBe("changed");
+  });
+  it("treats a repeated screen and column as a retake, and repeated column names as one", async () => {
+    const { screenMatrix } = await import("../core/media");
+    const m = screenMatrix(
+      [
+        { screen: "Home", column: "iPhone", src: "old.png" },
+        { screen: "Home", column: "iPhone", src: "new.png" },
+      ],
+      ["iPhone", "iPhone"],
+    );
+    expect(m.shots.map((s) => s.src)).toEqual(["new.png"]);
+    expect(m.columns).toEqual(["iPhone"]);
+    expect(m.missing).toBe(0);
+  });
+});

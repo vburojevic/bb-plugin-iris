@@ -37,6 +37,52 @@ export function normalizeGallery(v: unknown): GalleryImage[] {
   return out;
 }
 
+// ---------- Screens ----------
+
+export interface Shot {
+  screen: string;
+  column: string;
+  src: string;
+  caption?: string;
+  status?: string;
+}
+
+export interface ScreenMatrix {
+  screens: string[];
+  columns: string[];
+  /** cells[row][col]: the shot's index in shots, or -1 when that screen has none for that column. */
+  cells: number[][];
+  shots: Shot[];
+  missing: number;
+}
+
+export const MAX_SHOTS = 120;
+
+/** Shots into a screens-by-columns grid, in first-seen order unless columns names the order. */
+export function screenMatrix(v: unknown, order?: unknown): ScreenMatrix {
+  const shots: Shot[] = [];
+  for (const item of list(v)) {
+    const o = obj(item);
+    const src = text(o.src ?? o.path ?? o.url)?.trim();
+    if (!src) continue;
+    const screen = text(o.screen ?? o.row ?? o.name, 80) ?? fileLabel(src);
+    const column = text(o.column ?? o.device ?? o.theme ?? o.variant, 60) ?? "Screenshot";
+    const shot = { screen, column, src, caption: text(o.caption ?? o.note, 200), status: text(o.status, 40) };
+    // A second shot of the same screen and column is a retake: it replaces the first.
+    const again = shots.findIndex((x) => x.screen === screen && x.column === column);
+    if (again >= 0) shots[again] = shot;
+    else shots.push(shot);
+    if (shots.length >= MAX_SHOTS) break;
+  }
+  const screens = [...new Set(shots.map((s) => s.screen))];
+  const seen = [...new Set(shots.map((s) => s.column))];
+  const named = [...new Set(list(order).map((c) => text(c, 60)).filter((c): c is string => Boolean(c)))];
+  const columns = named.length ? [...named, ...seen.filter((c) => !named.includes(c))] : seen;
+  const cells = screens.map((sc) => columns.map((col) => shots.findIndex((s) => s.screen === sc && s.column === col)));
+  const missing = cells.flat().filter((k) => k < 0).length;
+  return { screens, columns, cells, shots, missing };
+}
+
 /** A readable name for an image from its path or URL. */
 export function fileLabel(src: string): string {
   if (src.startsWith("data:")) return "Image";

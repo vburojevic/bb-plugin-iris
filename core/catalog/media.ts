@@ -70,6 +70,30 @@ export const MEDIA = [
     aliases: ["Images", "Photos", "Lightbox", "Carousel"],
   }),
   component({
+    name: "Screens",
+    group: "Media",
+    summary:
+      "Screenshots as a matrix: one row per screen, one column per device, theme or locale, each tile with its label and an optional status; a click opens a lightbox. A screen missing a column shows as Missing. For proving a UI on every platform and theme.",
+    props: {
+      shots: p.list(
+        "Each {screen, column, src, caption?, status?}; src is a workspace or thread storage path, an https URL or a data: image; status passed|failed|changed or any word. At most 120",
+        "{screen, column, src, caption?, status?}[]",
+        { required: true },
+      ),
+      columns: p.list("Column order, e.g. [\"iPhone\", \"iPad\", \"Mac\"]; default as first seen", "string[]"),
+      title: p.str("Caption above the matrix"),
+    },
+    children: "none",
+    example: `<Screens title="Settings, build 212" columns={["iPhone", "iPad", "Mac"]} shots={[
+  { screen: "Settings", column: "iPhone", src: "${phone}", status: "passed" },
+  { screen: "Settings", column: "iPad", src: "${desktop}", status: "passed" },
+  { screen: "Settings", column: "Mac", src: "${desktop}", status: "changed" },
+  { screen: "Account", column: "iPhone", src: "${phone}" },
+  { screen: "Account", column: "Mac", src: "${desktop}" },
+]} />`,
+    aliases: ["ScreenMatrix", "ScreenshotMatrix", "DeviceMatrix"],
+  }),
+  component({
     name: "Hotspots",
     group: "Media",
     summary: "Numbered pins on an image; each opens its title and text. For a floor plan, a product shot, parts of a diagram. A list of the pins sits below for reading in order.",

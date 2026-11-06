@@ -108,6 +108,7 @@
   @media (min-width: 96rem) {
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).container { max-width: 96rem; }
 }
+  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .-m-0\.5, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).-m-0\.5 { margin: calc(var(--spacing) * -.5); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .-m-1, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).-m-1 { margin: calc(var(--spacing) * -1); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .m-0, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).m-0 { margin: calc(var(--spacing) * 0); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .m-2\.5, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).m-2\.5 { margin: calc(var(--spacing) * 2.5); }

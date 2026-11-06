@@ -368,7 +368,7 @@ export function TypeSpecimenView({ props }: ViewProps) {
           </Chip>
         ) : null}
       </div>
-      <div role="radiogroup" aria-label="Weight" className="iris-scroll-x mt-2.5 flex gap-1.5 overflow-x-auto pb-0.5">
+      <div role="radiogroup" aria-label="Weight" className="iris-scroll-x -mx-0.5 mt-2 flex gap-1.5 overflow-x-auto p-0.5">
         {weights.map((w) => (
           <button
             key={w}

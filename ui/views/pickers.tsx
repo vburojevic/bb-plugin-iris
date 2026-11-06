@@ -9,7 +9,9 @@ export function FollowUpsView({ props }: ViewProps) {
   const prompts = Array.isArray(props.prompts) ? props.prompts.map(toText).filter(Boolean) : [];
   const kind = props.mode === "send" ? "send" : "insert";
   return (
-    <div className="iris-scroll-x -mx-0.5 flex gap-1.5 overflow-x-auto px-0.5 pb-0.5">
+    // A sideways scroller clips on every side, and each pill's outline sits just outside its box:
+    // two pixels of room all round keep it whole, and the matching negative margin keeps the layout.
+    <div className="iris-scroll-x -m-0.5 flex gap-1.5 overflow-x-auto p-0.5">
       {prompts.map((p) => (
         <button key={p} type="button" disabled={env.streaming} onClick={() => env.perform([{ $iris: "action", kind, args: [p] }])} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] ring-1 ring-border transition-colors hover:bg-state-hover disabled:opacity-50">
           <Glyph name="corner-down-right" size={13} className="text-muted-foreground" />

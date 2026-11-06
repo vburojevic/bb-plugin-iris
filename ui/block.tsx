@@ -179,7 +179,7 @@ export function IrisBlock(props: BlockProps) {
         ref={frame}
         data-iris-root=""
         data-streaming={streaming ? "" : undefined}
-        className="iris-root group/iris relative my-2 min-w-0 text-foreground"
+        className="iris-root @container/iris group/iris relative my-2 min-w-0 text-foreground"
         style={{ ["--iris-accent" as string]: palette.accent, ["--iris-spectrum" as string]: palette.accent, ["--iris-raised" as string]: raisedSurface(palette) }}
       >
         {!rootCard && tools ? <div className="pointer-events-none absolute -top-1 right-0 z-[2] opacity-0 transition-opacity focus-within:pointer-events-auto focus-within:opacity-100 group-hover/iris:pointer-events-auto group-hover/iris:opacity-100">{tools}</div> : null}

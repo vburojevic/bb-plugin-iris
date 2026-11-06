@@ -417,7 +417,7 @@ export function AnnotateView({ props }: ViewProps) {
   return (
     <figure className="min-w-0">
       {image.status === "ok" ? (
-        <div className="relative mx-auto w-fit max-w-full" style={width ? { maxWidth: `min(100%, ${width}px)` } : undefined}>
+        <div className="relative w-fit max-w-full" style={width ? { maxWidth: `min(100%, ${width}px)` } : undefined}>
           <img src={image.url} alt={str(props.alt) ?? ""} className="block max-h-[640px] w-auto max-w-full rounded-lg ring-1 ring-border" />
           {notes.map((c) => (
             <CalloutMark key={c.n} callout={c} active={active} onActive={setActive} fallback={palette.accent} />

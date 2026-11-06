@@ -302,12 +302,12 @@ export function CronView({ props, node }: ViewProps) {
         <>
           <div className="mt-2.5 text-[15px] font-semibold leading-snug tracking-[-0.01em]">{describeCron(cron)}</div>
           {/* Five tiles side by side; on a phone, one row per field so every meaning reads in full. */}
-          <dl className="mt-3 grid grid-cols-5 gap-1.5 max-sm:grid-cols-1 max-sm:gap-0 max-sm:overflow-hidden max-sm:rounded-lg max-sm:ring-1 max-sm:ring-border max-sm:[&>div+div]:border-t max-sm:[&>div+div]:border-border">
+          <dl className="mt-3 grid grid-cols-5 gap-1.5 @max-lg/iris:grid-cols-1 @max-lg/iris:gap-0 @max-lg/iris:overflow-hidden @max-lg/iris:rounded-lg @max-lg/iris:ring-1 @max-lg/iris:ring-border @max-lg/iris:[&>div+div]:border-t @max-lg/iris:[&>div+div]:border-border">
             {cronFields(cron).map((f) => (
-              <div key={f.label} className="min-w-0 rounded-lg px-2 py-1.5 ring-1 ring-border max-sm:grid max-sm:grid-cols-[4.5rem_4.5rem_minmax(0,1fr)] max-sm:items-baseline max-sm:gap-2 max-sm:rounded-none max-sm:px-3 max-sm:ring-0">
-                <dt className="truncate text-[10.5px] text-muted-foreground max-sm:text-[11.5px]">{f.label}</dt>
+              <div key={f.label} className="min-w-0 rounded-lg px-2 py-1.5 ring-1 ring-border @max-lg/iris:grid @max-lg/iris:grid-cols-[4rem_3.5rem_minmax(0,1fr)] @max-lg/iris:items-baseline @max-lg/iris:gap-2 @max-lg/iris:rounded-none @max-lg/iris:px-3 @max-lg/iris:ring-0">
+                <dt className="truncate text-[10.5px] text-muted-foreground @max-lg/iris:text-[11.5px]">{f.label}</dt>
                 <dd className="truncate font-mono text-[13px] font-medium">{f.raw}</dd>
-                <dd className="text-[11px] leading-snug text-muted-foreground max-sm:text-[12px]">{f.meaning}</dd>
+                <dd className="text-[11px] leading-snug text-muted-foreground @max-lg/iris:text-[12px]">{f.meaning}</dd>
               </div>
             ))}
           </dl>
@@ -324,7 +324,7 @@ export function CronView({ props, node }: ViewProps) {
                     </span>
                     <span className={cn("shrink-0 tabular-nums", k === 0 && "font-semibold")}>{clockText(w.hour, w.minute)}</span>
                     {mine ? (
-                      <span className="hidden min-w-0 truncate text-[12px] text-muted-foreground min-[420px]:inline">
+                      <span className="hidden min-w-0 truncate text-[12px] text-muted-foreground @min-[420px]/iris:inline">
                         {clockText(mine.hour, mine.minute)} your time{mine.day !== w.day ? `, ${WEEKDAY_SHORT[mine.weekday]}` : ""}
                       </span>
                     ) : null}
@@ -390,7 +390,7 @@ export function DateDiffView({ props, node }: ViewProps) {
   };
   const dateField = (which: "from" | "to", v: string) =>
     editable ? (
-      <input type="date" value={parseDay(v) ? v : ""} aria-label={which === "from" ? "Start date" : "End date"} onChange={(e) => setDate(which, e.target.value)} className={cn(FIELD, "h-8 font-sans text-[13px] tabular-nums")} style={{ colorScheme: palette.dark ? "dark" : "light" }} />
+      <input type="date" value={parseDay(v) ? v : ""} aria-label={which === "from" ? "Start date" : "End date"} onChange={(e) => setDate(which, e.target.value)} className={cn(FIELD, "iris-field h-8 w-full min-w-0 font-sans text-[13px] tabular-nums")} style={{ colorScheme: palette.dark ? "dark" : "light" }} />
     ) : (
       <span className="text-[13.5px] font-medium tabular-nums">{shortDate(v, true)}</span>
     );
@@ -407,9 +407,10 @@ export function DateDiffView({ props, node }: ViewProps) {
           ) : null
         }
       />
-      <div className="flex flex-wrap items-center gap-2">
+      {/* From, arrow, to on one row at every width: the fields share it instead of wrapping apart. */}
+      <div className="grid max-w-[26rem] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 @max-[20rem]/iris:grid-cols-1 @max-[20rem]/iris:justify-items-start">
         {dateField("from", from)}
-        <Glyph name="arrow-right" size={14} className="text-muted-foreground" />
+        <Glyph name="arrow-right" size={14} className="text-muted-foreground @max-[20rem]/iris:ml-3 @max-[20rem]/iris:rotate-90" />
         {dateField("to", to)}
       </div>
       {holidays.problems.length ? <ErrorLine className="mt-2">{holidays.problems[0]}</ErrorLine> : null}
@@ -420,7 +421,7 @@ export function DateDiffView({ props, node }: ViewProps) {
             <span className="text-[30px] font-semibold leading-none tracking-[-0.03em] tabular-nums">{span.businessDays}</span>
             <span className="text-[14px] text-muted-foreground">{Math.abs(span.businessDays) === 1 ? "business day" : "business days"}{span.backwards ? ", counting back" : ""}</span>
           </div>
-          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 min-[480px]:grid-cols-4">
+          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 @min-[480px]/iris:grid-cols-4">
             <Fact label="Calendar days" value={String(Math.abs(span.calendarDays))} note={weeksAndDays(span.calendarDays)} />
             <Fact label="Weekend days" value={String(span.weekendDays)} />
             <Fact label="Holidays" value={String(span.holidays.length)} note={span.holidays.length ? "on working days" : undefined} />

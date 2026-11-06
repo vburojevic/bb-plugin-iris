@@ -425,6 +425,7 @@ export function CompareGridView({ props }: ViewProps) {
     <div className="flex min-w-0 flex-col gap-2.5">
       {given.problems.length ? <InlineError error={new Error(`${given.problems[0]}${given.problems.length > 1 ? ` (and ${given.problems.length - 1} more)` : ""}`)} context="<CompareGrid>" /> : null}
       {problem ? <InlineError error={new Error(problem)} context="<CompareGrid>" /> : null}
+      {title ? <div className="min-w-0 truncate text-[13.5px] font-semibold">{title}</div> : null}
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <div role="radiogroup" aria-label="Show" className="iris-scroll-x inline-flex max-w-full gap-0.5 overflow-x-auto rounded-full bg-muted/70 p-0.5">
           {(Object.keys(FILTER_LABEL) as GridFilter[]).map((f) => (
@@ -457,7 +458,6 @@ export function CompareGridView({ props }: ViewProps) {
           </select>
         </label>
         {sample ? <Chip>Sample</Chip> : null}
-        {title ? <span className="ml-auto min-w-0 truncate text-xs text-muted-foreground">{title}</span> : null}
       </div>
       {counts.all && counts.pending ? (
         <div className="flex items-center gap-2 text-xs text-muted-foreground" role="status">

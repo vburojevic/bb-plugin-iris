@@ -167,7 +167,7 @@ export function ChartView({ props }: ViewProps) {
               </button>
             </span>
           ) : (
-            <span className="mr-auto text-[11.5px] text-muted-foreground max-sm:hidden">Drag across the chart to select a range</span>
+            <span className="mr-auto text-[11.5px] text-muted-foreground @max-lg/iris:hidden">Drag across the chart to select a range</span>
           )
         ) : null}
         <div className="inline-flex shrink-0 rounded-md bg-muted/70 p-0.5 text-[11.5px]" role="tablist" aria-label="View">

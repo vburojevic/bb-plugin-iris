@@ -42,7 +42,7 @@ export function Caption({ title, name, sample, right }: { title?: string; name: 
   return (
     <div className="flex min-w-0 items-center gap-2">
       <div className="min-w-0 flex-1 truncate text-[13.5px] font-semibold">{title ?? name}</div>
-      {title ? <span className="hidden min-w-0 truncate font-mono text-[11.5px] text-muted-foreground sm:inline">{name}</span> : null}
+      {title ? <span className="hidden min-w-0 truncate font-mono text-[11.5px] text-muted-foreground @lg/iris:inline">{name}</span> : null}
       {sample ? <Chip>Sample</Chip> : null}
       {right}
     </div>
@@ -397,28 +397,28 @@ export function VideoPlayerView({ props }: ViewProps) {
           accent={accent}
           fps={fps}
         />
-        <div className="flex min-w-0 items-center gap-0.5 sm:gap-1">
+        <div className="flex min-w-0 items-center gap-0.5 @lg/iris:gap-1">
           <button type="button" className={ICON_BTN} onClick={() => playToggle(el)} aria-label={paused ? "Play" : "Pause"} disabled={!el}>
             <Glyph name={paused ? "play" : "pause"} size={16} />
           </button>
           {/* Frame steps and mute are desk tools; on a phone the time keeps their room. */}
-          <button type="button" className={cn(ICON_BTN, "max-sm:hidden")} onClick={() => step(-1)} aria-label="Previous frame (comma)" title="Previous frame (,)" disabled={!el}>
+          <button type="button" className={cn(ICON_BTN, "@max-lg/iris:hidden")} onClick={() => step(-1)} aria-label="Previous frame (comma)" title="Previous frame (,)" disabled={!el}>
             <Glyph name="step-back" size={15} />
           </button>
-          <button type="button" className={cn(ICON_BTN, "max-sm:hidden")} onClick={() => step(1)} aria-label="Next frame (period)" title="Next frame (.)" disabled={!el}>
+          <button type="button" className={cn(ICON_BTN, "@max-lg/iris:hidden")} onClick={() => step(1)} aria-label="Next frame (period)" title="Next frame (.)" disabled={!el}>
             <Glyph name="step-forward" size={15} />
           </button>
           <span className="ml-1 shrink-0 font-mono text-[12px] tabular-nums text-muted-foreground">
             <span className="text-foreground">{formatTime(t, paused && t > 0 ? { fps } : {})}</span> / {formatTime(duration)}
           </span>
-          {chapterAt >= 0 && chapters.items.length > 1 ? <span className="hidden min-w-0 truncate text-[12px] text-muted-foreground sm:inline">· {chapters.items[chapterAt].title}</span> : null}
+          {chapterAt >= 0 && chapters.items.length > 1 ? <span className="hidden min-w-0 truncate text-[12px] text-muted-foreground @lg/iris:inline">· {chapters.items[chapterAt].title}</span> : null}
           <div className="flex-1" />
           <button type="button" className={cn(ICON_BTN, "inline-flex w-auto gap-1.5 px-2.5 text-[12.5px] font-medium")} onClick={comment} title="Put the current time in the composer" disabled={!el}>
             <Glyph name="message-square-plus" size={14} />
-            <span className="hidden sm:inline">Comment</span>
+            <span className="hidden @lg/iris:inline">Comment</span>
           </button>
           <SpeedSelect value={rate} onChange={setRate} />
-          <button type="button" className={cn(ICON_BTN, "max-sm:hidden")} onClick={() => setMuted((m) => !m)} aria-label={muted ? "Unmute" : "Mute"} disabled={!el}>
+          <button type="button" className={cn(ICON_BTN, "@max-lg/iris:hidden")} onClick={() => setMuted((m) => !m)} aria-label={muted ? "Unmute" : "Mute"} disabled={!el}>
             <Glyph name={muted ? "volume-x" : "volume-2"} size={15} />
           </button>
           <button type="button" className={ICON_BTN} onClick={fullscreen} aria-label="Full screen" disabled={!el}>
@@ -427,7 +427,7 @@ export function VideoPlayerView({ props }: ViewProps) {
         </div>
       </div>
       {chapters.items.length || notes.items.length ? (
-        <div className={cn("grid min-w-0 gap-3", chapters.items.length && notes.items.length && "sm:grid-cols-2")}>
+        <div className={cn("grid min-w-0 gap-3", chapters.items.length && notes.items.length && "@lg/iris:grid-cols-2")}>
           {chapters.items.length ? <ChapterList chapters={chapters.items} at={chapterAt} onJump={(c) => jump(c.at)} accent={accent} /> : null}
           {notes.items.length ? <NoteList notes={notes.items} at={noteAt} onJump={(n) => jump(n.at)} color={noteColor} /> : null}
         </div>

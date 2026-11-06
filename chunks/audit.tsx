@@ -157,7 +157,7 @@ function ImpactDot({ impact }: { impact: Impact }) {
 function Summary({ audit, only, setOnly }: { audit: Audit; only: Impact | null; setOnly: (i: Impact | null) => void }) {
   const { palette } = useEnv();
   return (
-    <div className="grid grid-cols-4 gap-2 max-sm:grid-cols-2">
+    <div className="grid grid-cols-4 gap-2 @max-lg/iris:grid-cols-2">
       {IMPACTS.map((i) => {
         const c = audit.counts[i];
         const active = only === i;
@@ -392,9 +392,9 @@ function Screenshot({
                 onClick={() => reveal(n)}
                 onPointerEnter={() => setHot(n)}
                 onPointerLeave={() => setHot(null)}
-                className={cn("absolute -translate-x-2/3 -translate-y-1/2 transition-transform", hot === n && "z-10 scale-110")}
-                // Top-right corner: page text usually starts at the left.
-                style={{ left: `${Math.max(3, Math.min(98, ((b.x + Math.max(6, b.w)) / size.w) * 100))}%`, top: `${Math.max(2, (b.y / size.h) * 100)}%` }}
+                className={cn("absolute -translate-x-1/2 -translate-y-1/2 transition-transform", hot === n && "z-10 scale-110")}
+                // Top-right corner (page text usually starts at the left), kept a marker's width inside every edge.
+                style={{ left: `clamp(12px, ${((b.x + Math.max(6, b.w)) / size.w) * 100}%, calc(100% - 12px))`, top: `clamp(12px, ${(b.y / size.h) * 100}%, calc(100% - 12px))` }}
               >
                 <NodeNumber n={n} impact={node.impact} />
               </button>

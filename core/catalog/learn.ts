@@ -106,12 +106,12 @@ export const GRAPHICS = [
     },
     children: "none",
     example: `<Card title="Orbit">
-<Scene ground animate={(t) => ({ moon: { at: [Math.cos(t) * 2, 0.6, Math.sin(t) * 2] }, ring: { rotation: [90, 0, t * 40] } })} objects={[
+<Scene ground camera={{ at: [0, 2.6, 5.2], look: [0, 0.8, 0] }} animate={(t) => ({ moon: { at: [Math.cos(t) * 2, 0.6, Math.sin(t) * 2] }, ring: { rotation: [90, 0, t * 40] } })} objects={[
   { id: "planet", type: "sphere", size: 0.8, at: [0, 0.6, 0], color: "accent" },
   { id: "ring", type: "torus", size: [1.3, 0.04], at: [0, 0.6, 0], color: 3 },
   { id: "moon", type: "sphere", size: 0.18, color: "warn" },
   { type: "box", size: [0.5, 0.5, 0.5], at: [-2.2, 0.25, 1], rotation: [0, 30, 0], color: "good" },
-  { type: "text", text: "Earth", at: [0, 1.75, 0] },
+  { type: "text", text: "Saturn", at: [0, 1.75, 0] },
 ]} />
 </Card>`,
     aliases: ["ThreeD", "Three", "Model", "Scene3D"],

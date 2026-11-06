@@ -44,6 +44,9 @@ function normalizeRows(rows: unknown, columns: unknown): { rows: Record<string, 
     return { key, label: str(o.label) ?? humanize(key), format: o.format, align: o.align, width: num(o.width), tone: o.tone, render: o.render };
   });
   for (const c of cols) {
+    // A money column with any cents shows cents on every row, so its decimals line up.
+    if (typeof c.format === "string" && ["usd", "eur", "gbp"].includes(c.format) && objects.slice(0, 200).some((r) => typeof r[c.key] === "number" && !Number.isInteger(r[c.key])))
+      c.format = { style: "currency", currency: c.format.toUpperCase(), decimals: 2 };
     if (!c.align) {
       const sample = objects.slice(0, 20).map((r) => r[c.key]).filter((v) => v != null);
       c.align = sample.length && sample.every((v) => typeof v === "number") ? "right" : "left";
@@ -122,6 +125,9 @@ export function TableView({ props }: ViewProps) {
   // Stack only when the columns really don't fit: the table, laid out at full width even while
   // hidden, reports how wide it has to be.
   const stacked = width > 0 && cols.length >= 3 && need > width + 4;
+  // Without prose columns, every column but the last hugs its content and the last takes the rest,
+  // so short tables read as a tight grid instead of spreading their columns across the card.
+  const compact = !cols.some((c) => c.wrap || c.fluid) && cols.length > 1;
   return (
     <div className="min-w-0" ref={box}>
       {searchable ? (
@@ -140,8 +146,8 @@ export function TableView({ props }: ViewProps) {
         <table ref={table} className={cn("w-full border-collapse text-[13px] tabular-nums", props.dense ? "[&_td]:py-1" : "[&_td]:py-1.5")}>
           <thead>
             <tr>
-              {cols.map((c) => (
-                <th key={c.key} scope="col" className={cn("whitespace-nowrap border-b border-border px-2 pb-1.5 text-xs font-medium text-muted-foreground first:pl-0 last:pr-0", c.align === "right" ? "text-right" : c.align === "center" ? "text-center" : "text-left")} style={c.width ? { width: c.width } : undefined}>
+              {cols.map((c, k) => (
+                <th key={c.key} scope="col" className={cn("whitespace-nowrap border-b border-border px-2 pb-1.5 text-xs font-medium text-muted-foreground first:pl-0 last:pr-0", c.align === "right" ? "text-right" : c.align === "center" ? "text-center" : "text-left")} style={c.width ? { width: c.width } : compact && k < cols.length - 1 && !c.render ? { width: "1%", paddingRight: "1.5rem" } : undefined}>
                   <button type="button" onClick={() => toggleSort(c.key)} className={cn("inline-flex items-center gap-1 hover:text-foreground", sort?.key === c.key && "text-foreground")} aria-sort={sort?.key === c.key ? (sort.dir === 1 ? "ascending" : "descending") : "none"}>
                     {c.label}
                     {sort?.key === c.key ? <Glyph name={sort.dir === 1 ? "arrow-up" : "arrow-down"} size={11} /> : null}
@@ -400,7 +406,7 @@ function HeatmapGrid({ cells, weeks, max, color, footer }: { cells: { date: stri
   const shown = months.filter((m, k) => (k === 0 ? months.length < 2 || months[1].col - m.col >= 3 : weeks - m.col >= 2));
   return (
     <div ref={box} className="min-w-0">
-      <div ref={scroller} className="iris-scroll-x overflow-x-auto">
+      <div ref={scroller} className="iris-scroll-x overflow-x-auto" style={{ maskImage: "none", animation: "none" }}>
         <div className="grid w-max text-[10.5px] text-muted-foreground" style={{ gridTemplateColumns: `${DAY_LABEL_W}px repeat(${weeks}, ${size}px)`, columnGap: GAP, rowGap: GAP, gridTemplateRows: `14px repeat(7, ${size}px)` }}>
           {shown.map((m) => (
             <span key={m.col} className="whitespace-nowrap leading-none" style={{ gridColumn: m.col + 2, gridRow: 1 }}>

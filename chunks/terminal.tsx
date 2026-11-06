@@ -192,7 +192,7 @@ export function TerminalReplayView({ props }: ViewProps) {
         <span className="w-[86px] shrink-0 text-center font-mono text-[11.5px] tabular-nums text-muted-foreground">
           {castClock(time)} / {castClock(cast.duration)}
         </span>
-        <div className="relative flex min-w-[60px] flex-1 items-center">
+        <div className="relative flex min-w-[36px] flex-1 items-center">
           <input
             type="range"
             min={0}
@@ -213,12 +213,12 @@ export function TerminalReplayView({ props }: ViewProps) {
         <button
           type="button"
           onClick={() => setSpeed(SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length])}
-          className="iris-hit h-7 shrink-0 rounded-full px-2 font-mono text-[11px] tabular-nums ring-1 ring-border sm:hidden"
+          className="iris-hit h-7 shrink-0 rounded-full px-2 font-mono text-[11px] tabular-nums ring-1 ring-border @lg/iris:hidden"
           aria-label={`Speed ${speed}×, tap for the next`}
         >
           {speed}×
         </button>
-        <div className="flex shrink-0 items-center rounded-full p-0.5 ring-1 ring-border max-sm:hidden" role="radiogroup" aria-label="Speed">
+        <div className="flex shrink-0 items-center rounded-full p-0.5 ring-1 ring-border @max-lg/iris:hidden" role="radiogroup" aria-label="Speed">
           {SPEEDS.map((s) => (
             <button
               key={s}
@@ -232,7 +232,7 @@ export function TerminalReplayView({ props }: ViewProps) {
             </button>
           ))}
         </div>
-        <button type="button" className={cn(ICON_BTN, "size-7 max-[420px]:hidden")} onClick={() => env.perform([{ $iris: "action", kind: "copy", args: [screen.text()] }])} aria-label="Copy output" title="Copy output">
+        <button type="button" className={cn(ICON_BTN, "size-7 @max-[420px]/iris:hidden")} onClick={() => env.perform([{ $iris: "action", kind: "copy", args: [screen.text()] }])} aria-label="Copy output" title="Copy output">
           <Glyph name="copy" size={13} />
         </button>
       </div>

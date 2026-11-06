@@ -473,7 +473,7 @@ export function WhiteboardView({ props, node }: ViewProps) {
             Delete
           </button>
         ) : null}
-        <div className="pointer-events-none absolute bottom-3 left-3 hidden text-[11.5px] text-muted-foreground sm:block">{editable ? "Double-click to add · drag to move · ⌘-scroll to zoom" : "Drag to move · ⌘-scroll to zoom"}</div>
+        <div className="pointer-events-none absolute bottom-3 left-3 hidden text-[11.5px] text-muted-foreground @lg/iris:block">{editable ? "Double-click to add · drag to move · ⌘-scroll to zoom" : "Drag to move · ⌘-scroll to zoom"}</div>
       </div>
     </div>
   );

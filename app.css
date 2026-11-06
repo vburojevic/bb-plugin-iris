@@ -150,22 +150,12 @@
   margin-bottom: 0;
 }
 
-/* Mermaid in the card's style: rounded nodes, and edge labels on a knockout so the line
- * doesn't run through the text. */
+/* Mermaid in the card's style: rounded nodes. Edge labels keep the renderer's own colors: bb
+ * draws them on a light knockout with dark text, so the label box is never recolored here. */
 [data-iris-root] .iris-diagram g.node rect,
 [data-iris-root] .iris-diagram g.cluster rect {
   rx: 8px;
   ry: 8px;
-}
-[data-iris-root] .iris-diagram .edgeLabel,
-[data-iris-root] .iris-diagram .edgeLabel p,
-[data-iris-root] .iris-diagram .edgeLabel span,
-[data-iris-root] .iris-diagram .labelBkg {
-  background-color: var(--card) !important;
-}
-[data-iris-root] .iris-diagram .edgeLabel p,
-[data-iris-root] .iris-diagram .edgeLabel span {
-  padding: 0 3px;
 }
 
 /* A diagram wider than the card scrolls from its left edge; centering would hide that edge. */
@@ -366,4 +356,52 @@
 }
 [data-iris-root] .iris-link:hover {
   text-decoration-color: currentColor;
+}
+
+/* Sideways scrollers show there is more: the edge with hidden content fades out, driven by the
+ * scroll position itself. Nothing fades when everything fits, and browsers without scroll-driven
+ * animations simply show no fade. */
+@property --iris-fade-l {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --iris-fade-r {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@keyframes iris-scroll-fade {
+  0% {
+    --iris-fade-l: 0px;
+    --iris-fade-r: 28px;
+  }
+  6% {
+    --iris-fade-l: 28px;
+  }
+  94% {
+    --iris-fade-r: 28px;
+  }
+  100% {
+    --iris-fade-l: 28px;
+    --iris-fade-r: 0px;
+  }
+}
+/* Framed scrollers (tables with a ring and sticky first columns) are left alone: a mask would cut
+ * their ring and fade their pinned columns. */
+@supports (animation-timeline: scroll()) {
+  [data-iris-root] .iris-scroll-x:not(.ring-1) {
+    mask-image: linear-gradient(to right, transparent 0, #000 var(--iris-fade-l), #000 calc(100% - var(--iris-fade-r)), transparent 100%);
+    animation: iris-scroll-fade linear both;
+    animation-timeline: scroll(self inline);
+  }
+}
+
+/* The native date picker's calendar icon sits at the weight of the other field icons. */
+[data-iris-root] input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.55;
+  cursor: pointer;
+}
+[data-iris-root] input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 0.9;
 }

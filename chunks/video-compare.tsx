@@ -291,7 +291,7 @@ export function VideoCompareView({ props }: ViewProps) {
       <Problems list={notes.problems} what="<VideoCompare>" />
       <div className="flex min-w-0 items-center gap-2">
         <div className="min-w-0 flex-1 truncate text-[13.5px] font-semibold">{title ?? name}</div>
-        {title ? <span className="hidden min-w-0 truncate font-mono text-[11.5px] text-muted-foreground sm:inline">{name}</span> : null}
+        {title ? <span className="hidden min-w-0 truncate font-mono text-[11.5px] text-muted-foreground @lg/iris:inline">{name}</span> : null}
         {sample ? <Chip>Sample</Chip> : null}
       </div>
       <div tabIndex={0} onKeyDown={onKey} className={cn("flex min-w-0 flex-col gap-1.5 rounded-xl", FOCUS_BOX)} aria-label={`Videos ${name}. Space plays both, comma and period step a frame, brackets shift the offset`}>
@@ -351,23 +351,23 @@ export function VideoCompareView({ props }: ViewProps) {
           accent={accent}
           fps={fps}
         />
-        <div className="flex min-w-0 items-center gap-0.5 sm:gap-1">
+        <div className="flex min-w-0 items-center gap-0.5 @lg/iris:gap-1">
           <button type="button" className={ICON_BTN} onClick={toggle} aria-label={playing ? "Pause both" : "Play both"} disabled={!ready}>
             <Glyph name={playing ? "pause" : "play"} size={16} />
           </button>
-          <button type="button" className={ICON_BTN} onClick={() => step(-1)} aria-label="Previous frame (comma)" title="Previous frame (,)" disabled={!ready}>
+          <button type="button" className={cn(ICON_BTN, "@max-lg/iris:hidden")} onClick={() => step(-1)} aria-label="Previous frame (comma)" title="Previous frame (,)" disabled={!ready}>
             <Glyph name="step-back" size={15} />
           </button>
-          <button type="button" className={ICON_BTN} onClick={() => step(1)} aria-label="Next frame (period)" title="Next frame (.)" disabled={!ready}>
+          <button type="button" className={cn(ICON_BTN, "@max-lg/iris:hidden")} onClick={() => step(1)} aria-label="Next frame (period)" title="Next frame (.)" disabled={!ready}>
             <Glyph name="step-forward" size={15} />
           </button>
-          <span className="ml-1 min-w-0 truncate font-mono text-[12px] tabular-nums text-muted-foreground">
+          <span className="ml-1 shrink-0 font-mono text-[12px] tabular-nums text-muted-foreground">
             <span className="text-foreground">{formatTime(t - lo, playing ? {} : { fps })}</span> / {formatTime(span)}
           </span>
           <div className="flex-1" />
           <button type="button" className={cn(ICON_BTN, "inline-flex w-auto gap-1.5 px-2.5 text-[12.5px] font-medium")} onClick={comment} title="Put both times in the composer" disabled={!ready}>
             <Glyph name="message-square-plus" size={14} />
-            <span className="hidden sm:inline">Comment</span>
+            <span className="hidden @lg/iris:inline">Comment</span>
           </button>
           <SpeedSelect value={rate} onChange={setRate} />
           <button type="button" className={ICON_BTN} onClick={() => setMuted((m) => !m)} aria-label={muted ? "Unmute" : "Mute"} title={`Sound comes from ${videos[0].label}`} disabled={!a}>

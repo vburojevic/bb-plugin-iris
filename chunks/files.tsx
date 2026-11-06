@@ -194,7 +194,7 @@ export function FileTreeView({ props }: ViewProps) {
         {sample ? <Chip>Sample</Chip> : null}
         {(["A", "M", "D", "R", "U"] as Marker[]).map((m) =>
           counts.get(m) ? (
-            <span key={m} className="hidden text-[11.5px] font-semibold tabular-nums sm:inline" style={{ color: toneColor(m) }} title={MARKER_LABEL[m]}>
+            <span key={m} className="hidden text-[11.5px] font-semibold tabular-nums @lg/iris:inline" style={{ color: toneColor(m) }} title={MARKER_LABEL[m]}>
               {m} {counts.get(m)}
             </span>
           ) : null,
@@ -453,6 +453,7 @@ export function AssetGalleryView({ props }: ViewProps) {
               role="radio"
               aria-checked={bg === m}
               aria-label={`${m === "muted" ? "Muted" : m === "card" ? "Card" : "Inverted"} background`}
+              title={`${m === "muted" ? "Muted" : m === "card" ? "Card" : "Inverted"} background`}
               onClick={() => setBg(m)}
               className={cn("size-6 rounded-full ring-1 ring-border transition-transform", bg === m ? "scale-100 ring-2 ring-[var(--iris-accent)]" : "scale-90 opacity-70 hover:opacity-100")}
               style={bgStyle(m)}
@@ -466,8 +467,8 @@ export function AssetGalleryView({ props }: ViewProps) {
         ) : null}
       </div>
       {pick ? (
-        <div className="flex min-w-0 flex-col gap-3 rounded-xl p-3 ring-1 ring-border sm:flex-row">
-          <div className="grid aspect-square w-full shrink-0 place-items-center overflow-hidden rounded-lg sm:w-56" style={bgStyle(bg)}>
+        <div className="flex min-w-0 flex-col gap-3 rounded-xl p-3 ring-1 ring-border @lg/iris:flex-row">
+          <div className="grid aspect-square w-full shrink-0 place-items-center overflow-hidden rounded-lg @lg/iris:w-56" style={bgStyle(bg)}>
             {urlOf(pick) ? <img src={urlOf(pick)} alt={pick.name} className="max-h-full max-w-full object-contain p-3" /> : null}
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -720,7 +721,7 @@ export function FontPreviewView({ props }: ViewProps) {
           ))}
         </div>
       </div>
-      <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-1 gap-2 @lg/iris:grid-cols-3">
         {[
           ["Aa Bb Cc", 28],
           ["0123456789", 22],

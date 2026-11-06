@@ -29,7 +29,8 @@ export function CardView({ props, children, node }: ViewProps) {
     >
       <i className="iris-edge" aria-hidden style={tone ? { background: tone } : undefined} />
       {hasHeader ? (
-        <header className="flex min-w-0 items-center gap-2.5">
+        <header className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5">
+          {/* The title keeps at least 7.5rem; when the toolbar can't fit beside it, the toolbar takes its own line. */}
           {props.icon ? (
             <span className={cn("iris-glyph grid size-[30px] shrink-0 place-items-center rounded-full p-[1.5px]", alive && "iris-glyph-alive")}>
               <span className="grid size-full place-items-center rounded-full bg-card">
@@ -37,22 +38,22 @@ export function CardView({ props, children, node }: ViewProps) {
               </span>
             </span>
           ) : null}
-          <div className="min-w-0 flex-1">
+          <div className="min-w-[7.5rem] flex-1 basis-0">
             {/* On a phone the title may take two lines and the status moves under it, so the toolbar never squeezes the title to a few letters. */}
-            {title ? <h3 className="line-clamp-2 text-[14px] font-semibold leading-snug sm:line-clamp-none sm:truncate">{title}</h3> : null}
+            {title ? <h3 className="line-clamp-2 text-[14px] font-semibold leading-snug @lg/iris:line-clamp-none @lg/iris:truncate">{title}</h3> : null}
             {subtitle ? <p className="truncate text-[12.5px] leading-snug text-muted-foreground">{subtitle}</p> : null}
             {status ? (
-              <div className="mt-0.5 sm:hidden">
+              <div className="mt-0.5 @lg/iris:hidden">
                 <CardStatus state={state} text={status} />
               </div>
             ) : null}
           </div>
           {status ? (
-            <div className="shrink-0 max-sm:hidden">
+            <div className="shrink-0 @max-lg/iris:hidden">
               <CardStatus state={state} text={status} />
             </div>
           ) : null}
-          {block.toolsFor === node.start ? block.tools : null}
+          {block.toolsFor === node.start ? <div className="ml-auto shrink-0">{block.tools}</div> : null}
         </header>
       ) : null}
       <div className={cn("flex min-w-0 flex-col gap-3", hasHeader && "pt-3")}>{children}</div>
@@ -133,7 +134,7 @@ export function TabsView({ props, node, scope }: ViewProps) {
   if (!tabs.length) return null;
   return (
     <div className="min-w-0">
-      <div role="tablist" className="iris-scroll-x mb-3 flex gap-1 overflow-x-auto border-b border-border">
+      <div role="tablist" className="iris-scroll-x mb-3 flex gap-5 overflow-x-auto border-b border-border">
         {labels.map((l, k) => (
           <button
             key={k}
@@ -142,7 +143,8 @@ export function TabsView({ props, node, scope }: ViewProps) {
             aria-selected={k === active}
             onClick={() => pick(k)}
             className={cn(
-              "-mb-px inline-flex shrink-0 items-center gap-1.5 border-b-2 px-2.5 pb-2 pt-1 text-[13px] font-medium transition-colors",
+              // No side padding: the first label starts on the content edge and each underline is as wide as its label.
+              "iris-hit -mb-px inline-flex shrink-0 items-center gap-1.5 border-b-2 px-0 pb-2 pt-1 text-[13px] font-medium transition-colors",
               k === active ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
             )}
           >

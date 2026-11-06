@@ -31,7 +31,7 @@ export function ChoicesView({ props }: ViewProps) {
   return (
     <div className="min-w-0">
       {str(props.title) ? <div className="mb-2 text-[13px] text-muted-foreground">{str(props.title)}</div> : null}
-      <div className="grid gap-1.5 sm:grid-cols-[repeat(auto-fit,minmax(12rem,1fr))]">
+      <div className="grid gap-1.5 @lg/iris:grid-cols-[repeat(auto-fit,minmax(12rem,1fr))]">
         {opts.map((o, k) => (
           <button key={k} type="button" disabled={env.streaming} onClick={() => pick(o)} className={cn("group flex min-w-0 items-start gap-2.5 rounded-xl px-3 py-2.5 text-left ring-1 ring-border transition-colors hover:bg-state-hover disabled:opacity-50")}>
             {o.icon ? <Glyph name={o.icon} size={16} className="mt-0.5 text-muted-foreground" /> : null}

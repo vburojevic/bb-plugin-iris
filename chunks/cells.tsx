@@ -139,8 +139,16 @@ function CellRow({ cell, result, index, editable, editing, onEdit, onCommit, onR
   return (
     <li className="group/cell min-w-0 px-3 py-2">
       <div className="flex min-w-0 flex-wrap items-start gap-x-3 gap-y-1">
-        <span className="mt-[3px] w-5 shrink-0 text-right font-mono text-[10.5px] tabular-nums text-muted-foreground/70" aria-hidden>
-          {index + 1}
+        {/* The cell's number gives way to its remove button on hover, so results reach the row's edge. */}
+        <span className="relative mt-[3px] w-5 shrink-0 text-right">
+          <span className={cn("font-mono text-[10.5px] tabular-nums text-muted-foreground/70", editable && "group-hover/cell:opacity-0 group-focus-within/cell:opacity-0")} aria-hidden>
+            {index + 1}
+          </span>
+          {editable ? (
+            <span className="absolute -top-[5px] -right-0.5">
+              <RemoveButton onClick={onRemove} />
+            </span>
+          ) : null}
         </span>
         <div className="min-w-[10rem] flex-1">
           {cell.label ? <div className="mb-0.5 truncate px-1.5 text-[12px] text-muted-foreground">{cell.label}</div> : null}
@@ -178,11 +186,6 @@ function CellRow({ cell, result, index, editable, editing, onEdit, onCommit, onR
         {!block ? (
           <div className="ml-auto flex max-w-full min-w-0 items-center gap-1">
             <CellValue result={result} format={cell.format} />
-            {editable ? <RemoveButton onClick={onRemove} /> : null}
-          </div>
-        ) : editable ? (
-          <div className="ml-auto">
-            <RemoveButton onClick={onRemove} />
           </div>
         ) : null}
       </div>

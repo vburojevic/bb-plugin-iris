@@ -91,6 +91,14 @@ function ExternalLink({ url, children, className }: { url: string; children: Rea
 // ---------- Gallery ----------
 
 const ASPECT: Record<string, string> = { square: "aspect-square", landscape: "aspect-[4/3]", portrait: "aspect-[3/4]" };
+const RATIO: Record<string, number> = { square: 1, landscape: 4 / 3, portrait: 3 / 4 };
+/** An image within 15% of its tile's shape fills the tile (a sliver cropped, no bands); others show whole. */
+const fitTile = (aspect: string) => (e: { currentTarget: HTMLImageElement }) => {
+  const img = e.currentTarget;
+  const r = img.naturalWidth / (img.naturalHeight || 1);
+  const t = RATIO[aspect];
+  if (t && Math.abs(r / t - 1) <= 0.15) img.style.objectFit = "cover";
+};
 
 export function GalleryView({ props }: ViewProps) {
   const pending = isPendingValue(props.images);
@@ -112,7 +120,7 @@ export function GalleryView({ props }: ViewProps) {
       {str(props.title) ? <div className="mb-2 text-xs text-muted-foreground">{str(props.title)}</div> : null}
       <div
         className="grid gap-2"
-        style={{ gridTemplateColumns: columns ? `repeat(${Math.max(1, Math.min(8, Math.round(columns)))}, minmax(0, 1fr))` : "repeat(auto-fill, minmax(min(150px, 45%), 1fr))" }}
+        style={{ gridTemplateColumns: columns ? `repeat(${Math.max(1, Math.min(8, Math.round(columns)))}, minmax(0, 1fr))` : "repeat(auto-fit, minmax(min(150px, 45%), 1fr))", maxWidth: columns ? undefined : `${images.length * 280}px` }}
       >
         {images.map((im, k) => {
           const s = states[k];
@@ -128,7 +136,7 @@ export function GalleryView({ props }: ViewProps) {
                 className={cn("group/thumb relative block w-full overflow-hidden rounded-lg bg-muted ring-1 ring-border transition-shadow hover:ring-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/50", ASPECT[aspect])}
               >
                 {s.status === "ok" ? (
-                  <img src={s.url} alt={im.alt} loading="lazy" className={cn("block w-full transition-transform duration-300 group-hover/thumb:scale-[1.03] motion-reduce:transition-none", aspect === "natural" ? "h-auto" : "h-full object-contain")} />
+                  <img src={s.url} alt={im.alt} loading="lazy" onLoad={aspect === "natural" ? undefined : fitTile(aspect)} className={cn("block w-full transition-transform duration-300 group-hover/thumb:scale-[1.03] motion-reduce:transition-none", aspect === "natural" ? "h-auto" : "h-full object-contain")} />
                 ) : s.status === "loading" ? (
                   <Shimmer className={cn("w-full", aspect === "natural" ? "aspect-[4/3]" : "h-full")} />
                 ) : (
@@ -245,7 +253,7 @@ export function HotspotsView({ props }: ViewProps) {
     <figure className="min-w-0">
       {image.status === "ok" ? (
         <div
-          className="relative mx-auto w-fit max-w-full"
+          className="relative w-fit max-w-full"
           onKeyDown={(e) => {
             if (e.key === "Escape") setSelected(null);
           }}
@@ -262,7 +270,7 @@ export function HotspotsView({ props }: ViewProps) {
       )}
       {str(props.caption) ? <figcaption className="mt-1.5 text-xs text-muted-foreground">{str(props.caption)}</figcaption> : null}
       {showList && spots.length ? (
-        <ol className="mt-2.5 grid gap-1" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(220px, 100%), 1fr))" }}>
+        <ol className="mt-2.5 grid gap-x-4 gap-y-1.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))" }}>
           {spots.map((s) => (
             <li key={s.n} id={`${baseId}-${s.n}`}>
               <SpotRow spot={s} selected={selected === s.n} onSelect={() => setSelected(selected === s.n ? null : s.n)} color={palette.accent} />

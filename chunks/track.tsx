@@ -285,7 +285,7 @@ function ForecastCard({ model: m, problems, unit, chart, title }: { model: Forec
           </div>
         ) : null}
       </div>
-      <p className="mt-2 text-[13px] leading-snug text-muted-foreground">{words}</p>
+      <p className="mt-2 max-w-[60ch] text-[13px] leading-snug text-muted-foreground [text-wrap:pretty]">{words}</p>
       <ForecastChart m={m} chart={chart} unit={unit} />
       <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11.5px] text-muted-foreground">
         <LegendLine color={palette.accent} label={chart === "down" ? "Remaining" : "Done"} />

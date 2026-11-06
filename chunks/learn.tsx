@@ -379,7 +379,7 @@ export function FlashcardsView({ props, node }: ViewProps) {
           Know it
           <Glyph name="arrow-right" size={14} />
         </button>
-        <span className="hidden text-[11.5px] text-muted-foreground sm:inline">Space flips</span>
+        <span className="hidden text-[11.5px] text-muted-foreground @lg/iris:inline">Space flips</span>
         <div className="ml-auto flex gap-1.5">
           {card.hint && !flipped ? (
             <button type="button" className={ICON_BTN} aria-label="Show a hint" title="Hint" disabled={hint} onClick={() => setHint(true)}>
@@ -448,7 +448,7 @@ export function WalkthroughView({ props, node }: ViewProps) {
               <span className={cn("grid size-5 shrink-0 place-items-center rounded-full text-[11px] tabular-nums", k === at ? "bg-[var(--iris-accent)] text-background" : k < at ? "bg-muted text-foreground" : "ring-1 ring-border")}>
                 {k < at ? <Glyph name="check" size={11} /> : k + 1}
               </span>
-              <span className={cn("truncate", k !== at && "max-sm:hidden")}>{s.title}</span>
+              <span className={cn("truncate", k !== at && "@max-lg/iris:hidden")}>{s.title}</span>
             </button>
           </li>
         ))}
@@ -483,7 +483,7 @@ export function WalkthroughView({ props, node }: ViewProps) {
         )}
         <span className="ml-auto text-[12px] tabular-nums text-muted-foreground">
           Step {at + 1} of {steps.length}
-          <span className="max-sm:hidden"> · arrow keys move</span>
+          <span className="@max-lg/iris:hidden"> · arrow keys move</span>
         </span>
       </div>
     </div>
@@ -521,7 +521,9 @@ export function TimerView({ props, node }: ViewProps) {
 
   const left = Math.max(0, total - elapsed);
   const shown = mode === "countdown" ? formatClock(left, { up: true }) : formatClock(elapsed, { tenths: true });
-  const ratio = mode === "countdown" && total > 0 ? left / total : 1;
+  // A countdown's ring empties as time runs out; a stopwatch shows a short arc while it has time
+  // on it and only its track when idle, so an untouched stopwatch never reads as complete.
+  const ratio = mode === "countdown" ? (total > 0 ? left / total : 1) : t.running || elapsed > 0 ? 0.25 : 0;
   const color = finished ? palette.tone.good : mode === "countdown" && ratio < 0.1 && t.running ? palette.tone.warn : "var(--iris-accent)";
   const label = str(props.label);
   const toggle = () => setSaved(finished ? timerToggle(TIMER_IDLE, Date.now()) : timerToggle(t, Date.now()));
@@ -542,7 +544,8 @@ export function TimerView({ props, node }: ViewProps) {
             {finished ? "Done" : shown}
           </div>
         </div>
-        <div className="ml-auto flex shrink-0 gap-1.5">
+        {/* No ml-auto: the time block's flex-1 already pushes the buttons right, and once they wrap under it they start on its left edge. */}
+        <div className="flex shrink-0 gap-1.5">
           {mode === "stopwatch" ? (
             <button type="button" className={ICON_BTN} aria-label="Lap" title="Lap" disabled={!t.running} onClick={lap}>
               <Glyph name="flag" size={14} />

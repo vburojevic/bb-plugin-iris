@@ -24,7 +24,7 @@ export const COMPUTE = [
   { name: "price", expr: "29", format: "usd" },
   { name: "monthly", expr: "price * seats", format: "usd" },
   { name: "annual", expr: "monthly * 12 * 0.85", format: "usd", note: "15% off when paid yearly" },
-  "tiers = [5, 10, 25].map((n) => ({ seats: n, monthly: n * price }))",
+  "tiers = [5, 10, 25].map((n) => ({ seats: n, monthly: fmt(n * price, 'usd') }))",
 ]} />
 <Metric label="Annual" value={calc.annual} format="usd" />
 </Card>`,

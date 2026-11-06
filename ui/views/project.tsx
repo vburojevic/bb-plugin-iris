@@ -63,7 +63,7 @@ export function TestsView({ props }: ViewProps) {
         </ul>
       ) : null}
       {shownOthers.length ? (
-        <ul className="mt-2 columns-1 gap-6 text-[12.5px] sm:columns-2">
+        <ul className="mt-2 columns-1 gap-6 text-[12.5px] @lg/iris:columns-2">
           {shownOthers.map((t, k) => (
             <li key={k} className="flex min-w-0 break-inside-avoid items-center gap-2 py-0.5 text-muted-foreground">
               <Glyph name={t.status === "skipped" ? "circle-minus" : "check"} size={13} color={t.status === "passed" ? env.palette.tone.good : undefined} />

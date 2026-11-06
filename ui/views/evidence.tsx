@@ -223,7 +223,7 @@ function AcceptanceMatrix({ model, selected, onSelect, panelId }: { model: Retur
           {model.rows.map((r, ri) => (
             <tr key={ri} className="[&>*]:border-t [&>*]:border-border/70">
               <th scope="row" className="min-w-[7.5rem] max-w-[22rem] py-1.5 pr-3 text-left align-middle font-normal">
-                <div className="whitespace-normal leading-snug">{r.name}</div>
+                <div className="whitespace-normal leading-snug [text-wrap:pretty]">{r.name}</div>
                 {r.note ? <div className="mt-0.5 whitespace-normal text-[12px] leading-snug text-muted-foreground">{r.note}</div> : null}
                 {r.evidence ? <EvidenceLink evidence={r.evidence} /> : null}
               </th>
@@ -242,7 +242,7 @@ function AcceptanceMatrix({ model, selected, onSelect, panelId }: { model: Retur
                         data-cell={key}
                         title={label}
                         onClick={() => onSelect(selected === key ? null : key)}
-                        className={cn("relative inline-grid size-8 place-items-center rounded-lg hover:bg-state-hover", selected === key && "bg-muted ring-1 ring-border")}
+                        className={cn("iris-hit relative inline-grid size-8 place-items-center rounded-lg hover:bg-state-hover pointer-coarse:size-10", selected === key && "bg-muted ring-1 ring-border")}
                       >
                         <StatusIcon status={cell.status} size={16} />
                         <span className="absolute right-1 top-1 size-1 rounded-full bg-muted-foreground/70" aria-hidden />
@@ -345,11 +345,11 @@ export function CompareView({ props }: Pick<ViewProps, "props">) {
               onClick={() => setMode(m)}
               title={MODE_LABEL[m].label}
               aria-label={MODE_LABEL[m].label}
-              className={cn("iris-hit inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] transition-colors", mode === m ? "bg-card font-medium text-foreground shadow-[0_0_0_1px_var(--border)]" : "text-muted-foreground hover:text-foreground max-sm:px-2.5")}
+              className={cn("iris-hit inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] transition-colors", mode === m ? "bg-card font-medium text-foreground shadow-[0_0_0_1px_var(--border)]" : "text-muted-foreground hover:text-foreground @max-lg/iris:px-2.5")}
             >
               <Glyph name={MODE_LABEL[m].icon} size={13} />
               {/* On a phone only the chosen mode keeps its name, so all four fit. */}
-              <span className={cn(mode !== m && "max-sm:hidden")}>{MODE_LABEL[m].label}</span>
+              <span className={cn(mode !== m && "@max-lg/iris:hidden")}>{MODE_LABEL[m].label}</span>
             </button>
           ))}
         </div>
@@ -651,7 +651,7 @@ export function ProvenanceView({ props }: ViewProps) {
           {verdict ? (
             <span className="inline-flex min-w-0 items-center gap-1.5 text-[13px] font-medium" style={{ color: verdict.tone === "neutral" ? undefined : env.palette.tone[verdict.tone] }}>
               <Glyph name={verdict.icon} size={15} />
-              <span className="min-w-0">{verdict.text}</span>
+              <span className="min-w-0 [text-wrap:balance]">{verdict.text}</span>
             </span>
           ) : null}
           {title ? <span className="ml-auto truncate text-xs text-muted-foreground">{title}</span> : null}
@@ -723,7 +723,8 @@ function StageBody({ stage, inline }: { stage: ProvenanceStage; inline?: boolean
         ) : null}
       </div>
       {stage.facts.length ? (
-        <dl className={cn("mt-1.5 min-w-0 text-[12px]", inline ? "flex flex-wrap gap-x-4 gap-y-1" : "space-y-1")}>
+        <dl className={cn("mt-1.5 min-w-0 text-[12px]", inline ? "grid grid-cols-[repeat(auto-fill,minmax(6rem,1fr))] gap-x-4 gap-y-1" : "flex flex-col gap-1")}>
+          {/* Facts sit in fixed columns, so every stage lines up and an "expected" note never pushes its neighbors. */}
           {stage.facts.map(([f, v]) => {
             const m = wrong.get(f);
             return (

@@ -294,7 +294,7 @@ function ExchangeHead({ ex }: { ex: Exchange }) {
           </span>
         ) : null}
         {ex.size !== null ? <span>{formatBytes(ex.size)}</span> : null}
-        {ex.version ? <span className="hidden font-mono sm:inline">{ex.version}</span> : null}
+        {ex.version ? <span className="hidden font-mono @lg/iris:inline">{ex.version}</span> : null}
       </div>
     </div>
   );
@@ -778,12 +778,20 @@ export function QueryPlanView({ props }: ViewProps) {
                     ) : (
                       <span className="w-5 shrink-0" />
                     )}
-                    <span className="min-w-0">
+                    {/* The warning leads the name, so it never wraps onto a line of its own; on a phone the
+                        row counts move under the name instead of being dropped. */}
+                    <span className="min-w-0 [text-wrap:pretty]">
+                      {n.warnings.length ? (
+                        <span className="mr-1.5 inline-flex translate-y-[2px]" title={n.warnings.join("\n")}>
+                          <Glyph name="triangle-alert" size={13} color={palette.tone.warn} />
+                        </span>
+                      ) : null}
                       <span className="font-medium">{n.label.split(" on ")[0].split(" using ")[0]}</span>
                       {n.label.length > n.label.split(" on ")[0].split(" using ")[0].length ? <span className="text-muted-foreground">{n.label.slice(n.label.split(" on ")[0].split(" using ")[0].length)}</span> : null}
-                      {n.warnings.length ? (
-                        <span className="ml-1.5 inline-flex translate-y-[2px]" title={n.warnings.join("\n")}>
-                          <Glyph name="triangle-alert" size={13} color={palette.tone.warn} />
+                      {compact && (n.actual || n.planRows !== null) ? (
+                        <span className="block text-[11px] tabular-nums text-muted-foreground">
+                          {n.actual ? `${count(n.actual.rows * Math.max(1, n.actual.loops))} rows` : null}
+                          {n.planRows !== null ? `${n.actual ? ", estimated " : "estimated "}${count(n.planRows * Math.max(1, n.actual?.loops ?? 1))}` : null}
                         </span>
                       ) : null}
                     </span>

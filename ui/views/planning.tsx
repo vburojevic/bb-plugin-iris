@@ -191,7 +191,7 @@ export function DecisionView({ props }: ViewProps) {
                 </div>
                 {str(o.note) ? <div className="truncate text-xs text-muted-foreground">{str(o.note)}</div> : null}
               </div>
-              <div className="h-1.5 w-28 overflow-hidden rounded-full bg-muted max-sm:w-16">
+              <div className="h-1.5 w-28 overflow-hidden rounded-full bg-muted @max-lg/iris:w-16">
                 <div className="iris-bar h-full rounded-full" style={{ width: `${pct}%`, background: k === 0 ? env.palette.accent : "var(--muted-foreground)" }} />
               </div>
               <span className="w-8 text-right text-[13px] font-semibold tabular-nums">{pct}</span>
@@ -204,7 +204,7 @@ export function DecisionView({ props }: ViewProps) {
               ))}
             </div>
             {Array.isArray(o.pros) || Array.isArray(o.cons) ? (
-              <div className="mt-1.5 grid gap-x-4 gap-y-0.5 text-[12px] sm:grid-cols-2">
+              <div className="mt-1.5 grid gap-x-4 gap-y-0.5 text-[12px] @lg/iris:grid-cols-2">
                 <ul className="space-y-0.5">
                   {((o.pros as unknown[] | undefined) ?? []).map((p, j) => (
                     <li key={j} className="flex gap-1.5">
@@ -228,7 +228,7 @@ export function DecisionView({ props }: ViewProps) {
       </ol>
       <div className="mt-3 mb-1.5 flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
         <span className="font-medium text-foreground">How much each counts</span>
-        <span>Drag to re-rank</span>
+        <span className="shrink-0 whitespace-nowrap">Drag to re-rank</span>
       </div>
       <div className="grid grid-cols-[max-content_minmax(0,1fr)_1.25rem] items-center gap-x-3 gap-y-1.5 text-[12.5px]">
         {criteria.map((c, k) => (
@@ -260,11 +260,12 @@ function ReadOnlyBoard({ props }: ViewProps) {
   const items = list(props.items);
   const columns = Array.isArray(props.columns) ? props.columns.map(toText) : [...new Set(items.map((i) => toText(i.status)))];
   return (
-    <div className="iris-scroll-x -mx-1 flex min-w-0 gap-2.5 overflow-x-auto px-1 pb-1">
+    // On a phone the columns stack, each full width, instead of a row cut off at the card's edge.
+    <div className="iris-scroll-x -mx-1 flex min-w-0 gap-2.5 overflow-x-auto px-1 pb-1 @max-lg/iris:flex-col @max-lg/iris:overflow-visible">
       {columns.map((col) => {
         const cards = items.filter((i) => toText(i.status) === col);
         return (
-          <div key={col} className="flex min-w-[11rem] max-w-[18rem] flex-1 basis-0 flex-col gap-1.5 rounded-xl bg-muted/50 p-2">
+          <div key={col} className="flex min-w-[11rem] max-w-[18rem] flex-1 basis-0 flex-col gap-1.5 rounded-xl bg-muted/50 p-2 @max-lg/iris:max-w-none @max-lg/iris:basis-auto">
             <div className="flex items-center justify-between px-1 text-xs font-medium">
               {col}
               <span className="tabular-nums text-muted-foreground">{cards.length}</span>
@@ -316,7 +317,7 @@ export function RoadmapView({ props }: ViewProps) {
   }
   return (
     <div className="min-w-0">
-      <div className="relative ml-[7rem] h-5 text-[11px] text-muted-foreground max-sm:ml-0">
+      <div className="relative ml-[7rem] h-5 text-[11px] text-muted-foreground @max-lg/iris:ml-0">
         {months.map((m) => (
           <span key={m.t} className="absolute -translate-x-1/2 whitespace-nowrap" style={{ left: x(m.t) }}>
             {m.label}
@@ -325,7 +326,7 @@ export function RoadmapView({ props }: ViewProps) {
       </div>
       <div className="space-y-2">
         {lanes.map((lane) => (
-          <div key={lane} className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-2 max-sm:grid-cols-1">
+          <div key={lane} className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-2 @max-lg/iris:grid-cols-1">
             <div className="truncate pt-1 text-xs font-medium text-muted-foreground">{lane}</div>
             <div className="relative space-y-1 rounded-lg bg-muted/40 py-1.5">
               {now >= min && now <= max ? <span className="absolute inset-y-0 z-0 w-px" style={{ left: x(now), background: env.palette.tone.bad }} aria-label="Today" /> : null}
@@ -434,15 +435,15 @@ export function CalendarView({ props }: ViewProps) {
           const date = d >= 1 && d <= daysIn ? `${first}-${String(d).padStart(2, "0")}` : null;
           const evs = date ? events.filter((e) => toText(e.date).slice(0, 10) === date) : [];
           return (
-            <div key={k} className={cn("min-h-[3.75rem] bg-card p-1 max-sm:min-h-[2.75rem]", !date && "bg-muted/40")}>
+            <div key={k} className={cn("min-h-[3.75rem] bg-card p-1 @max-lg/iris:min-h-[2.75rem]", !date && "bg-muted/40")}>
               {date ? <div className={cn("mb-0.5 inline-block h-5 rounded-full px-1 leading-5 tabular-nums", date === today ? "bg-foreground text-background" : "text-muted-foreground")}>{d}</div> : null}
               {/* Wide enough: named chips. On a phone: a dot per event, named in the list under the grid. */}
-              <div className="flex flex-wrap gap-1 px-1 sm:hidden">
+              <div className="flex flex-wrap gap-1 px-1 @lg/iris:hidden">
                 {evs.map((e, j) => (
                   <span key={j} className="size-1.5 rounded-full" style={{ background: toneColor(env.palette, e.tone) ?? env.palette.accent }} title={toText(e.title)} />
                 ))}
               </div>
-              <div className="max-sm:hidden">
+              <div className="@max-lg/iris:hidden">
                 {evs.slice(0, 3).map((e, j) => {
                   const color = toneColor(env.palette, e.tone) ?? env.palette.accent;
                   return (
@@ -457,7 +458,7 @@ export function CalendarView({ props }: ViewProps) {
           );
         })}
       </div>
-      <ul className="mt-2 space-y-1 sm:hidden">
+      <ul className="mt-2 space-y-1 @lg/iris:hidden">
         {events
           .filter((e) => /^\d{4}-\d{2}-\d{2}/.test(toText(e.date)) && toText(e.date).slice(0, 7) === first)
           .sort((a, b) => toText(a.date).localeCompare(toText(b.date)))

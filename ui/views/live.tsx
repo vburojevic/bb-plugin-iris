@@ -402,16 +402,16 @@ function CommitRow({ commit }: { commit: CommitInfo }) {
     <li className="min-w-0">
       <button type="button" onClick={() => setOpen(!open)} className="flex w-full min-w-0 items-center gap-2.5 px-2.5 py-1.5 text-left hover:bg-muted/40" aria-expanded={open}>
         <Glyph name="chevron-right" size={13} className={cn("text-muted-foreground transition-transform", open && "rotate-90")} />
-        <span className="shrink-0 font-mono text-[11.5px] text-muted-foreground max-sm:hidden">{commit.shortSha}</span>
+        <span className="shrink-0 font-mono text-[11.5px] text-muted-foreground @max-lg/iris:hidden">{commit.shortSha}</span>
         {/* On a phone the subject takes the row and the sha and time sit under it. */}
         <span className="min-w-0 flex-1">
-          <span className="block text-[13px] max-sm:line-clamp-2 sm:truncate">{commit.subject}</span>
-          <span className="block font-mono text-[11px] text-muted-foreground sm:hidden">
+          <span className="block text-[13px] @max-lg/iris:line-clamp-2 @lg/iris:truncate">{commit.subject}</span>
+          <span className="block font-mono text-[11px] text-muted-foreground @lg/iris:hidden">
             {commit.shortSha} · <span className="font-sans">{ago(commit.authoredAt)}</span>
           </span>
         </span>
-        <span className="hidden w-28 shrink-0 truncate text-xs text-muted-foreground sm:inline">{commit.author}</span>
-        <span className="hidden w-[6.5rem] shrink-0 whitespace-nowrap text-right text-xs tabular-nums text-muted-foreground sm:inline" title={formatValue(commit.authoredAt, "datetime")}>
+        <span className="hidden w-28 shrink-0 truncate text-xs text-muted-foreground @lg/iris:inline">{commit.author}</span>
+        <span className="hidden w-[6.5rem] shrink-0 whitespace-nowrap text-right text-xs tabular-nums text-muted-foreground @lg/iris:inline" title={formatValue(commit.authoredAt, "datetime")}>
           {ago(commit.authoredAt)}
         </span>
       </button>
@@ -499,8 +499,9 @@ export function PullRequestView() {
           <StatusLine icon={MERGE[pr.mergeability].icon} tone={MERGE[pr.mergeability].tone} label={MERGE[pr.mergeability].label} />
         </ul>
       )}
-      <button type="button" onClick={open} className="mt-3 inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[12.5px] ring-1 ring-border hover:bg-muted">
-        <Glyph name="external-link" size={13} />
+      {/* A plain link on the status column's edge: its icon lines up with the status icons above. */}
+      <button type="button" onClick={open} className="iris-hit mt-3 inline-flex items-center gap-2 text-[12.5px] text-muted-foreground hover:text-foreground">
+        <Glyph name="external-link" size={15} />
         Open on GitHub
       </button>
     </div>
@@ -529,7 +530,7 @@ function CheckBar({ checks }: { checks: PullRequestInfo["checks"] }) {
         {[checks.passed ? `${checks.passed} passed` : null, checks.failed ? `${checks.failed} failed` : null, checks.pending ? `${checks.pending} running` : null, other ? `${other} other` : null].filter(Boolean).join(", ")}
       </span>
       {/* On a phone the counts say it; the bar gives them its room. */}
-      <span className="flex h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-muted max-sm:hidden">
+      <span className="flex h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-muted @max-lg/iris:hidden">
         <span className="iris-bar h-full" style={{ width: `${(checks.passed / total) * 100}%`, background: t.good }} />
         <span className="iris-bar h-full" style={{ width: `${(checks.failed / total) * 100}%`, background: t.bad }} />
         <span className="iris-bar h-full" style={{ width: `${(checks.pending / total) * 100}%`, background: t.warn }} />
@@ -605,13 +606,13 @@ export function ThreadsView({ props }: ViewProps) {
                           {t.branch ? "· " : ""}+{t.background} in background
                         </span>
                       ) : null}
-                      <span className="inline-flex shrink-0 items-center gap-1.5 sm:hidden">
+                      <span className="inline-flex shrink-0 items-center gap-1.5 @lg/iris:hidden">
                         <ThreadChip t={t} />
                         <span className="whitespace-nowrap tabular-nums">{ago(t.updatedAt)}</span>
                       </span>
                     </span>
                   </span>
-                  <span className="contents max-sm:hidden">
+                  <span className="contents @max-lg/iris:hidden">
                     <ThreadChip t={t} />
                     <span className="min-w-[4.5rem] shrink-0 whitespace-nowrap text-right text-xs tabular-nums text-muted-foreground">{ago(t.updatedAt)}</span>
                   </span>

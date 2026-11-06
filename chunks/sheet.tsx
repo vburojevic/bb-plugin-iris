@@ -311,7 +311,9 @@ export function SheetView({ props, node }: ViewProps) {
           onPaste={onPaste}
           className="w-max min-w-full text-[12.5px] outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_oklab,var(--iris-accent)_45%,transparent)]"
         >
-          <div className="sticky top-0 z-[2] flex bg-card" role="row" aria-rowindex={1}>
+          {/* Header and rows are as wide as their columns, on one surface, so the header band ends with the
+              last column and every row number sits on the same shade. */}
+          <div className="sticky top-0 z-[2] flex w-max bg-card" role="row" aria-rowindex={1}>
             <div className="sticky left-0 z-[3] shrink-0 border-r border-b border-border bg-muted/80" style={{ width: GUTTER, height: HEAD_H }}>
               <div className="flex h-5 items-center justify-center border-b border-border/70 text-[10.5px] text-muted-foreground" />
               <div className="flex items-center justify-center text-[10.5px] tabular-nums text-muted-foreground" style={{ height: HEAD_H - 20 }}>
@@ -332,7 +334,7 @@ export function SheetView({ props, node }: ViewProps) {
           {cells.slice(first, last).map((row, i) => {
             const r = first + i;
             return (
-              <div key={r} role="row" aria-rowindex={r + 2} className="flex" style={{ height: ROW_H }}>
+              <div key={r} role="row" aria-rowindex={r + 2} className="flex w-max bg-card" style={{ height: ROW_H }}>
                 <div
                   className={cn("sticky left-0 z-[1] flex shrink-0 items-center justify-center border-r border-b border-border bg-muted/80 text-[10.5px] tabular-nums", sel?.r === r ? "font-semibold text-foreground" : "text-muted-foreground")}
                   style={{ width: GUTTER }}

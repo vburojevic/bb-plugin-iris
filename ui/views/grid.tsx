@@ -90,7 +90,7 @@ export function DataGridView({ props }: ViewProps) {
             >
               <Glyph name={m.icon} size={13} />
               {/* On a phone only the open view keeps its name, so the switcher and copy share one row. */}
-              <span className={cn(mode !== m.id && "max-sm:hidden")}>{m.label}</span>
+              <span className={cn(mode !== m.id && "@max-lg/iris:hidden")}>{m.label}</span>
             </button>
           ))}
         </div>

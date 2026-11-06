@@ -184,7 +184,7 @@ function Legend({ ramp, bounds, fmt, label }: { ramp: string[]; bounds: number[]
         <div className="min-w-0">
           <div className="flex">
             {ramp.map((c, k) => (
-              <span key={k} className="h-2.5 w-9 first:rounded-l-sm last:rounded-r-sm max-sm:w-7" style={{ background: c }} />
+              <span key={k} className="h-2.5 w-9 first:rounded-l-sm last:rounded-r-sm @max-lg/iris:w-7" style={{ background: c }} />
             ))}
           </div>
           <div className="mt-0.5 flex justify-between gap-2 tabular-nums">

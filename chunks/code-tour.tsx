@@ -114,7 +114,7 @@ export function CodeTourView({ props, node }: ViewProps) {
           </div>
         }
       />
-      <div className="grid min-w-0 gap-3 @[620px]:grid-cols-[minmax(170px,210px)_minmax(0,1fr)]">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 @[620px]:grid-cols-[minmax(170px,210px)_minmax(0,1fr)]">
         <div ref={list} role="tablist" aria-label="Steps" className="iris-scroll-x flex min-w-0 gap-1.5 overflow-x-auto @[620px]:max-h-[420px] @[620px]:flex-col @[620px]:overflow-y-auto @[620px]:overflow-x-visible">
           {items.map((s, k) => (
             <button

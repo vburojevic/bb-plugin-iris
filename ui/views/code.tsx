@@ -257,11 +257,14 @@ export function DiagramView({ props, text }: ViewProps) {
     const wire = () => {
       // Mermaid shrinks a wide diagram to the column until its labels are unreadable. Hold it at
       // about two thirds of its own size (labels near 11 px); anything wider scrolls sideways instead.
-      const svg = el.querySelector<SVGSVGElement>("svg");
-      const natural = svg?.viewBox?.baseVal?.width;
-      if (svg && natural && !svg.dataset.irisSized) {
+      // The drawing, not a toolbar icon: Mermaid marks its svg with a role description.
+      for (const svg of el.querySelectorAll<SVGSVGElement>("svg[aria-roledescription]")) {
+        const natural = svg.viewBox?.baseVal?.width;
+        if (!natural || natural < 64 || svg.dataset.irisSized) continue;
         svg.dataset.irisSized = "1";
         svg.style.minWidth = `${Math.round(natural * 0.68)}px`;
+        // The renderer's own frame clips; it scrolls sideways instead.
+        for (let a = svg.parentElement; a && a !== el; a = a.parentElement) if (getComputedStyle(a).overflowX === "hidden") a.style.overflowX = "auto";
       }
       for (const node of el.querySelectorAll<SVGGElement>("g.node, g.actor, g.stateGroup, g.classGroup")) {
         if (node.dataset.irisWired) continue;
@@ -373,7 +376,7 @@ function TreeRow({ node, depth, open, onClick }: { node: TreeNode; depth: number
   };
   return (
     <div role="treeitem" aria-expanded={folder ? expanded : undefined}>
-      <button type="button" onClick={activate} className="flex w-full min-w-0 items-center gap-1.5 rounded px-1 text-left hover:bg-state-hover" style={{ paddingLeft: depth * 14 + 4 }}>
+      <button type="button" onClick={activate} className="iris-hit -mx-1 flex w-[calc(100%+0.5rem)] min-w-0 items-center gap-1.5 rounded px-1 text-left hover:bg-state-hover pointer-coarse:min-h-9" style={{ paddingLeft: depth * 14 + 4 }}>
         {folder ? <Glyph name="chevron-right" size={12} className={cn("text-muted-foreground transition-transform", expanded && "rotate-90")} /> : <span className="w-3" />}
         <Glyph name={node.icon ?? (folder ? (expanded ? "folder-open" : "folder") : "file")} size={13} color={color} className="text-muted-foreground" />
         <span className="truncate" style={color ? { color } : undefined}>

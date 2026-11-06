@@ -111,7 +111,8 @@ function formatPercent(n: number, d?: number): string {
 
 function formatCurrency(n: number, currency: string, d?: number): string {
   try {
-    const whole = Number.isInteger(n) && Math.abs(n) >= 100;
+    // Cents only when the amount has them: "$29", "$348", "$3,549.60".
+    const whole = Number.isInteger(n);
     return new Intl.NumberFormat(LOCALE, {
       style: "currency",
       currency,

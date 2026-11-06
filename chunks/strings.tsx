@@ -107,7 +107,7 @@ export function StringsTableView({ props }: ViewProps) {
       {view !== "summary" ? (
         <div className="min-w-0">
           <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2">
-            <label className="flex h-8 w-full items-center sm:w-auto sm:min-w-[10rem] sm:flex-1 gap-2 rounded-full bg-muted/60 px-3 text-[13px] ring-1 ring-border focus-within:ring-foreground/30">
+            <label className="flex h-8 w-full items-center @lg/iris:w-auto @lg/iris:min-w-[10rem] @lg/iris:flex-1 gap-2 rounded-full bg-muted/60 px-3 text-[13px] ring-1 ring-border focus-within:ring-foreground/30">
               <Glyph name="search" size={14} className="text-muted-foreground" />
               <input value={search} onChange={(e) => (setSearch(e.target.value), setLimit(PAGE))} placeholder="Search keys and text" className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted-foreground" aria-label="Search strings" />
               {search ? (
@@ -157,11 +157,11 @@ export function StringsTableView({ props }: ViewProps) {
               <table className="w-full border-separate border-spacing-0 text-[13px]">
                 <thead className="sticky top-0 z-[2] bg-card">
                   <tr className="text-left text-xs text-muted-foreground">
-                    <th scope="col" className="sticky left-0 z-[1] min-w-[8rem] max-w-[11rem] border-b border-r border-border bg-card px-2.5 py-1.5 font-medium sm:min-w-[9rem] sm:max-w-none">
-                      Key<span className="font-normal sm:hidden"> and {table.source}</span>
+                    <th scope="col" className="sticky left-0 z-[1] min-w-[8rem] max-w-[11rem] border-b border-r border-border bg-card px-2.5 py-1.5 font-medium @lg/iris:min-w-[9rem] @lg/iris:max-w-none">
+                      Key<span className="font-normal @lg/iris:hidden"> and {table.source}</span>
                     </th>
                     {[table.source, ...shown].map((l) => (
-                      <th key={l} scope="col" className={cn("min-w-[10rem] border-b border-border px-2.5 py-1.5 font-medium", l === table.source && "hidden sm:table-cell")}>
+                      <th key={l} scope="col" className={cn("min-w-[10rem] border-b border-border px-2.5 py-1.5 font-medium", l === table.source && "hidden @lg/iris:table-cell")}>
                         <span className="font-mono text-foreground">{l}</span> <span className="font-normal">{l === table.source ? "source" : (localeName(l) ?? "")}</span>
                       </th>
                     ))}
@@ -170,10 +170,10 @@ export function StringsTableView({ props }: ViewProps) {
                 <tbody>
                   {visible.map((r) => (
                     <tr key={r.key} className="group align-top">
-                      <th scope="row" className="sticky left-0 z-[1] max-w-[11rem] sm:max-w-[16rem] border-b border-r border-border/60 bg-card px-2.5 py-2 text-left font-normal group-last:border-b-0">
+                      <th scope="row" className="sticky left-0 z-[1] max-w-[11rem] @lg/iris:max-w-[16rem] border-b border-r border-border/60 bg-card px-2.5 py-2 text-left font-normal group-last:border-b-0">
                         <div className="break-all font-mono text-[12px] leading-snug">{r.key}</div>
                         {r.comment ? <div className="mt-0.5 line-clamp-2 text-[11.5px] leading-snug text-muted-foreground">{r.comment}</div> : null}
-                        <div className="mt-1 line-clamp-3 whitespace-pre-wrap break-words text-[12.5px] leading-snug text-muted-foreground sm:hidden">{r.source ?? "Not in source"}</div>
+                        <div className="mt-1 line-clamp-3 whitespace-pre-wrap break-words text-[12.5px] leading-snug text-muted-foreground @lg/iris:hidden">{r.source ?? "Not in source"}</div>
                       </th>
                       {[table.source, ...shown].map((l) => (
                         <Cell key={l} row={r} locale={l} isSource={l === table.source} onPick={pick} />
@@ -282,7 +282,7 @@ function Cell({ row, locale, isSource, onPick }: { row: StringsRow; locale: stri
   const color = worst ? env.palette.tone[KIND[worst].tone as "bad"] : undefined;
   const value = cell?.value ?? null;
   return (
-    <td className={cn("border-b border-border/60 p-0 group-last:border-b-0", isSource && "hidden sm:table-cell")} style={color ? { background: tint(color, 8) } : undefined}>
+    <td className={cn("border-b border-border/60 p-0 group-last:border-b-0", isSource && "hidden @lg/iris:table-cell")} style={color ? { background: tint(color, 8) } : undefined}>
       <button
         type="button"
         onClick={() => onPick(row.key, locale, value)}

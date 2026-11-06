@@ -169,17 +169,20 @@ export function RedlineView({ props, node }: ViewProps) {
             </button>
           )}
           <div className="flex-1" />
-          <button type="button" className={cn(SECONDARY, "h-7 px-2.5 text-[12px]")} onClick={() => all("accept")} disabled={accepted === count}>
-            Accept all
-          </button>
-          <button type="button" className={cn(SECONDARY, "h-7 px-2.5 text-[12px]")} onClick={() => all("reject")} disabled={rejected === count}>
-            Reject all
-          </button>
-          {accepted + rejected ? (
-            <button type="button" className={cn(ICON_BTN, "size-7")} onClick={() => all(null)} aria-label="Clear decisions" title="Clear decisions">
-              <Glyph name="rotate-ccw" size={13} />
+          {/* The bulk actions wrap as one group, never one on each line. */}
+          <div className="ml-auto flex shrink-0 items-center gap-1.5">
+            <button type="button" className={cn(SECONDARY, "h-7 px-2.5 text-[12px]")} onClick={() => all("accept")} disabled={accepted === count}>
+              Accept all
             </button>
-          ) : null}
+            <button type="button" className={cn(SECONDARY, "h-7 px-2.5 text-[12px]")} onClick={() => all("reject")} disabled={rejected === count}>
+              Reject all
+            </button>
+            {accepted + rejected ? (
+              <button type="button" className={cn(ICON_BTN, "size-7")} onClick={() => all(null)} aria-label="Clear decisions" title="Clear decisions">
+                <Glyph name="rotate-ccw" size={13} />
+              </button>
+            ) : null}
+          </div>
         </div>
       ) : null}
       <div className="flex min-w-0 flex-wrap items-center gap-2 border-t border-border pt-3">

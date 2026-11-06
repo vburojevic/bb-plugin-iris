@@ -235,7 +235,7 @@ export function BenchmarkView({ props }: ViewProps) {
               {change != null ? (
                 <span className="shrink-0 font-medium tabular-nums" style={{ color }}>
                   {change > 0 ? "+" : "−"}
-                  {Math.abs(change * 100).toFixed(Math.abs(change) < 0.1 ? 1 : 0)}%{Math.abs(change) >= 0.5 && r.before && r.after ? ` (${(r.better === "lower" ? r.before / r.after : r.after / r.before).toFixed(1)}×)` : ""}
+                  {Math.abs(change * 100).toFixed(Math.abs(change) < 0.1 || (Math.abs(change) > 0.99 && Math.abs(change) < 1) ? 1 : 0)}%{Math.abs(change) >= 0.5 && r.before && r.after ? ` (${(r.better === "lower" ? r.before / r.after : r.after / r.before).toFixed(1)}×)` : ""}
                 </span>
               ) : null}
             </div>

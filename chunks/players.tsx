@@ -3,7 +3,7 @@
 // the controls are Iris's own so they follow the theme. Without a thread the
 // gallery plays a bundled clip (video) or a synthesized one (audio).
 
-import { Chip, Glyph, InlineError, Shimmer, cn, num, str, useEnv, toneColor } from "@iris/ui";
+import { Chip, Glyph, InlineError, Shimmer, cn, num, str, useEnv, toneColor, inkOn } from "@iris/ui";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { isPendingValue } from "../core/evaluate";
 import {
@@ -401,13 +401,14 @@ export function VideoPlayerView({ props }: ViewProps) {
           <button type="button" className={ICON_BTN} onClick={() => playToggle(el)} aria-label={paused ? "Play" : "Pause"} disabled={!el}>
             <Glyph name={paused ? "play" : "pause"} size={16} />
           </button>
-          <button type="button" className={ICON_BTN} onClick={() => step(-1)} aria-label="Previous frame (comma)" title="Previous frame (,)" disabled={!el}>
+          {/* Frame steps and mute are desk tools; on a phone the time keeps their room. */}
+          <button type="button" className={cn(ICON_BTN, "max-sm:hidden")} onClick={() => step(-1)} aria-label="Previous frame (comma)" title="Previous frame (,)" disabled={!el}>
             <Glyph name="step-back" size={15} />
           </button>
-          <button type="button" className={ICON_BTN} onClick={() => step(1)} aria-label="Next frame (period)" title="Next frame (.)" disabled={!el}>
+          <button type="button" className={cn(ICON_BTN, "max-sm:hidden")} onClick={() => step(1)} aria-label="Next frame (period)" title="Next frame (.)" disabled={!el}>
             <Glyph name="step-forward" size={15} />
           </button>
-          <span className="ml-1 min-w-0 truncate font-mono text-[12px] tabular-nums text-muted-foreground">
+          <span className="ml-1 shrink-0 font-mono text-[12px] tabular-nums text-muted-foreground">
             <span className="text-foreground">{formatTime(t, paused && t > 0 ? { fps } : {})}</span> / {formatTime(duration)}
           </span>
           {chapterAt >= 0 && chapters.items.length > 1 ? <span className="hidden min-w-0 truncate text-[12px] text-muted-foreground sm:inline">· {chapters.items[chapterAt].title}</span> : null}
@@ -417,7 +418,7 @@ export function VideoPlayerView({ props }: ViewProps) {
             <span className="hidden sm:inline">Comment</span>
           </button>
           <SpeedSelect value={rate} onChange={setRate} />
-          <button type="button" className={ICON_BTN} onClick={() => setMuted((m) => !m)} aria-label={muted ? "Unmute" : "Mute"} disabled={!el}>
+          <button type="button" className={cn(ICON_BTN, "max-sm:hidden")} onClick={() => setMuted((m) => !m)} aria-label={muted ? "Unmute" : "Mute"} disabled={!el}>
             <Glyph name={muted ? "volume-x" : "volume-2"} size={15} />
           </button>
           <button type="button" className={ICON_BTN} onClick={fullscreen} aria-label="Full screen" disabled={!el}>
@@ -703,8 +704,8 @@ export function AudioPlayerView({ props }: ViewProps) {
             onClick={() => playToggle(el)}
             disabled={!el}
             aria-label={paused ? "Play" : "Pause"}
-            className="grid size-11 shrink-0 place-items-center rounded-full text-background transition-opacity hover:opacity-90 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--iris-accent)]"
-            style={{ background: accent }}
+            className="grid size-11 shrink-0 place-items-center rounded-full transition-opacity hover:opacity-90 disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--iris-accent)]"
+            style={{ background: accent, color: inkOn(accent) }}
           >
             <Glyph name={paused ? "play" : "pause"} size={18} className={paused ? "translate-x-px" : undefined} />
           </button>
@@ -741,7 +742,7 @@ export function AudioPlayerView({ props }: ViewProps) {
                   style={on ? { background: tint(accent, 13) } : undefined}
                 >
                   <span className="w-10 shrink-0 font-mono text-[11.5px] tabular-nums text-muted-foreground">{formatTime(l.at)}</span>
-                  <span className="min-w-0 flex-1">
+                  <span className="min-w-0 flex-1 [text-wrap:pretty]">
                     {l.speaker ? (
                       <span className="mr-1.5 font-medium">
                         {l.speaker}

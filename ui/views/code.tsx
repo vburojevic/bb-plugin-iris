@@ -145,7 +145,7 @@ export function LogsView({ props, text }: ViewProps) {
       title={str(props.command) ? <span className="text-muted-foreground">$ <span className="text-foreground">{str(props.command)}</span></span> : str(props.title)}
       right={
         <span className="flex shrink-0 items-center gap-2">
-          {errors ? <span className="text-destructive tabular-nums">{errors} error lines</span> : null}
+          {errors ? <span className="text-destructive tabular-nums">{errors} error {errors === 1 ? "line" : "lines"}</span> : null}
           {exit != null ? (
             <span className={cn("rounded-full px-2 py-px text-[11px] font-medium tabular-nums", exit === 0 ? "text-[color:var(--success)]" : "text-destructive")} style={{ background: `color-mix(in oklab, ${exit === 0 ? "var(--success)" : "var(--destructive)"} 14%, transparent)` }}>
               exit {exit}
@@ -255,6 +255,14 @@ export function DiagramView({ props, text }: ViewProps) {
     const el = host.current;
     if (!el) return;
     const wire = () => {
+      // Mermaid shrinks a wide diagram to the column until its labels are unreadable. Hold it at
+      // about two thirds of its own size (labels near 11 px); anything wider scrolls sideways instead.
+      const svg = el.querySelector<SVGSVGElement>("svg");
+      const natural = svg?.viewBox?.baseVal?.width;
+      if (svg && natural && !svg.dataset.irisSized) {
+        svg.dataset.irisSized = "1";
+        svg.style.minWidth = `${Math.round(natural * 0.68)}px`;
+      }
       for (const node of el.querySelectorAll<SVGGElement>("g.node, g.actor, g.stateGroup, g.classGroup")) {
         if (node.dataset.irisWired) continue;
         node.dataset.irisWired = "1";

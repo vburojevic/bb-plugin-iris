@@ -131,7 +131,7 @@ function Dashboard({ model, problems, title, sample, live, changedAt, now }: { m
                   <span className="truncate text-[13px] font-medium">{p.name}</span>
                 </div>
                 <div className="mt-1.5">{p.status ? <StatusPill status={p.status} /> : null}</div>
-                {p.build || p.version || p.detail ? <div className="mt-1 truncate text-[11.5px] text-muted-foreground">{[p.version, p.build ? `build ${p.build}` : undefined, p.detail].filter(Boolean).join(" · ")}</div> : null}
+                {p.build || p.version || p.detail ? <div className="mt-1 text-[11.5px] leading-snug text-muted-foreground [text-wrap:pretty]">{[p.version, p.build ? `build ${p.build}` : undefined, p.detail].filter(Boolean).join(" · ")}</div> : null}
               </div>
             ))}
           </div>

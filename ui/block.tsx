@@ -14,7 +14,7 @@ import { CardRuntime, compile, type LoadResult, type Program } from "../core/pro
 import { MAX_LINK_SOURCE, PLAYGROUND_URL, playLink } from "../shared/playground";
 import type { RpcContract } from "../shared/rpc";
 import { EnvContext, type IrisEnv, type IrisMode, useActions } from "./env";
-import { usePalette } from "./palette";
+import { usePalette, raisedSurface } from "./palette";
 import { setPin, usePin } from "./pin-store";
 import { InlineError, renderNodes } from "./render";
 import { Glyph, cn } from "./views/kit";
@@ -180,7 +180,7 @@ export function IrisBlock(props: BlockProps) {
         data-iris-root=""
         data-streaming={streaming ? "" : undefined}
         className="iris-root group/iris relative my-2 min-w-0 text-foreground"
-        style={{ ["--iris-accent" as string]: palette.accent, ["--iris-spectrum" as string]: palette.accent }}
+        style={{ ["--iris-accent" as string]: palette.accent, ["--iris-spectrum" as string]: palette.accent, ["--iris-raised" as string]: raisedSurface(palette) }}
       >
         {!rootCard && tools ? <div className="pointer-events-none absolute -top-1 right-0 z-[2] opacity-0 transition-opacity focus-within:pointer-events-auto focus-within:opacity-100 group-hover/iris:pointer-events-auto group-hover/iris:opacity-100">{tools}</div> : null}
         {showSource ? <SourceView source={source} onClose={() => setShowSource(false)} /> : body}
@@ -248,7 +248,7 @@ function Toolbar(p: { source: string; language: string; showSource: boolean; onT
     // A card's files and bb data stay on this machine; the playground draws it without them.
     if (/\bload\(/.test(p.source)) toast("Opened in the playground. Files and bb data this card loads stay here, so it shows them as pending.");
   };
-  const btn = "grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground";
+  const btn = "iris-hit grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground";
   return (
     <div className="iris-tools flex shrink-0 items-center gap-0.5 rounded-full bg-card/80 p-0.5 opacity-60 backdrop-blur-sm transition-opacity hover:opacity-100 focus-within:opacity-100">
       {p.canReset ? (

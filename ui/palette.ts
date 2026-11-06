@@ -122,7 +122,8 @@ export function readPalette(el: Element): Palette {
     const borrowed = [v("--file-accent"), v("--ansi-12"), v("--ansi-4")].map(rgb).find((x) => x && toOklch(x).c >= 0.05);
     base = borrowed ? toOklch(borrowed) : { ...base, h: NEUTRAL_FALLBACK_HUE };
   }
-  const band = { l: dark ? 0.74 : 0.57, c: Math.min(0.15, Math.max(0.085, base.c)) };
+  // Light themes sit deeper, so tone text reads at 4.5:1 or better on the card and on muted fills.
+  const band = { l: dark ? 0.74 : 0.52, c: Math.min(0.15, Math.max(0.085, base.c)) };
   const hueOf = (name: string, fallbackHue: number) => {
     const x = rgb(v(name));
     return x && toOklch(x).c > 0.03 ? toOklch(x).h : fallbackHue;
@@ -138,8 +139,8 @@ export function readPalette(el: Element): Palette {
     neutral: v("--muted-foreground") || "currentColor",
     info: "",
     good: hex({ l: band.l, c: toneC, h: goodH }),
-    warn: hex({ l: band.l + (dark ? 0.06 : 0.08), c: toneC, h: warnH }),
-    bad: hex({ l: band.l - (dark ? 0.04 : 0.06), c: toneC + 0.02, h: badH }),
+    warn: hex({ l: band.l + (dark ? 0.06 : 0.02), c: toneC, h: warnH }),
+    bad: hex({ l: band.l - (dark ? 0.04 : 0.04), c: toneC + 0.02, h: badH }),
   };
   // Series hues step away from the accent and steer clear of the tone hues, so an
   // untoned series never reads as "failed" or "warning".
@@ -308,4 +309,18 @@ export function sequentialRamp(p: Palette, n: number): string[] {
 export function lightness(color: string): number | null {
   const x = rgb(color);
   return x ? toOklch(x).l : null;
+}
+
+/** A surface one step above the card: the card itself in light themes, a little lighter in dark ones, where the card is darker than muted fills. */
+export function raisedSurface(p: Palette): string {
+  return p.dark ? "color-mix(in oklab, var(--card), var(--foreground) 12%)" : "var(--card)";
+}
+
+/** Ink for text or a glyph drawn on a solid color: near-black on light fills, white on dark ones. */
+export function inkOn(color: string): string {
+  const c = rgb(color);
+  if (!c) return "#fff";
+  const y = 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
+  // The crossover where black and white text reach the same contrast.
+  return y > 0.179 ? "rgb(20 20 22)" : "#fff";
 }

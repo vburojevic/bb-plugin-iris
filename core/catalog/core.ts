@@ -66,7 +66,7 @@ export const LAYOUT = [
     summary: "One page inside Tabs.",
     props: { label: p.str("Tab name", { required: true }), icon: p.icon(), badge: p.any("Small count after the label") },
     children: "nodes",
-    example: `<Tabs><Tab label="One"><Text>Hello</Text></Tab></Tabs>`,
+    example: `<Tabs>\n  <Tab label="Summary" icon="list"><Text>3 of 4 checks passed.</Text></Tab>\n  <Tab label="Failures" badge={1}><Text>**Export to CSV** times out after 30 s.</Text></Tab>\n</Tabs>`,
   }),
   component({
     name: "Details",

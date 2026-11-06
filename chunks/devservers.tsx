@@ -157,9 +157,18 @@ function ProcRow({ p, color, now, onOpen, onLog }: { p: Proc; color: string; now
           ) : null}
         </div>
         {p.command ? <div className="truncate font-mono text-[11.5px] text-muted-foreground" title={p.command}>{p.command}</div> : null}
-        {facts.length ? <div className="text-[11.5px] tabular-nums text-muted-foreground @[520px]:hidden">{facts.join(" · ")}</div> : null}
+        {/* Each fact keeps its words together and facts sit apart by space, so a wrapped line never splits "up 3 h 12 min" or starts on a separator. */}
+        {facts.length ? (
+          <div className="flex flex-wrap gap-x-3 text-[11.5px] tabular-nums text-muted-foreground @[520px]:hidden">
+            {facts.map((f, k) => (
+              <span key={k} className="whitespace-nowrap">
+                {f}
+              </span>
+            ))}
+          </div>
+        ) : null}
         {p.note ? (
-          <div className="mt-0.5 truncate font-mono text-[11.5px]" style={{ color: p.status === "crashed" ? color : undefined }} title={p.note}>
+          <div className="mt-0.5 font-mono text-[11.5px] [overflow-wrap:anywhere]" style={{ color: p.status === "crashed" ? color : undefined }} title={p.note}>
             {p.note}
           </div>
         ) : null}

@@ -38,10 +38,20 @@ export function CardView({ props, children, node }: ViewProps) {
             </span>
           ) : null}
           <div className="min-w-0 flex-1">
-            {title ? <h3 className="truncate text-[14px] font-semibold leading-snug">{title}</h3> : null}
+            {/* On a phone the title may take two lines and the status moves under it, so the toolbar never squeezes the title to a few letters. */}
+            {title ? <h3 className="line-clamp-2 text-[14px] font-semibold leading-snug sm:line-clamp-none sm:truncate">{title}</h3> : null}
             {subtitle ? <p className="truncate text-[12.5px] leading-snug text-muted-foreground">{subtitle}</p> : null}
+            {status ? (
+              <div className="mt-0.5 sm:hidden">
+                <CardStatus state={state} text={status} />
+              </div>
+            ) : null}
           </div>
-          {status ? <CardStatus state={state} text={status} /> : null}
+          {status ? (
+            <div className="shrink-0 max-sm:hidden">
+              <CardStatus state={state} text={status} />
+            </div>
+          ) : null}
           {block.toolsFor === node.start ? block.tools : null}
         </header>
       ) : null}

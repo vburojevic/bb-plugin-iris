@@ -627,15 +627,10 @@ export function PhotoSearchView({ props }: ViewProps) {
       />
       <figcaption className="mt-1.5 min-w-0 text-xs text-muted-foreground">
         <span className="block text-foreground/90">{str(props.caption) ?? photo.title}</span>
-        <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5">
+        {/* Credits sit apart by space, so a wrapped line never starts or ends on a separator. */}
+        <span className="mt-0.5 flex flex-wrap items-center gap-x-3">
           <span>Photo{photo.author ? `: ${photo.author}` : ""}</span>
-          {photo.license ? (
-            <>
-              <span aria-hidden>·</span>
-              {photo.licenseUrl ? <ExternalLink url={photo.licenseUrl}>{photo.license}</ExternalLink> : <span>{photo.license}</span>}
-            </>
-          ) : null}
-          <span aria-hidden>·</span>
+          {photo.license ? photo.licenseUrl ? <ExternalLink url={photo.licenseUrl}>{photo.license}</ExternalLink> : <span>{photo.license}</span> : null}
           <ExternalLink url={photo.page}>Wikimedia Commons</ExternalLink>
         </span>
       </figcaption>

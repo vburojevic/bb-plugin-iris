@@ -209,7 +209,16 @@ export function TerminalReplayView({ props }: ViewProps) {
             <span key={k} className="pointer-events-none absolute top-1/2 h-2.5 w-[2px] -translate-y-1/2 rounded-full bg-foreground/60" style={{ left: `calc(${cast.duration ? (m.t / cast.duration) * 100 : 0}% - 1px)` }} aria-hidden />
           ))}
         </div>
-        <div className="flex shrink-0 items-center rounded-full p-0.5 ring-1 ring-border" role="radiogroup" aria-label="Speed">
+        {/* On a phone one button cycles the speeds, so the scrubber keeps its room. */}
+        <button
+          type="button"
+          onClick={() => setSpeed(SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length])}
+          className="iris-hit h-7 shrink-0 rounded-full px-2 font-mono text-[11px] tabular-nums ring-1 ring-border sm:hidden"
+          aria-label={`Speed ${speed}×, tap for the next`}
+        >
+          {speed}×
+        </button>
+        <div className="flex shrink-0 items-center rounded-full p-0.5 ring-1 ring-border max-sm:hidden" role="radiogroup" aria-label="Speed">
           {SPEEDS.map((s) => (
             <button
               key={s}

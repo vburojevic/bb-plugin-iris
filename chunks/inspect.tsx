@@ -89,15 +89,20 @@ function JsonTree({ value, open = 2 }: { value: unknown; open?: number }) {
 }
 
 function JsonNode({ value, depth, open, name }: { value: unknown; depth: number; open: number; name?: string }) {
+  const { palette } = useEnv();
   const [expanded, setExpanded] = useState(depth < open);
   const label = name !== undefined ? <span className="text-muted-foreground">{name}: </span> : null;
   if (value === null || typeof value !== "object") {
-    const cls = typeof value === "string" ? "text-[color:var(--ansi-10,var(--success))]" : typeof value === "number" ? "text-[color:var(--ansi-12,var(--primary))]" : "text-[color:var(--ansi-13,var(--primary))]";
+    // Theme-derived ink, readable in light and dark: strings good, numbers info, the rest a series hue.
+    const color = typeof value === "string" ? palette.tone.good : typeof value === "number" ? palette.tone.info : palette.series[2];
     const text = typeof value === "string" ? JSON.stringify(value) : String(value);
     return (
-      <div className="truncate" title={text.length > 80 ? text : undefined}>
-        {label}
-        <span className={cls}>{text}</span>
+      <div className="flex min-w-0 items-center gap-1" title={text.length > 80 ? text : undefined}>
+        <span className="w-[11px] shrink-0" aria-hidden />
+        <span className="min-w-0 truncate">
+          {label}
+          <span style={{ color }}>{text}</span>
+        </span>
       </div>
     );
   }
@@ -114,12 +119,15 @@ function JsonNode({ value, depth, open, name }: { value: unknown; depth: number;
         </span>
       </button>
       {expanded ? (
-        <div className="ml-[5px] border-l border-border pl-3">
-          {entries.slice(0, 500).map(([k, v]) => (
-            <JsonNode key={k} name={k} value={v} depth={depth + 1} open={open} />
-          ))}
-          {entries.length > 500 ? <div className="text-muted-foreground">{entries.length - 500} more</div> : null}
-        </div>
+        <>
+          <div className="ml-[5px] border-l border-border pl-2.5">
+            {entries.slice(0, 500).map(([k, v]) => (
+              <JsonNode key={k} name={k} value={v} depth={depth + 1} open={open} />
+            ))}
+            {entries.length > 500 ? <div className="pl-[15px] text-muted-foreground">{entries.length - 500} more</div> : null}
+          </div>
+          <div className="pl-[15px] text-muted-foreground">{brackets[1]}</div>
+        </>
       ) : null}
     </div>
   );
@@ -495,15 +503,18 @@ export function ErDiagramView({ props }: ViewProps) {
   const [zoom, setZoom] = useState<number | null>(null);
   const [box, width] = useWidth<HTMLDivElement>();
 
+  // On a phone the tables stack in one column, links curving out to the right, instead of a wide
+  // row zoomed below reading size.
+  const stacked = width > 0 && width < 520;
   const layout = useMemo(() => {
     if (!schema) return null;
-    const ranks = rankTables(schema);
+    const ranks = stacked ? [rankTables(schema).flat()] : rankTables(schema);
     const byName = new Map(schema.tables.map((t) => [t.name, t]));
     const heights = ranks.map((col) => col.reduce((a, n) => a + T_HEAD + byName.get(n)!.columns.length * T_ROW + T_PAD + GAP_Y, -GAP_Y));
     const tallest = Math.max(0, ...heights);
     const placed = new Map<string, Placed>();
     ranks.forEach((col, k) => {
-      let y = (tallest - heights[k]) / 2;
+      let y = 0; // top-aligned columns share one top edge
       for (const n of col) {
         const t = byName.get(n)!;
         const h = T_HEAD + t.columns.length * T_ROW + T_PAD;
@@ -511,8 +522,8 @@ export function ErDiagramView({ props }: ViewProps) {
         y += h + GAP_Y;
       }
     });
-    return { placed, w: ranks.length * (T_W + GAP_X) - GAP_X, h: tallest };
-  }, [schema]);
+    return { placed, w: ranks.length * (T_W + GAP_X) - GAP_X + (stacked ? 64 : 0), h: tallest };
+  }, [schema, stacked]);
 
   if (pending || !schema || !layout) return <Shimmer className="h-56" />;
   const title = str(props.title);

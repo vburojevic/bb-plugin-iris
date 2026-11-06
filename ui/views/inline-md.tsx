@@ -56,7 +56,7 @@ export function InlineMarkdown({ text }: { text: string }) {
               e.stopPropagation();
               env.perform([{ $iris: "action", kind: "openUrl", args: [url] }]);
             }}
-            className="underline decoration-border underline-offset-2 hover:text-foreground"
+            className="iris-link underline underline-offset-2 hover:text-foreground"
           >
             {part.text}
           </a>

@@ -264,7 +264,7 @@ export function QuizView({ props, node }: ViewProps) {
           {last ? "See score" : "Next"}
           <Glyph name="arrow-right" size={14} />
         </button>
-        <span className="text-[11.5px] text-muted-foreground">{answered ? "Enter to go on" : `Keys 1-${Math.min(9, q.options.length)} pick`}</span>
+        <span className="text-[11.5px] text-muted-foreground pointer-coarse:hidden">{answered ? "Press Enter to go on" : `Press 1 to ${Math.min(9, q.options.length)} to pick`}</span>
       </div>
     </div>
   );

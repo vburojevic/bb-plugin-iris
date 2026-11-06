@@ -73,7 +73,7 @@ export const TIME = [
       title: p.str("Caption, e.g. the job's name"),
     },
     children: "none",
-    example: `<Card title="Nightly jobs">
+    example: `<Card title="Scheduled jobs">
 <Cron expr="*/15 9-17 * * 1-5" tz="Europe/Zagreb" title="Sync inbox" />
 </Card>`,
     aliases: ["CronExplainer", "Crontab", "CronSchedule"],

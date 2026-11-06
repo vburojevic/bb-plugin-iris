@@ -12,7 +12,7 @@ import { KIT } from "../core/react-kit";
 import { AppFrame } from "./app-frame";
 import { IrisBlock } from "./block";
 import { IrisMark } from "./brand";
-import { usePalette } from "./palette";
+import { usePalette, raisedSurface } from "./palette";
 import { Glyph, cn } from "./views/kit";
 
 interface Entry {
@@ -185,7 +185,7 @@ export function GalleryPage({ subPath = "", brand = true }: { subPath?: string; 
   );
 
   return (
-    <div ref={root} tabIndex={-1} data-iris-root="" className="iris-gallery relative flex h-full min-h-0 bg-background text-foreground outline-none" style={{ ["--iris-accent" as string]: palette.accent }}>
+    <div ref={root} tabIndex={-1} data-iris-root="" className="iris-gallery relative flex h-full min-h-0 bg-background text-foreground outline-none" style={{ ["--iris-accent" as string]: palette.accent, ["--iris-raised" as string]: raisedSurface(palette) }}>
       {wide ? <aside className="flex w-[264px] shrink-0 flex-col border-r border-border">{nav}</aside> : null}
       <div ref={main} className="min-w-0 flex-1 overflow-y-auto">
         {!wide ? (

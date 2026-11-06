@@ -138,7 +138,7 @@ export function TimelineView({ props }: ViewProps) {
         const color = toneColor(env.palette, e.tone) ?? "var(--muted-foreground)";
         return (
           <li key={k} className="relative grid grid-cols-[4.5rem_0.75rem_minmax(0,1fr)] gap-x-3 pb-3 last:pb-0">
-            <time className="pt-px text-right text-xs tabular-nums text-muted-foreground">{toText(e.time)}</time>
+            <time className="pt-[3px] text-right text-xs tabular-nums text-muted-foreground">{toText(e.time)}</time>
             <span className="relative flex justify-center">
               <span className="relative z-[1] mt-1.5 size-2.5 rounded-full ring-[3px] ring-card" style={{ background: color }} />
               {k < items.length - 1 ? <span className="absolute top-3 bottom-[-0.75rem] w-px bg-border" /> : null}
@@ -226,7 +226,11 @@ export function DecisionView({ props }: ViewProps) {
           </li>
         ))}
       </ol>
-      <div className="mt-3 grid grid-cols-[max-content_minmax(0,1fr)_1.25rem] items-center gap-x-3 gap-y-1.5 text-[12.5px]">
+      <div className="mt-3 mb-1.5 flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
+        <span className="font-medium text-foreground">How much each counts</span>
+        <span>Drag to re-rank</span>
+      </div>
+      <div className="grid grid-cols-[max-content_minmax(0,1fr)_1.25rem] items-center gap-x-3 gap-y-1.5 text-[12.5px]">
         {criteria.map((c, k) => (
           <WeightRow key={c} label={c} value={weights[k]} onChange={(v) => update(k, v)} />
         ))}
@@ -324,7 +328,7 @@ export function RoadmapView({ props }: ViewProps) {
           <div key={lane} className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-2 max-sm:grid-cols-1">
             <div className="truncate pt-1 text-xs font-medium text-muted-foreground">{lane}</div>
             <div className="relative space-y-1 rounded-lg bg-muted/40 py-1.5">
-              {now >= min && now <= max ? <span className="absolute inset-y-0 w-px" style={{ left: x(now), background: env.palette.tone.bad }} aria-label="Today" /> : null}
+              {now >= min && now <= max ? <span className="absolute inset-y-0 z-0 w-px" style={{ left: x(now), background: env.palette.tone.bad }} aria-label="Today" /> : null}
               {items
                 .filter((i) => toText(i.lane ?? "") === lane)
                 .map((i, k) =>
@@ -341,10 +345,10 @@ export function RoadmapView({ props }: ViewProps) {
                       </span>
                     </div>
                   ) : (
-                    <div key={k} className="relative h-6">
+                    <div key={k} className="relative z-[1] h-6">
                       <div
                         className="absolute inset-y-0 flex items-center overflow-hidden rounded-md px-2 text-[12px] font-medium"
-                        style={{ left: x(i.s), width: `max(1.5rem, ${((i.e + DAY - i.s) / span) * 100}%)`, background: `color-mix(in oklab, ${env.palette.accent} ${i.status === "done" ? 12 : 22}%, transparent)`, boxShadow: `inset 2px 0 0 ${env.palette.accent}` }}
+                        style={{ left: x(i.s), width: `max(1.5rem, ${((i.e + DAY - i.s) / span) * 100}%)`, background: `color-mix(in oklab, ${env.palette.accent} ${i.status === "done" ? 12 : 22}%, var(--card))`, boxShadow: `inset 2px 0 0 ${env.palette.accent}` }}
                         title={`${toText(i.title)}: ${toText(i.start)} to ${toText(i.end ?? i.start)}`}
                       >
                         <span className="truncate">{toText(i.title)}</span>
@@ -430,21 +434,41 @@ export function CalendarView({ props }: ViewProps) {
           const date = d >= 1 && d <= daysIn ? `${first}-${String(d).padStart(2, "0")}` : null;
           const evs = date ? events.filter((e) => toText(e.date).slice(0, 10) === date) : [];
           return (
-            <div key={k} className={cn("min-h-[3.75rem] bg-card p-1", !date && "bg-muted/40")}>
-              {date ? <div className={cn("mb-0.5 inline-grid size-5 place-items-center rounded-full tabular-nums", date === today ? "bg-foreground text-background" : "text-muted-foreground")}>{d}</div> : null}
-              {evs.slice(0, 3).map((e, j) => {
-                const color = toneColor(env.palette, e.tone) ?? env.palette.accent;
-                return (
-                  <div key={j} className="mb-0.5 truncate rounded px-1 py-px text-[11px]" style={{ background: `color-mix(in oklab, ${color} 18%, transparent)` }} title={toText(e.title)}>
-                    {toText(e.title)}
-                  </div>
-                );
-              })}
-              {evs.length > 3 ? <div className="text-[10.5px] text-muted-foreground">+{evs.length - 3}</div> : null}
+            <div key={k} className={cn("min-h-[3.75rem] bg-card p-1 max-sm:min-h-[2.75rem]", !date && "bg-muted/40")}>
+              {date ? <div className={cn("mb-0.5 inline-block h-5 rounded-full px-1 leading-5 tabular-nums", date === today ? "bg-foreground text-background" : "text-muted-foreground")}>{d}</div> : null}
+              {/* Wide enough: named chips. On a phone: a dot per event, named in the list under the grid. */}
+              <div className="flex flex-wrap gap-1 px-1 sm:hidden">
+                {evs.map((e, j) => (
+                  <span key={j} className="size-1.5 rounded-full" style={{ background: toneColor(env.palette, e.tone) ?? env.palette.accent }} title={toText(e.title)} />
+                ))}
+              </div>
+              <div className="max-sm:hidden">
+                {evs.slice(0, 3).map((e, j) => {
+                  const color = toneColor(env.palette, e.tone) ?? env.palette.accent;
+                  return (
+                    <div key={j} className="mb-0.5 truncate rounded px-1 py-px text-[11px]" style={{ background: `color-mix(in oklab, ${color} 18%, transparent)` }} title={toText(e.title)}>
+                      {toText(e.title)}
+                    </div>
+                  );
+                })}
+                {evs.length > 3 ? <div className="text-[10.5px] text-muted-foreground">+{evs.length - 3}</div> : null}
+              </div>
             </div>
           );
         })}
       </div>
+      <ul className="mt-2 space-y-1 sm:hidden">
+        {events
+          .filter((e) => /^\d{4}-\d{2}-\d{2}/.test(toText(e.date)) && toText(e.date).slice(0, 7) === first)
+          .sort((a, b) => toText(a.date).localeCompare(toText(b.date)))
+          .map((e, j) => (
+            <li key={j} className="flex min-w-0 items-center gap-2 text-[12.5px]">
+              <span className="size-1.5 shrink-0 rounded-full" style={{ background: toneColor(env.palette, e.tone) ?? env.palette.accent }} />
+              <span className="w-12 shrink-0 tabular-nums text-muted-foreground">{new Date(`${toText(e.date).slice(0, 10)}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}</span>
+              <span className="min-w-0 truncate">{toText(e.title)}</span>
+            </li>
+          ))}
+      </ul>
     </div>
   );
 }

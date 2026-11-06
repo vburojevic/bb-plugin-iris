@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { defaultCompare, isElementValue, isFnValue, isPendingValue, toText } from "../../core/evaluate";
 import { useEnv } from "../env";
 import { toneColor, tooClose } from "../palette";
@@ -265,14 +265,20 @@ export function JsonView({ props }: ViewProps) {
 }
 
 function JsonNode({ value, depth, open, name }: { value: unknown; depth: number; open: number; name?: string }) {
+  const { palette } = useEnv();
   const [expanded, setExpanded] = useState(depth < open);
   const label = name !== undefined ? <span className="text-muted-foreground">{name}: </span> : null;
   if (value === null || typeof value !== "object") {
-    const cls = typeof value === "string" ? "text-[color:var(--ansi-10,var(--success))]" : typeof value === "number" ? "text-[color:var(--ansi-12,var(--primary))]" : "text-[color:var(--ansi-13,var(--primary))]";
+    // Theme-derived ink, readable in light and dark: strings good, numbers info, the rest a series hue.
+    const color = typeof value === "string" ? palette.tone.good : typeof value === "number" ? palette.tone.info : palette.series[2];
     return (
-      <div className="truncate">
-        {label}
-        <span className={cls}>{typeof value === "string" ? JSON.stringify(value) : String(value)}</span>
+      <div className="flex min-w-0 items-center gap-1">
+        {/* The width of a chevron, so leaf keys line up with their expandable siblings. */}
+        <span className="w-[11px] shrink-0" aria-hidden />
+        <span className="min-w-0 truncate">
+          {label}
+          <span style={{ color }}>{typeof value === "string" ? JSON.stringify(value) : String(value)}</span>
+        </span>
       </div>
     );
   }
@@ -289,12 +295,15 @@ function JsonNode({ value, depth, open, name }: { value: unknown; depth: number;
         </span>
       </button>
       {expanded ? (
-        <div className="ml-4 border-l border-border pl-2">
-          {entries.slice(0, 500).map(([k, v]) => (
-            <JsonNode key={k} name={k} value={v} depth={depth + 1} open={open} />
-          ))}
-          {entries.length > 500 ? <div className="text-muted-foreground">{entries.length - 500} more</div> : null}
-        </div>
+        <>
+          <div className="ml-[5px] border-l border-border pl-2.5">
+            {entries.slice(0, 500).map(([k, v]) => (
+              <JsonNode key={k} name={k} value={v} depth={depth + 1} open={open} />
+            ))}
+            {entries.length > 500 ? <div className="pl-[15px] text-muted-foreground">{entries.length - 500} more</div> : null}
+          </div>
+          <div className="pl-[15px] text-muted-foreground">{brackets[1]}</div>
+        </>
       ) : null}
     </div>
   );
@@ -315,7 +324,7 @@ export function SegmentedBarView({ props }: ViewProps) {
   return (
     <div className="min-w-0">
       <div className="flex h-2.5 gap-0.5 overflow-hidden rounded-full bg-muted" role="img" aria-label={parts.map((p, k) => `${toText(p.label)} ${values[k]}`).join(", ")}>
-        {parts.map((p, k) => (values[k] > 0 ? <div key={k} className="iris-bar h-full first:rounded-l-full last:rounded-r-full" style={{ width: `${(values[k] / (total || 1)) * 100}%`, background: color(p, k) }} /> : null))}
+        {parts.map((p, k) => (values[k] > 0 ? <div key={k} className="iris-bar h-full min-w-1.5 first:rounded-l-full last:rounded-r-full" style={{ flex: `${values[k] / (total || 1)} 1 0%`, background: color(p, k) }} /> : null))}
       </div>
       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
         {parts.map((p, k) => (
@@ -343,7 +352,7 @@ export function CalendarHeatmapView({ props }: ViewProps) {
   const counts = new Map<string, number>();
   if (Array.isArray(props.days)) for (const d of props.days as { date?: unknown; value?: unknown }[]) counts.set(toText(d.date), num(d.value) ?? 0);
   else if (props.days && typeof props.days === "object") for (const [k, v] of Object.entries(props.days)) counts.set(k, num(v) ?? 0);
-  const weeks = Math.max(4, Math.min(53, num(props.weeks) ?? 26));
+  const weeks = Math.round(Math.max(4, Math.min(53, num(props.weeks) ?? 26)));
   const dates = [...counts.keys()].sort();
   const end = dates.length ? new Date(`${dates[dates.length - 1]}T00:00:00Z`) : new Date();
   const endDay = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate() + (6 - end.getUTCDay())));
@@ -356,23 +365,67 @@ export function CalendarHeatmapView({ props }: ViewProps) {
     cells.push({ date: key, value: counts.get(key) ?? 0 });
   }
   const total = [...counts.values()].reduce((a, b) => a + b, 0);
+  return <HeatmapGrid cells={cells} weeks={weeks} max={max} color={color} footer={`${total.toLocaleString("en-US")} ${str(props.label)?.toLowerCase() ?? "events"} in ${weeks} weeks`} />;
+}
+
+const GAP = 3;
+const DAY_LABEL_W = 26;
+
+/** The grid fills the card: cells grow to fit up to 16 px; past the 9 px floor it scrolls, opened at the newest week. */
+function HeatmapGrid({ cells, weeks, max, color, footer }: { cells: { date: string; value: number }[]; weeks: number; max: number; color: string; footer: string }) {
+  const box = useRef<HTMLDivElement | null>(null);
+  const scroller = useRef<HTMLDivElement | null>(null);
+  const [width, setWidth] = useState(0);
+  // Measured before paint, so the first frame already has its fitted cell size.
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
+    ro.observe(el);
+    setWidth(el.clientWidth);
+    return () => ro.disconnect();
+  }, []);
+  const size = width ? Math.max(9, Math.min(16, Math.floor((width - DAY_LABEL_W - GAP * (weeks - 1)) / weeks))) : 11;
+  useEffect(() => {
+    const el = scroller.current;
+    if (el) el.scrollLeft = el.scrollWidth;
+  }, [size, weeks]);
+  const months: { col: number; label: string }[] = [];
+  for (let w = 0; w < weeks; w++) {
+    const d = new Date(`${cells[w * 7].date}T00:00:00Z`);
+    const prev = w ? new Date(`${cells[(w - 1) * 7].date}T00:00:00Z`) : null;
+    if (!prev || prev.getUTCMonth() !== d.getUTCMonth()) months.push({ col: w, label: d.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" }) });
+  }
+  // A month that starts in the last two columns has no room for its name.
+  const shown = months.filter((m, k) => (k === 0 ? months.length < 2 || months[1].col - m.col >= 3 : weeks - m.col >= 2));
   return (
-    <div className="min-w-0">
-      <div className="iris-scroll-x overflow-x-auto">
-        <div className="grid w-max grid-flow-col gap-[3px]" style={{ gridTemplateRows: "repeat(7, 11px)" }}>
-          {cells.map((c) => (
+    <div ref={box} className="min-w-0">
+      <div ref={scroller} className="iris-scroll-x overflow-x-auto">
+        <div className="grid w-max text-[10.5px] text-muted-foreground" style={{ gridTemplateColumns: `${DAY_LABEL_W}px repeat(${weeks}, ${size}px)`, columnGap: GAP, rowGap: GAP, gridTemplateRows: `14px repeat(7, ${size}px)` }}>
+          {shown.map((m) => (
+            <span key={m.col} className="whitespace-nowrap leading-none" style={{ gridColumn: m.col + 2, gridRow: 1 }}>
+              {m.label}
+            </span>
+          ))}
+          {/* One sticky column holds the weekday names, so scrolled cells never show beside them. */}
+          <span className="sticky left-0 z-[1] grid bg-card" style={{ gridColumn: 1, gridRow: "2 / -1", gridTemplateRows: `repeat(7, ${size}px)`, rowGap: GAP }}>
+            {["", "Mon", "", "Wed", "", "Fri", ""].map((d, k) => (
+              <span key={k} className="self-center leading-none">
+                {d}
+              </span>
+            ))}
+          </span>
+          {cells.map((c, k) => (
             <div
               key={c.date}
               title={`${c.date}: ${c.value}`}
-              className="size-[11px] rounded-[3px]"
-              style={{ background: c.value ? `color-mix(in oklab, ${color} ${Math.round(25 + (c.value / max) * 75)}%, transparent)` : "var(--muted)" }}
+              className="rounded-[3px]"
+              style={{ gridColumn: Math.floor(k / 7) + 2, gridRow: (k % 7) + 2, background: c.value ? `color-mix(in oklab, ${color} ${Math.round(25 + (c.value / max) * 75)}%, transparent)` : "var(--muted)" }}
             />
           ))}
         </div>
       </div>
-      <div className="mt-1.5 text-xs text-muted-foreground">
-        {total.toLocaleString("en-US")} {str(props.label)?.toLowerCase() ?? "events"} in {weeks} weeks
-      </div>
+      <div className="mt-1.5 text-xs text-muted-foreground">{footer}</div>
     </div>
   );
 }

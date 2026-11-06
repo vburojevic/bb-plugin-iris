@@ -172,7 +172,7 @@ export function ChartView({ props }: ViewProps) {
         ) : null}
         <div className="inline-flex shrink-0 rounded-md bg-muted/70 p-0.5 text-[11.5px]" role="tablist" aria-label="View">
           {(["chart", "table"] as const).map((v) => (
-            <button key={v} type="button" role="tab" aria-selected={view === v} onClick={() => setView(v)} className={cn("rounded px-2 py-0.5 capitalize", view === v ? "bg-card text-foreground shadow-[0_0_0_1px_var(--border)]" : "text-muted-foreground hover:text-foreground")}>
+            <button key={v} type="button" role="tab" aria-selected={view === v} onClick={() => setView(v)} className={cn("iris-hit rounded px-2 py-0.5 capitalize", view === v ? "bg-card text-foreground shadow-[0_0_0_1px_var(--border)]" : "text-muted-foreground hover:text-foreground")}>
               {v}
             </button>
           ))}
@@ -412,7 +412,7 @@ function Cartesian({ props, model, type, width, height, brush }: { props: Record
       ))}
       {/* category labels */}
       {model.xs.map((x, k) =>
-        k % every === 0 || (k === n - 1 && (n - 1) % every >= every / 2) ? (
+        k % every === 0 || (k === n - 1 && (n - 1) % every > every / 2) ? (
           horizontal ? (
             <text key={k} x={L - 8} y={pos(k) + 4} textAnchor="end" className="fill-muted-foreground text-[11px]">
               {truncate(fmt(x, props.xFormat), 22)}

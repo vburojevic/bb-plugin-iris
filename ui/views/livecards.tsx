@@ -158,7 +158,7 @@ export function LiveLogView({ props }: ViewProps) {
     <div className="min-w-0 overflow-hidden rounded-[10px] bg-muted/30 ring-1 ring-border">
       <div className="flex min-w-0 items-center gap-2 border-b border-border px-3 py-1.5 text-xs">
         <div className="min-w-0 flex-1 truncate font-mono text-[12px] text-foreground">{title}</div>
-        {errors ? <span className="shrink-0 tabular-nums text-destructive">{errors} error lines</span> : null}
+        {errors ? <span className="shrink-0 tabular-nums text-destructive">{errors} error {errors === 1 ? "line" : "lines"}</span> : null}
         {value ? <span className="shrink-0 tabular-nums text-muted-foreground">{fmt(value.size, "bytes")}</span> : null}
         {chip}
       </div>
@@ -313,7 +313,7 @@ function TaskBar({ task, big, label, unit, samples, quietFor, stallAfter, now, s
       <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground tabular-nums">
         <span className="min-w-0 truncate">{detail}</span>
         {stalled ? <span style={{ color }}>No progress for {ago(quietFor).replace(" ago", "")}</span> : null}
-        {sample ? <span className="ml-auto">Sample</span> : null}
+        {sample ? <span className="ml-auto shrink-0 rounded-full bg-muted px-2 py-px text-[11px]">Sample</span> : null}
       </div>
     </div>
   );

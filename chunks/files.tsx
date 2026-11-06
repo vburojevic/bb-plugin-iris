@@ -216,18 +216,21 @@ export function FileTreeView({ props }: ViewProps) {
             className="h-7 w-full min-w-0 rounded-full bg-transparent pl-7 pr-3 text-[12.5px] ring-1 ring-border outline-none placeholder:text-muted-foreground focus:ring-[color-mix(in_oklab,var(--iris-accent)_60%,transparent)]"
           />
         </label>
-        {markers.size ? (
-          <button type="button" className={PILL(changedOnly)} onClick={() => setChangedOnly((v) => !v)} aria-pressed={changedOnly}>
-            <Glyph name="git-branch" size={12} />
-            Changed only
+        {/* The controls wrap as one group, never one stray button on a line. */}
+        <div className="ml-auto flex shrink-0 items-center gap-1.5">
+          {markers.size ? (
+            <button type="button" className={PILL(changedOnly)} onClick={() => setChangedOnly((v) => !v)} aria-pressed={changedOnly}>
+              <Glyph name="git-branch" size={12} />
+              Changed only
+            </button>
+          ) : null}
+          <button type="button" className={ICON_BTN} onClick={() => setOpen(allDirs())} aria-label="Open every folder" title="Open every folder">
+            <Glyph name="chevrons-up-down" size={14} />
           </button>
-        ) : null}
-        <button type="button" className={ICON_BTN} onClick={() => setOpen(allDirs())} aria-label="Open every folder" title="Open every folder">
-          <Glyph name="chevrons-up-down" size={14} />
-        </button>
-        <button type="button" className={ICON_BTN} onClick={() => setOpen(new Set())} aria-label="Close every folder" title="Close every folder">
-          <Glyph name="minus" size={14} />
-        </button>
+          <button type="button" className={ICON_BTN} onClick={() => setOpen(new Set())} aria-label="Close every folder" title="Close every folder">
+            <Glyph name="chevrons-down-up" size={14} />
+          </button>
+        </div>
       </div>
       <div role="tree" aria-label={display} className="max-h-[440px] min-w-0 overflow-y-auto overscroll-contain rounded-lg py-1 ring-1 ring-border">
         {rows.length ? (
@@ -260,8 +263,9 @@ export function FileTreeView({ props }: ViewProps) {
                 ) : null}
                 <span className={cn("relative w-[4.5rem] shrink-0 text-right text-[11.5px] tabular-nums", isDir ? "text-muted-foreground" : "")}>
                   {node.kind === "file" && node.gone ? "" : unknown ? "…" : formatBytes(size ?? 0)}
-                  {node.kind === "file" && !node.gone && size !== null ? (
-                    <span aria-hidden className="absolute -bottom-1 right-0 h-0.5 rounded-full" style={{ width: `${Math.max(3, (size / largest) * 100)}%`, background: tint(accentOf(palette), 55) }} />
+                  {/* Bars only for files that weigh something next to the largest; tiny ones read as specks. */}
+                  {node.kind === "file" && !node.gone && size !== null && size / largest >= 0.08 ? (
+                    <span aria-hidden className="absolute -bottom-1 right-0 h-0.5 rounded-full" style={{ width: `${(size / largest) * 100}%`, background: tint(accentOf(palette), 55) }} />
                   ) : null}
                 </span>
               </button>
@@ -685,12 +689,13 @@ export function FontPreviewView({ props }: ViewProps) {
             <span className="min-w-0 truncate text-[13.5px] font-semibold">{str(props.title) ?? info.family ?? name}</span>
             {info.style ? <span className="text-[12.5px] text-muted-foreground">{info.style}</span> : null}
           </div>
-          <div className="mt-0.5 flex min-w-0 flex-wrap gap-x-2 text-[11.5px] tabular-nums text-muted-foreground">
+          {/* Facts sit apart by space, not dots, so a wrapped line never starts with a separator. */}
+          <div className="mt-0.5 flex min-w-0 flex-wrap gap-x-3 text-[11.5px] tabular-nums text-muted-foreground">
             <span className="font-mono">{name}</span>
             {facts.map((f) => (
-              <span key={f}>· {f}</span>
+              <span key={f}>{f}</span>
             ))}
-            {info.designer ? <span>· {info.designer}</span> : null}
+            {info.designer ? <span>{info.designer}</span> : null}
           </div>
         </div>
         {sample ? <Chip>Sample</Chip> : null}
@@ -786,7 +791,7 @@ function AxisSlider({ label, value, min, max, step, unit, onChange, accent }: { 
   return (
     <label className="flex min-w-0 items-center gap-2">
       <span className="shrink-0">{label}</span>
-      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-28 min-w-0" style={{ accentColor: accent }} />
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="iris-range w-28 min-w-0" style={{ ["--iris-fill" as string]: `${((value - min) / (max - min || 1)) * 100}%`, accentColor: accent }} />
       <span className="w-12 shrink-0 tabular-nums text-foreground">
         {Math.round(value * 10) / 10}
         {unit ?? ""}

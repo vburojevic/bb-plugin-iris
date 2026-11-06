@@ -84,10 +84,13 @@ export function DataGridView({ props }: ViewProps) {
               role="tab"
               aria-selected={mode === m.id}
               onClick={() => setMode(m.id)}
-              className={cn("inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2.5", mode === m.id ? "bg-card text-foreground shadow-[0_0_0_1px_var(--border)]" : "text-muted-foreground hover:text-foreground")}
+              title={m.label}
+              aria-label={m.label}
+              className={cn("iris-hit inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2.5", mode === m.id ? "bg-card text-foreground shadow-[0_0_0_1px_var(--border)]" : "text-muted-foreground hover:text-foreground")}
             >
               <Glyph name={m.icon} size={13} />
-              {m.label}
+              {/* On a phone only the open view keeps its name, so the switcher and copy share one row. */}
+              <span className={cn(mode !== m.id && "max-sm:hidden")}>{m.label}</span>
             </button>
           ))}
         </div>

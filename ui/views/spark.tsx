@@ -7,7 +7,9 @@ export function SparkPath({ values, color, width = 96, height = 24, area = true,
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = max - min || 1;
-  const pts = values.map((v, k) => [(k / (values.length - 1)) * (width - 2) + 1, height - 2 - ((v - min) / span) * (height - 4)] as const);
+  // Inset by the end dot's radius plus half the stroke, so the dot is never clipped at an edge.
+  const pad = 3;
+  const pts = values.map((v, k) => [(k / (values.length - 1)) * (width - 2 * pad) + pad, height - pad - ((v - min) / span) * (height - 2 * pad)] as const);
   const line = pts.map(([x, y], k) => `${k ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className={className} aria-hidden>

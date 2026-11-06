@@ -79,13 +79,13 @@ export function StepperView({ props }: ViewProps) {
   return (
     <Field label={str(props.label)}>
       <div className="inline-flex h-8 items-center rounded-full ring-1 ring-border">
-        <button type="button" className="grid size-8 place-items-center rounded-l-full hover:bg-state-hover disabled:opacity-40" disabled={min != null && v <= min} onClick={() => set(clamp(v - step))} aria-label="Decrease">
+        <button type="button" className="iris-hit grid size-8 place-items-center rounded-l-full hover:bg-state-hover disabled:opacity-40" disabled={min != null && v <= min} onClick={() => set(clamp(v - step))} aria-label="Decrease">
           <Glyph name="minus" size={14} />
         </button>
         <span className="min-w-10 px-1 text-center text-[13.5px] font-medium tabular-nums" aria-live="polite">
           {v}
         </span>
-        <button type="button" className="grid size-8 place-items-center rounded-r-full hover:bg-state-hover disabled:opacity-40" disabled={max != null && v >= max} onClick={() => set(clamp(v + step))} aria-label="Increase">
+        <button type="button" className="iris-hit grid size-8 place-items-center rounded-r-full hover:bg-state-hover disabled:opacity-40" disabled={max != null && v >= max} onClick={() => set(clamp(v + step))} aria-label="Increase">
           <Glyph name="plus" size={14} />
         </button>
       </div>
@@ -103,8 +103,8 @@ export function ToggleView({ props }: ViewProps) {
         <span className="block text-[13.5px]">{str(props.label)}</span>
         {str(props.detail) ? <span className="block text-xs text-muted-foreground">{str(props.detail)}</span> : null}
       </span>
-      <button id={id} type="button" role="switch" aria-checked={on} onClick={() => set(!on)} className={cn("relative h-5 w-9 shrink-0 rounded-full transition-colors", on ? "bg-foreground" : "bg-muted ring-1 ring-border")}>
-        <span className={cn("absolute top-0.5 size-4 rounded-full bg-background shadow transition-[left]", on ? "left-[18px]" : "left-0.5")} />
+      <button id={id} type="button" role="switch" aria-checked={on} onClick={() => set(!on)} className={cn("iris-hit relative h-5 w-9 shrink-0 rounded-full transition-colors", on ? "bg-foreground" : "bg-muted ring-1 ring-border")}>
+        <span className={cn("absolute top-0.5 size-4 rounded-full shadow transition-[left]", on ? "left-[18px] bg-background" : "left-0.5 bg-muted-foreground")} />
       </button>
     </label>
   );
@@ -119,7 +119,7 @@ export function SegmentedView({ props }: ViewProps) {
         {opts.map((o) => {
           const active = same(o.value, value);
           return (
-            <button key={o.label} type="button" role="radio" aria-checked={active} onClick={() => set(o.value)} className={cn("inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] transition-colors", active ? "bg-card font-medium text-foreground shadow-[0_0_0_1px_var(--border)]" : "text-muted-foreground hover:text-foreground")}>
+            <button key={o.label} type="button" role="radio" aria-checked={active} onClick={() => set(o.value)} className={cn("iris-hit inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] transition-colors", active ? "bg-card font-medium text-foreground shadow-[0_0_0_1px_var(--border)]" : "text-muted-foreground hover:text-foreground")}>
               {o.icon ? <Glyph name={o.icon} size={13} /> : null}
               {o.label}
             </button>
@@ -138,7 +138,7 @@ export function SelectView({ props }: ViewProps) {
   return (
     <Field label={str(props.label)} htmlFor={id}>
       <div className="relative">
-        <select id={id} value={index} onChange={(e) => set(opts[Number(e.target.value)]?.value)} className="h-8 w-full appearance-none rounded-lg bg-card pl-3 pr-8 text-[13.5px] ring-1 ring-border outline-none focus-visible:ring-foreground/40">
+        <select id={id} value={index} onChange={(e) => set(opts[Number(e.target.value)]?.value)} className="iris-field h-8 w-full appearance-none rounded-lg bg-card pl-3 pr-8 text-[13.5px] ring-1 ring-border outline-none focus-visible:ring-foreground/40">
           {index < 0 ? <option value={-1}>{str(props.placeholder) ?? "Choose"}</option> : null}
           {opts.map((o, k) => (
             <option key={k} value={k}>
@@ -204,7 +204,7 @@ export function InputView({ props }: ViewProps) {
         value={value == null ? "" : String(value)}
         placeholder={str(props.placeholder)}
         onChange={(e) => set(type === "number" ? (e.target.value === "" ? null : Number(e.target.value)) : e.target.value)}
-        className="h-8 w-full rounded-lg bg-card px-3 text-[13.5px] ring-1 ring-border outline-none placeholder:text-muted-foreground focus-visible:ring-foreground/40"
+        className="iris-field h-8 w-full rounded-lg bg-card px-3 text-[13.5px] ring-1 ring-border outline-none placeholder:text-muted-foreground focus-visible:ring-foreground/40"
       />
     </Field>
   );
@@ -225,7 +225,7 @@ export function DateInputView({ props }: ViewProps) {
   const [value, set] = useBound(props);
   return (
     <Field label={str(props.label)} htmlFor={id}>
-      <input id={id} type="date" value={value == null ? "" : String(value)} min={str(props.min)} max={str(props.max)} onChange={(e) => set(e.target.value)} className="h-8 rounded-lg bg-card px-3 text-[13.5px] ring-1 ring-border outline-none focus-visible:ring-foreground/40" />
+      <input id={id} type="date" value={value == null ? "" : String(value)} min={str(props.min)} max={str(props.max)} onChange={(e) => set(e.target.value)} className="iris-field h-8 rounded-lg bg-card px-3 text-[13.5px] ring-1 ring-border outline-none focus-visible:ring-foreground/40" />
     </Field>
   );
 }
@@ -240,7 +240,7 @@ export function RatingView({ props }: ViewProps) {
     <Field label={str(props.label)}>
       <div className="flex gap-0.5" role="radiogroup" onPointerLeave={() => setHover(null)}>
         {Array.from({ length: max }, (_, k) => (
-          <button key={k} type="button" role="radio" aria-checked={num(value) === k + 1} aria-label={`${k + 1} of ${max}`} onPointerEnter={() => setHover(k + 1)} onClick={() => set(k + 1)} className="p-0.5">
+          <button key={k} type="button" role="radio" aria-checked={num(value) === k + 1} aria-label={`${k + 1} of ${max}`} onPointerEnter={() => setHover(k + 1)} onClick={() => set(k + 1)} className="iris-hit p-0.5">
             <Glyph name="star" size={20} color={k < v ? env.palette.tone.warn : undefined} className={k < v ? "[&_*]:fill-current" : "text-muted-foreground/50"} />
           </button>
         ))}
@@ -264,7 +264,7 @@ export function ButtonView({ props, text }: ViewProps) {
       type="button"
       disabled={props.disabled === true || env.streaming}
       onClick={() => env.run(props.onClick)}
-      className={cn("inline-flex w-fit shrink-0 items-center justify-center gap-1.5 rounded-full font-medium transition-[opacity,background-color] disabled:pointer-events-none disabled:opacity-50", props.size === "sm" ? "h-7 px-3 text-[12.5px]" : "h-8 px-3.5 text-[13px]", BUTTON[variant] ?? BUTTON.secondary)}
+      className={cn("iris-hit inline-flex w-fit shrink-0 items-center justify-center gap-1.5 rounded-full font-medium transition-[opacity,background-color] disabled:pointer-events-none disabled:opacity-50", props.size === "sm" ? "h-7 px-3 text-[12.5px]" : "h-8 px-3.5 text-[13px]", BUTTON[variant] ?? BUTTON.secondary)}
     >
       {props.icon ? <Glyph name={props.icon} size={14} /> : null}
       {text}

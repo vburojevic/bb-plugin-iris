@@ -37,7 +37,7 @@ export function CalloutView({ props, children, text }: ViewProps) {
   return (
     <div
       className="flex min-w-0 gap-2.5 rounded-lg px-3 py-2.5"
-      style={{ background: color ? `color-mix(in oklab, ${color} 9%, transparent)` : undefined, boxShadow: color ? `inset 0 0 0 1px color-mix(in oklab, ${color} 22%, transparent)` : undefined }}
+      style={{ background: color ? `color-mix(in oklab, ${color} 13%, transparent)` : undefined, boxShadow: color ? `inset 0 0 0 1px color-mix(in oklab, ${color} 32%, transparent)` : undefined }}
       role={tone === "bad" || tone === "warn" ? "alert" : "note"}
     >
       <Glyph name={props.icon ?? TONE_ICON[tone] ?? "info"} size={16} color={color} className="mt-0.5" />
@@ -118,7 +118,7 @@ export function KeyValueView({ props }: ViewProps) {
   if (isPendingValue(props.items)) return <Shimmer className="h-16" />;
   const rows = pairs(props.items);
   return (
-    <dl className="grid min-w-0 gap-x-6" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+    <dl className={cn("grid min-w-0 gap-x-6", cols === 1 && "max-w-[32rem]")} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
       {rows.map((r, k) => (
         <KVRow key={k} {...r} />
       ))}
@@ -205,10 +205,11 @@ export function LinkView({ props, text }: ViewProps) {
   return (
     <button
       type="button"
-      className="inline text-left text-[13.5px] text-foreground underline decoration-border underline-offset-[3px] hover:decoration-foreground"
+      className="iris-link inline text-left text-[13.5px] text-foreground underline underline-offset-[3px]"
       onClick={() => env.perform([file ? { $iris: "action", kind: "openFile", args: [file, num(props.line) ?? null] } : { $iris: "action", kind: "openUrl", args: [href ?? ""] }])}
     >
       {label}
+      <Glyph name={file ? "file" : "arrow-up-right"} size={12} className="ml-0.5 inline align-[-1px] text-muted-foreground" />
     </button>
   );
 }

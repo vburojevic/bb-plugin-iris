@@ -5,7 +5,7 @@
 // grid, the actual line solid, the projection dashed and the band one flat
 // fill. Math lives in core/budget.ts and core/forecast.ts.
 
-import { Chip, Glyph, InlineError, Shimmer, cn, str, tooClose, useEnv } from "@iris/ui";
+import { Chip, Glyph, InlineError, Shimmer, cn, str, useEnv } from "@iris/ui";
 import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { IrisError, isPendingValue } from "../core/evaluate";
 import { type BudgetLine, type BudgetPart, type BudgetState, amountNumber, formatAmount, formatOf, formatPair, formatRate, formatSpan, isPercentUnit, normalizeBudget } from "../core/budget";
@@ -18,14 +18,9 @@ type Palette = ReturnType<typeof useEnv>["palette"];
 // Under the warn share a meter is the accent, unless the theme's accent looks
 // like the warn or bad tone (an amber or red theme): then it is a quiet neutral,
 // so warn and bad still stand out.
-const okCache = new WeakMap<object, string>();
-function okColor(palette: Palette): string {
-  let c = okCache.get(palette);
-  if (!c) {
-    c = tooClose(palette.accent, palette.tone.warn) || tooClose(palette.accent, palette.tone.bad) ? palette.tone.neutral : palette.accent;
-    okCache.set(palette, c);
-  }
-  return c;
+/** Within the limit reads as a calm neutral in every theme, so only warn and over carry color. */
+function okColor(_palette: Palette): string {
+  return "color-mix(in oklab, var(--foreground) 55%, transparent)";
 }
 const stateColor = (palette: Palette, s: BudgetState) => (s === "over" ? palette.tone.bad : s === "warn" ? palette.tone.warn : okColor(palette));
 const pct = (r: number) => `${Math.round(r * 100)}%`;
@@ -227,7 +222,7 @@ function Strip({ parts, unit, lead, className }: { parts: BudgetPart[]; unit: st
   const { palette } = useEnv();
   const sorted = [...parts].sort((a, b) => b.value - a.value);
   const sum = sorted.reduce((s, p) => s + p.value, 0) || 1;
-  const color = (k: number) => (k === 0 ? stateColor(palette, lead) : `color-mix(in oklab, ${palette.tone.neutral} ${Math.max(28, 70 - (k - 1) * 14)}%, transparent)`);
+  const color = (k: number) => (k === 0 ? stateColor(palette, lead) : `color-mix(in oklab, ${palette.tone.neutral} ${Math.max(18, 40 - (k - 1) * 10)}%, transparent)`);
   return (
     <div className={cn("min-w-0", className)}>
       <div className="flex h-1.5 gap-0.5 overflow-hidden rounded-full bg-muted" role="img" aria-label={sorted.map((p) => `${p.label} ${formatAmount(p.value, unit)}`).join(", ")}>
@@ -275,7 +270,8 @@ function ForecastCard({ model: m, problems, unit, chart, title }: { model: Forec
     <div className="min-w-0">
       {problems.length ? <InlineError error={new Error(`${problems[0]}${problems.length > 1 ? ` (and ${problems.length - 1} more)` : ""}`)} context="<Forecast>" /> : null}
       {title ? <div className="mb-2 truncate text-[13.5px] font-semibold">{title}</div> : null}
-      <div className="flex min-w-0 flex-wrap items-end gap-x-6 gap-y-2">
+      {/* Labels share one top line; the big ETA figure then reads first. */}
+      <div className="flex min-w-0 flex-wrap items-start gap-x-6 gap-y-2">
         <Figure label={finished ? "Finished" : "ETA"} value={finished ? (m.finishedAt != null ? when(m.finishedAt) : "Done") : m.eta ? when(m.eta.at) : "None yet"} />
         {m.eta && when(m.eta.early) !== when(m.eta.late) ? <Figure label="Likely between" value={`${when(m.eta.early)} and ${when(m.eta.late)}`} small /> : null}
         <Figure label="Done" value={m.total != null ? `${count(m.done)} of ${count(m.total)}${unit ? ` ${unit}` : ""}` : `${count(m.done)}${unit ? ` ${unit}` : ""}`} small />

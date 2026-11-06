@@ -184,7 +184,7 @@ export const INPUTS = [
     summary: "A multi-line text field.",
     props: { bind: p.bind(), label: p.str("Name"), placeholder: p.str("Hint"), rows: p.num("Visible lines", { def: 3 }) },
     children: "none",
-    example: `<state note="" />\n<TextArea bind="note" label="Note for the agent" />`,
+    example: `<state note="" />\n<TextArea bind="note" label="Note for the agent" placeholder="Anything the agent should know before it starts" />`,
     aliases: ["Textarea", "Multiline"],
   }),
   component({

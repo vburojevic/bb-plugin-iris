@@ -343,10 +343,13 @@ export function CompareView({ props }: Pick<ViewProps, "props">) {
               role="radio"
               aria-checked={mode === m}
               onClick={() => setMode(m)}
-              className={cn("inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] transition-colors", mode === m ? "bg-card font-medium text-foreground shadow-[0_0_0_1px_var(--border)]" : "text-muted-foreground hover:text-foreground")}
+              title={MODE_LABEL[m].label}
+              aria-label={MODE_LABEL[m].label}
+              className={cn("iris-hit inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] transition-colors", mode === m ? "bg-card font-medium text-foreground shadow-[0_0_0_1px_var(--border)]" : "text-muted-foreground hover:text-foreground max-sm:px-2.5")}
             >
               <Glyph name={MODE_LABEL[m].icon} size={13} />
-              {MODE_LABEL[m].label}
+              {/* On a phone only the chosen mode keeps its name, so all four fit. */}
+              <span className={cn(mode !== m && "max-sm:hidden")}>{MODE_LABEL[m].label}</span>
             </button>
           ))}
         </div>
@@ -419,7 +422,7 @@ function Wipe({ a, b, aUrl, bUrl }: { a: CompareImage; b: CompareImage; aUrl: st
       <img src={aUrl} alt={a.label} draggable={false} className="absolute inset-0 size-full object-contain" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }} />
       <ImageTag label={a.label} className="left-2" />
       <ImageTag label={b.label} className="right-2" />
-      <div className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-card shadow-[0_0_0_1px_var(--border)]" style={{ left: `${pos}%` }} />
+      <div className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-foreground shadow-[0_0_0_1px_var(--card)]" style={{ left: `${pos}%` }} />
       <div
         role="slider"
         tabIndex={0}
@@ -429,7 +432,7 @@ function Wipe({ a, b, aUrl, bUrl }: { a: CompareImage; b: CompareImage; aUrl: st
         aria-valuenow={Math.round(pos)}
         aria-valuetext={`${Math.round(pos)}% ${a.label}`}
         onKeyDown={key}
-        className="absolute top-1/2 grid size-8 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-card text-foreground shadow-[0_0_0_1px_var(--border)] outline-none focus-visible:ring-2 focus-visible:ring-foreground/40"
+        className="absolute top-1/2 grid size-8 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-foreground text-background shadow-[0_0_0_2px_var(--card)] outline-none focus-visible:ring-2 focus-visible:ring-foreground/40"
         style={{ left: `${pos}%` }}
       >
         <Glyph name="chevrons-left-right" size={15} />

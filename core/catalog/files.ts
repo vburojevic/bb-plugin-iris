@@ -152,7 +152,7 @@ export const FILES = [
       title: p.str("Caption"),
     },
     children: "none",
-    example: `<FontPreview src="assets/fonts/Inter.woff2" sample="Sphinx of black quartz, judge my vow" />`,
+    example: `<FontPreview src="fonts/KaTeX_Main-Regular.woff2" sample="Sphinx of black quartz, judge my vow" />`,
     aliases: ["Font", "FontFile", "GlyphGrid", "Glyphs"],
     heavy: true,
   }),

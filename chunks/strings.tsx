@@ -157,11 +157,11 @@ export function StringsTableView({ props }: ViewProps) {
               <table className="w-full border-separate border-spacing-0 text-[13px]">
                 <thead className="sticky top-0 z-[2] bg-card">
                   <tr className="text-left text-xs text-muted-foreground">
-                    <th scope="col" className="sticky left-0 z-[1] min-w-[8rem] max-w-[11rem] border-b border-r border-border bg-card px-2.5 py-1.5 font-medium sm:min-w-[10rem] sm:max-w-none">
+                    <th scope="col" className="sticky left-0 z-[1] min-w-[8rem] max-w-[11rem] border-b border-r border-border bg-card px-2.5 py-1.5 font-medium sm:min-w-[9rem] sm:max-w-none">
                       Key<span className="font-normal sm:hidden"> and {table.source}</span>
                     </th>
                     {[table.source, ...shown].map((l) => (
-                      <th key={l} scope="col" className={cn("min-w-[10rem] border-b border-border px-2.5 py-1.5 font-medium sm:min-w-[11.5rem]", l === table.source && "hidden sm:table-cell")}>
+                      <th key={l} scope="col" className={cn("min-w-[10rem] border-b border-border px-2.5 py-1.5 font-medium", l === table.source && "hidden sm:table-cell")}>
                         <span className="font-mono text-foreground">{l}</span> <span className="font-normal">{l === table.source ? "source" : (localeName(l) ?? "")}</span>
                       </th>
                     ))}

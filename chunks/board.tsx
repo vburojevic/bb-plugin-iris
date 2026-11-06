@@ -113,10 +113,14 @@ export function WhiteboardView({ props, node }: ViewProps) {
     const pad = 28;
     const w = el.clientWidth;
     const h = el.clientHeight;
-    // Never fit below readable: a board too big for a phone starts at its top-left.
-    const k = clampK(Math.max(0.5, Math.min((w - pad * 2) / b.w, (h - pad * 2) / b.h, 1.15)));
+    // Where the hint shows (sm and up) the board keeps clear of it.
+    const padBottom = w >= 640 ? 44 : pad;
+    // Never fit below readable: on a phone notes keep about 80% of their size and the board starts
+    // at its top-left, to pan from there.
+    const floor = w < 520 ? 0.8 : 0.5;
+    const k = clampK(Math.max(floor, Math.min((w - pad * 2) / b.w, (h - pad - padBottom) / b.h, 1.15)));
     const x = b.w * k <= w - pad * 2 ? (w - b.w * k) / 2 - b.x * k : pad - b.x * k;
-    const y = b.h * k <= h - pad * 2 ? (h - b.h * k) / 2 - b.y * k : pad - b.y * k;
+    const y = b.h * k <= h - pad - padBottom ? (h - padBottom + pad - b.h * k) / 2 - b.y * k : pad - b.y * k;
     setView({ k, x, y });
   }, [laid]);
   useLayoutEffect(() => {

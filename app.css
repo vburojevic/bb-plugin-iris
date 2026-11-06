@@ -5,12 +5,25 @@
  * No gradients, no rainbow: one accent, quiet surfaces.
  */
 
+/* In-card hairlines. Some themes set --border almost equal to the card (Ayu Dark's is
+ * about 1.05:1), so rules, row separators and outlines vanish. Inside a card the border
+ * leans 10% toward the text color: still the theme's own hue, now visible in every theme.
+ * Computed once, on the outermost root, from the theme's --border, then handed to every
+ * descendant. Only the outermost: a nested root would read its own overridden --border and
+ * the two variables would refer to each other. */
+[data-iris-root]:not([data-iris-root] *) {
+  --iris-hairline: color-mix(in oklab, var(--border), var(--foreground) 10%);
+}
+[data-iris-root] * {
+  --border: var(--iris-hairline);
+}
+
 /* A card that is alive (live, waiting on you, or still streaming) shows a thin accent line. */
 [data-iris-root] .iris-edge {
   position: absolute;
   left: 18px;
   right: 18px;
-  top: -1px;
+  top: 0;
   height: 1.5px;
   border-radius: 2px;
   background: var(--iris-accent, var(--primary));
@@ -135,6 +148,29 @@
 }
 [data-iris-root] .iris-prose > :last-child {
   margin-bottom: 0;
+}
+
+/* Mermaid in the card's style: rounded nodes, and edge labels on a knockout so the line
+ * doesn't run through the text. */
+[data-iris-root] .iris-diagram g.node rect,
+[data-iris-root] .iris-diagram g.cluster rect {
+  rx: 8px;
+  ry: 8px;
+}
+[data-iris-root] .iris-diagram .edgeLabel,
+[data-iris-root] .iris-diagram .edgeLabel p,
+[data-iris-root] .iris-diagram .edgeLabel span,
+[data-iris-root] .iris-diagram .labelBkg {
+  background-color: var(--card) !important;
+}
+[data-iris-root] .iris-diagram .edgeLabel p,
+[data-iris-root] .iris-diagram .edgeLabel span {
+  padding: 0 3px;
+}
+
+/* A diagram wider than the card scrolls from its left edge; centering would hide that edge. */
+[data-iris-root] .iris-diagram :has(> svg) {
+  justify-content: safe center !important;
 }
 
 /* Clickable Mermaid nodes. */
@@ -290,4 +326,44 @@
   [data-iris-root] .iris-caret {
     animation: none !important;
   }
+}
+
+/* Touch: small controls keep their look but take a 44 px tall target, and fields grow to 40 px. */
+@media (pointer: coarse) {
+  [data-iris-root] .iris-hit {
+    position: relative;
+  }
+  [data-iris-root] .iris-hit::after {
+    content: "";
+    position: absolute;
+    inset: min(0px, calc((100% - 44px) / 2)) 0;
+  }
+  /* Inside a sideways scroller an overhanging tap area would make the track scroll vertically
+   * too; there the buttons grow to 36 px instead. */
+  [data-iris-root] .iris-scroll-x > .iris-hit {
+    min-height: 36px;
+  }
+  [data-iris-root] .iris-scroll-x > .iris-hit::after {
+    inset: 0;
+  }
+  [data-iris-root] .iris-tools > button {
+    width: 36px;
+  }
+  [data-iris-root] .iris-field {
+    min-height: 40px;
+  }
+}
+
+/* The selected option of a segmented control sits above its muted track. The card color does
+ * that in light themes; in dark ones the card is darker than the track, so it lifts a step. */
+[data-iris-root] button.bg-card:is([aria-selected="true"], [aria-checked="true"], [aria-pressed="true"]) {
+  background-color: var(--iris-raised, var(--card));
+}
+
+/* Links read as links in every theme: an underline at 40% of the text color, full on hover. */
+[data-iris-root] .iris-link {
+  text-decoration-color: color-mix(in oklab, currentColor 40%, transparent);
+}
+[data-iris-root] .iris-link:hover {
+  text-decoration-color: currentColor;
 }

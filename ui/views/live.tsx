@@ -402,10 +402,16 @@ function CommitRow({ commit }: { commit: CommitInfo }) {
     <li className="min-w-0">
       <button type="button" onClick={() => setOpen(!open)} className="flex w-full min-w-0 items-center gap-2.5 px-2.5 py-1.5 text-left hover:bg-muted/40" aria-expanded={open}>
         <Glyph name="chevron-right" size={13} className={cn("text-muted-foreground transition-transform", open && "rotate-90")} />
-        <span className="shrink-0 font-mono text-[11.5px] text-muted-foreground">{commit.shortSha}</span>
-        <span className="min-w-0 flex-1 truncate text-[13px]">{commit.subject}</span>
-        <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">{commit.author}</span>
-        <span className="shrink-0 whitespace-nowrap text-xs tabular-nums text-muted-foreground" title={formatValue(commit.authoredAt, "datetime")}>
+        <span className="shrink-0 font-mono text-[11.5px] text-muted-foreground max-sm:hidden">{commit.shortSha}</span>
+        {/* On a phone the subject takes the row and the sha and time sit under it. */}
+        <span className="min-w-0 flex-1">
+          <span className="block text-[13px] max-sm:line-clamp-2 sm:truncate">{commit.subject}</span>
+          <span className="block font-mono text-[11px] text-muted-foreground sm:hidden">
+            {commit.shortSha} · <span className="font-sans">{ago(commit.authoredAt)}</span>
+          </span>
+        </span>
+        <span className="hidden w-28 shrink-0 truncate text-xs text-muted-foreground sm:inline">{commit.author}</span>
+        <span className="hidden w-[6.5rem] shrink-0 whitespace-nowrap text-right text-xs tabular-nums text-muted-foreground sm:inline" title={formatValue(commit.authoredAt, "datetime")}>
           {ago(commit.authoredAt)}
         </span>
       </button>
@@ -519,10 +525,11 @@ function CheckBar({ checks }: { checks: PullRequestInfo["checks"] }) {
   const other = Math.max(0, checks.total - checks.passed - checks.failed - checks.pending);
   return (
     <span className="flex items-center gap-2 text-xs tabular-nums text-muted-foreground">
-      <span>
+      <span className="text-right [text-wrap:balance]">
         {[checks.passed ? `${checks.passed} passed` : null, checks.failed ? `${checks.failed} failed` : null, checks.pending ? `${checks.pending} running` : null, other ? `${other} other` : null].filter(Boolean).join(", ")}
       </span>
-      <span className="flex h-1.5 w-20 overflow-hidden rounded-full bg-muted">
+      {/* On a phone the counts say it; the bar gives them its room. */}
+      <span className="flex h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-muted max-sm:hidden">
         <span className="iris-bar h-full" style={{ width: `${(checks.passed / total) * 100}%`, background: t.good }} />
         <span className="iris-bar h-full" style={{ width: `${(checks.failed / total) * 100}%`, background: t.bad }} />
         <span className="iris-bar h-full" style={{ width: `${(checks.pending / total) * 100}%`, background: t.warn }} />
@@ -676,8 +683,12 @@ function EnvironmentRow({ e, sample }: { e: EnvironmentInfo; sample: boolean }) 
   return (
     <li className="min-w-0 px-2.5 py-2">
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-        <Glyph name={e.isWorktree ? "folder-git-2" : "folder"} size={14} className="text-muted-foreground" />
-        <span className="min-w-[9rem] flex-1 basis-0 truncate font-mono text-[12.5px] font-medium">{e.branch ?? e.name ?? folder ?? e.id}</span>
+        <Glyph name={e.isWorktree ? "folder-git-2" : "folder"} size={14} className="mt-[3px] self-start text-muted-foreground" />
+        {/* The branch and its folder stay together; the chips wrap beside or under them as a group. */}
+        <span className="min-w-[9rem] flex-1 basis-0">
+          <span className="block truncate font-mono text-[12.5px] font-medium">{e.branch ?? e.name ?? folder ?? e.id}</span>
+          {folder && folder !== e.branch ? <span className="block truncate font-mono text-[11px] text-muted-foreground" title={e.path ?? undefined}>{folder}</span> : null}
+        </span>
         <span className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5">
           {e.current ? <Chip tone="info">This thread</Chip> : null}
           {e.changedFiles ? <Chip>{e.changedFiles} changed</Chip> : e.changedFiles === 0 ? <span className="text-xs text-muted-foreground">clean</span> : null}
@@ -693,7 +704,6 @@ function EnvironmentRow({ e, sample }: { e: EnvironmentInfo; sample: boolean }) 
           ) : null}
         </span>
       </div>
-      {folder && folder !== e.branch ? <div className="truncate pl-[22px] font-mono text-[11px] text-muted-foreground" title={e.path ?? undefined}>{folder}</div> : null}
       {threads.length ? (
         <ul className="mt-1 space-y-0.5 pl-[22px]">
           {threads.map((t) => {
@@ -703,7 +713,7 @@ function EnvironmentRow({ e, sample }: { e: EnvironmentInfo; sample: boolean }) 
                 <button type="button" onClick={() => !sample && navigate.toThread(t.id)} className="flex w-full min-w-0 items-center gap-2 text-left text-[12.5px] hover:underline">
                   <StatusDot tone={s.tone} running={s.running} />
                   <span className="min-w-0 truncate">{t.title}</span>
-                  {s.tone === "warn" || s.tone === "bad" ? <span className="shrink-0 text-xs" style={{ color: env.palette.tone[s.tone] }}>{s.label}</span> : null}
+                  {s.tone === "warn" || s.tone === "bad" ? <span className="shrink-0 text-[12px]" style={{ color: env.palette.tone[s.tone] }}>{s.label}</span> : null}
                 </button>
               </li>
             );

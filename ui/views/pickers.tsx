@@ -50,17 +50,21 @@ export function ChoicesView({ props }: ViewProps) {
 export function SubmitView({ props, text }: ViewProps) {
   const env = useEnv();
   const label = text || str(props.label) || "Send answer";
-  if (!env.submit) {
-    return <div className="text-xs text-muted-foreground">{label} works inside an iris_ask picker.</div>;
-  }
+  // Outside a waiting picker there is no one to answer: the button shows, switched off, and says why.
+  const live = Boolean(env.submit);
   return (
-    <button
-      type="button"
-      onClick={() => env.submit?.(props.value !== undefined ? props.value : env.runtime.answers())}
-      className={cn("ml-auto inline-flex h-8 w-fit items-center gap-1.5 rounded-full px-4 text-[13px] font-medium", props.variant === "secondary" ? "ring-1 ring-border hover:bg-state-hover" : "bg-foreground text-background hover:opacity-90")}
-    >
-      {label}
-      <Glyph name="arrow-up" size={14} />
-    </button>
+    <div className="ml-auto flex items-center justify-end gap-3">
+      {live ? null : <span className="text-xs text-muted-foreground">Sends in an iris_ask picker</span>}
+      <button
+        type="button"
+        disabled={!live}
+        title={live ? undefined : "Sends the answer when this card is an iris_ask picker"}
+        onClick={() => env.submit?.(props.value !== undefined ? props.value : env.runtime.answers())}
+        className={cn("iris-hit inline-flex h-8 w-fit shrink-0 items-center gap-1.5 rounded-full px-4 text-[13px] font-medium disabled:opacity-50", props.variant === "secondary" ? "ring-1 ring-border hover:bg-state-hover" : "bg-foreground text-background hover:opacity-90")}
+      >
+        {label}
+        <Glyph name="arrow-up" size={14} />
+      </button>
+    </div>
   );
 }

@@ -227,7 +227,8 @@ function ZoneLine(p: { row: ZoneRow; narrow: boolean; labelW: number; trackW: nu
         <div className="absolute inset-0 flex">
           {cells.map((x, h) => (
             <div key={h} className={cn("relative flex flex-1 items-center justify-center text-[10.5px] tabular-nums", x.work ? "text-foreground/80" : "text-muted-foreground/70")} style={{ background: x.work ? tint("var(--foreground)", 9) : undefined, borderLeft: x.newDay && h > 0 ? "1px solid var(--border)" : undefined }}>
-              {x.newDay && p.every <= 2 ? (
+              {/* Where hours are labeled sparsely, the cells under and beside the slot stay blank, so its outline never cuts a label. */}
+              {p.every > 1 && h * 60 < start + duration + 60 && (h + 1) * 60 > start - 60 ? null : x.newDay && p.every <= 2 ? (
                 <span className="text-[9.5px] font-semibold uppercase tracking-wide">{WEEKDAY_SHORT[x.c.weekday].slice(0, p.every === 1 ? 3 : 2)}</span>
               ) : h % p.every === 0 ? (
                 <span title={x.c.minute ? clockText(x.c.hour, x.c.minute) : undefined}>{x.c.hour}</span>
@@ -300,14 +301,13 @@ export function CronView({ props, node }: ViewProps) {
       {cron ? (
         <>
           <div className="mt-2.5 text-[15px] font-semibold leading-snug tracking-[-0.01em]">{describeCron(cron)}</div>
-          <dl className="mt-3 grid grid-cols-5 gap-1.5">
+          {/* Five tiles side by side; on a phone, one row per field so every meaning reads in full. */}
+          <dl className="mt-3 grid grid-cols-5 gap-1.5 max-sm:grid-cols-1 max-sm:gap-0 max-sm:overflow-hidden max-sm:rounded-lg max-sm:ring-1 max-sm:ring-border max-sm:[&>div+div]:border-t max-sm:[&>div+div]:border-border">
             {cronFields(cron).map((f) => (
-              <div key={f.label} className="min-w-0 rounded-lg px-2 py-1.5 ring-1 ring-border">
-                <dt className="truncate text-[10.5px] text-muted-foreground">{f.label}</dt>
+              <div key={f.label} className="min-w-0 rounded-lg px-2 py-1.5 ring-1 ring-border max-sm:grid max-sm:grid-cols-[4.5rem_4.5rem_minmax(0,1fr)] max-sm:items-baseline max-sm:gap-2 max-sm:rounded-none max-sm:px-3 max-sm:ring-0">
+                <dt className="truncate text-[10.5px] text-muted-foreground max-sm:text-[11.5px]">{f.label}</dt>
                 <dd className="truncate font-mono text-[13px] font-medium">{f.raw}</dd>
-                <dd className="truncate text-[11px] text-muted-foreground" title={f.meaning}>
-                  {f.meaning}
-                </dd>
+                <dd className="text-[11px] leading-snug text-muted-foreground max-sm:text-[12px]">{f.meaning}</dd>
               </div>
             ))}
           </dl>

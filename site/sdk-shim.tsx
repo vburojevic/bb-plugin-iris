@@ -189,6 +189,10 @@ async function mermaid() {
     secure: ["secure", "securityLevel", "startOnLoad", "maxTextSize", "suppressErrorRendering", "maxEdges", "theme", "themeCSS", "themeVariables", "fontFamily", "altFontFamily", "darkMode", "htmlLabels"],
     theme: "base",
     fontFamily: "inherit",
+    // SVG text labels: the sanitizer keeps them whole, and edge labels get a background box
+    // in the card's color, so a line never runs through the words.
+    htmlLabels: false,
+    flowchart: { htmlLabels: false },
     themeVariables: {
       darkMode: dark,
       background: v("--card", dark ? "#141821" : "#ffffff"),
@@ -258,6 +262,24 @@ export function Markdown({ content, className }: { content: string; className?: 
   return <div className={`iris-site-markdown ${className ?? ""}`} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
+// A small code colorer for the stand-in: comments, strings, numbers and common keywords, in the
+// site's token colors. Every piece of text is escaped; the pattern is linear (no nested quantifiers).
+const CODE_TOKEN = /(\/\/[^\n]{0,400}|#(?![\da-f]{3,8}\b)[^\n]{0,400}$)|("(?:[^"\\\n]|\\.){0,400}"|'(?:[^'\\\n]|\\.){0,400}'|`(?:[^`\\\n]|\\.){0,400}`)|\b(\d[\d_.]*(?:e[+-]?\d+)?)\b|\b(const|let|var|function|return|import|export|from|type|interface|if|else|for|while|new|await|async|class|extends|def|fn|pub|struct|impl|use|func|true|false|null|undefined|nil|None|self|this)\b/gm;
+const escCode = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+function colorCode(line: string): string {
+  if (line.length > 2000) return escCode(line);
+  let out = "";
+  let last = 0;
+  for (const m of line.matchAll(CODE_TOKEN)) {
+    const at = m.index ?? 0;
+    out += escCode(line.slice(last, at));
+    last = at + m[0].length;
+    const cls = m[1] ? "comment" : m[2] ? "string" : m[3] ? "number" : "tag";
+    out += `<span class="tok-${cls}">${escCode(m[0])}</span>`;
+  }
+  return out + escCode(line.slice(last));
+}
+
 export function experimental_SourceCode({ content, highlightedLines }: { content: string; path?: string; highlightedLines?: { start: number; end: number } | null; overflow?: string }) {
   const lines = content.split("\n");
   return (
@@ -268,7 +290,7 @@ export function experimental_SourceCode({ content, highlightedLines }: { content
         return (
           <div key={k} className={on ? "bg-[color:color-mix(in_oklab,var(--primary)_14%,transparent)]" : undefined}>
             <span className="inline-block w-10 select-none pr-3 text-right text-muted-foreground">{n}</span>
-            {l || " "}
+            {l ? <span dangerouslySetInnerHTML={{ __html: colorCode(l) }} /> : " "}
           </div>
         );
       })}

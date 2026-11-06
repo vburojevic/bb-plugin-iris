@@ -1,6 +1,7 @@
 // The playground's front page: what Iris is, the real renderer to try, the moments
 // it is made for, and how to install it. Every card on it is live.
 import { useState } from "react";
+import { BB_SOURCES } from "../core/bb-data";
 import { CATALOG, GROUPS } from "../core/catalog";
 import { IrisBlock } from "../ui/block";
 import { IrisMark } from "../ui/brand";
@@ -62,7 +63,7 @@ const MOMENTS: { label: string; icon: string; name: string; line: string }[] = [
   { label: "Spend and limits", icon: "gauge", name: "Budget", line: "Every line against its cap, with the burn rate and when it runs out." },
 ];
 
-const BB_SOURCES = ["bb:thread", "bb:threads", "bb:usage", "bb:pr", "bb:commits", "bb:changes", "bb:environments", "bb:machines", "bb:plugins"];
+const BB_SOURCE_NAMES = BB_SOURCES.map((s) => `bb:${s.name}`);
 
 const byName = (n: string) => CATALOG.find((c) => c.name === n);
 
@@ -267,7 +268,7 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
               <code>load("bb:...")</code> reads bb's own live data, scoped to the card's thread. Inside a live card it re-reads every 2 seconds. Any plugin can feed cards too, through a public data contract.
             </SectionHead>
             <ul className="site-chips" aria-label="bb data sources">
-              {BB_SOURCES.map((s) => (
+              {BB_SOURCE_NAMES.map((s) => (
                 <li key={s}>
                   <code>{s}</code>
                 </li>

@@ -16,12 +16,13 @@ import { Prose } from "./views/prose";
 import { Chip, Glyph, Shimmer, cn, num, str } from "./views/kit";
 import { CompareView } from "./views/evidence";
 import { literalStrings } from "./files";
+import { useWipeDrag } from "./wipe";
 
 export type { GlSlot } from "./gl";
 export { chunkEntryUrl, sampleUrl };
 export { Chip, CompareView, Glyph, InlineError, literalStrings, Prose, Shimmer, cn, hexColor, num, sequentialRamp, str, themeVar, useEnv, useGlSlot };
 export { renderValue, runCells };
-export { inkOn, toneColor, tooClose };
+export { inkOn, toneColor, tooClose, useWipeDrag };
 
 export const CHUNK_API = {
   get useEnv() { return useEnv; },
@@ -46,4 +47,5 @@ export const CHUNK_API = {
   get inkOn() { return inkOn; },
   get CompareView() { return CompareView; },
   get literalStrings() { return literalStrings; },
+  get useWipeDrag() { return useWipeDrag; },
 };

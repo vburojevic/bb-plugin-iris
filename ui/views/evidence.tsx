@@ -2,7 +2,7 @@
 // screen) and Provenance (which build is really where). The judgments live in
 // core/evidence.ts; these only draw them, in the theme's tone colors.
 
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { isPendingValue } from "../../core/evaluate";
 import {
   type AcceptanceCell,
@@ -27,6 +27,7 @@ import { type ImageState, useLoadedImages, imageError } from "../files";
 import type { Tone } from "../palette";
 import type { ViewProps } from "../render";
 import { Chip, Glyph, Shimmer, cn, num, str } from "./kit";
+import { useWipeDrag } from "../wipe";
 
 function useWidth<T extends HTMLElement>(): [React.RefObject<T | null>, number] {
   const ref = useRef<T | null>(null);
@@ -389,18 +390,7 @@ export function CompareView({ props }: Pick<ViewProps, "props">) {
 function Wipe({ a, b, aUrl, bUrl }: { a: CompareImage; b: CompareImage; aUrl: string; bUrl: string }) {
   const size = useNaturalSize(aUrl);
   const [pos, setPos] = useState(50);
-  const box = useRef<HTMLDivElement | null>(null);
-  const drag = useRef(false);
-  const moveTo = (clientX: number) => {
-    const r = box.current?.getBoundingClientRect();
-    if (!r || !r.width) return;
-    setPos(Math.max(0, Math.min(100, ((clientX - r.left) / r.width) * 100)));
-  };
-  const down = (e: ReactPointerEvent<HTMLDivElement>) => {
-    drag.current = true;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    moveTo(e.clientX);
-  };
+  const drag = useWipeDrag(setPos);
   const key = (e: KeyboardEvent) => {
     const step = e.shiftKey ? 10 : 2;
     const next = e.key === "ArrowLeft" ? pos - step : e.key === "ArrowRight" ? pos + step : e.key === "Home" ? 0 : e.key === "End" ? 100 : null;
@@ -410,13 +400,9 @@ function Wipe({ a, b, aUrl, bUrl }: { a: CompareImage; b: CompareImage; aUrl: st
   };
   return (
     <div
-      ref={box}
-      className="relative w-full cursor-ew-resize touch-none select-none overflow-hidden rounded-lg bg-muted/40 ring-1 ring-border"
+      {...drag}
+      className="relative w-full cursor-ew-resize touch-pan-y select-none overflow-hidden rounded-lg bg-muted/40 ring-1 ring-border"
       style={{ aspectRatio: size ? `${size.width} / ${size.height}` : "16 / 10" }}
-      onPointerDown={down}
-      onPointerMove={(e) => drag.current && moveTo(e.clientX)}
-      onPointerUp={() => (drag.current = false)}
-      onPointerCancel={() => (drag.current = false)}
     >
       <img src={bUrl} alt={b.label} draggable={false} className="absolute inset-0 size-full object-contain" />
       <img src={aUrl} alt={a.label} draggable={false} className="absolute inset-0 size-full object-contain" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }} />

@@ -9,8 +9,8 @@
 // and seeked for large. Where neither video is inside (a gap made by the
 // offset), a wall clock carries t. Pausing lines both up on the same frame.
 
-import { Chip, Glyph, Shimmer, cn, num, str, useEnv, toneColor } from "@iris/ui";
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { Chip, Glyph, Shimmer, cn, num, str, useEnv, toneColor, useWipeDrag } from "@iris/ui";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { catchUp, normalizeVideos, offsetText, timeline, videoTime } from "../core/compare";
 import { isPendingValue } from "../core/evaluate";
 import { activeIndex, formatTime, mediaName, normalizeNotes, snapSpeed, stepFrame, type TimedNote } from "../core/players";
@@ -415,17 +415,7 @@ export function VideoCompareView({ props }: ViewProps) {
 }
 
 function WipeHandle({ pos, onMove, labels }: { pos: number; onMove: (p: number) => void; labels: [string, string] }) {
-  const drag = useRef(false);
-  const box = useRef<HTMLDivElement>(null);
-  const moveTo = (clientX: number) => {
-    const r = box.current?.getBoundingClientRect();
-    if (r?.width) onMove(Math.max(0, Math.min(100, ((clientX - r.left) / r.width) * 100)));
-  };
-  const down = (ev: ReactPointerEvent<HTMLDivElement>) => {
-    drag.current = true;
-    ev.currentTarget.setPointerCapture(ev.pointerId);
-    moveTo(ev.clientX);
-  };
+  const drag = useWipeDrag(onMove);
   const key = (ev: KeyboardEvent) => {
     const s = ev.shiftKey ? 10 : 2;
     const next = ev.key === "ArrowLeft" ? pos - s : ev.key === "ArrowRight" ? pos + s : null;
@@ -436,12 +426,8 @@ function WipeHandle({ pos, onMove, labels }: { pos: number; onMove: (p: number) 
   };
   return (
     <div
-      ref={box}
-      className="absolute inset-0 z-[2] cursor-ew-resize touch-none select-none"
-      onPointerDown={down}
-      onPointerMove={(ev) => drag.current && moveTo(ev.clientX)}
-      onPointerUp={() => (drag.current = false)}
-      onPointerCancel={() => (drag.current = false)}
+      {...drag}
+      className="absolute inset-0 z-[2] cursor-ew-resize touch-pan-y select-none"
     >
       <div className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-card shadow-[0_0_0_1px_var(--border)]" style={{ left: `${pos}%` }} />
       <div

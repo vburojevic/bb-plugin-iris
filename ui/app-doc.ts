@@ -34,12 +34,24 @@ const BRIDGE = (storage: Record<string, string>, kind: AppKind) => `
     kind === "react"
       ? // The kit's root has no margins to collapse, so its box is the content's height, and it can shrink.
         `const size = () => { const r = document.getElementById("root"); post("height", Math.ceil(r ? r.getBoundingClientRect().height : document.documentElement.scrollHeight)); };`
-      : `const size = () => post("height", Math.ceil(document.documentElement.scrollHeight));
+      : // The body's own box, not the document's scroll height: that never drops below the frame's
+        // current height, so a short page would keep the first 320 px for good. A page that sizes
+        // its body to the viewport keeps its height as before.
+        `const mb = (el) => parseFloat(getComputedStyle(el).marginBottom) || 0;
+  const size = () => {
+    const b = document.body;
+    if (!b) return post("height", Math.ceil(document.documentElement.scrollHeight));
+    let h = b.getBoundingClientRect().bottom + mb(b);
+    for (const c of b.children) { const r = c.getBoundingClientRect(); if (r.width || r.height) h = Math.max(h, r.bottom + mb(c) + mb(b)); }
+    // Content past the frame's bottom (a fixed-height body, deep overflow) still shows: then the scroll height counts.
+    const sh = document.documentElement.scrollHeight;
+    post("height", Math.ceil(sh > innerHeight + 1 ? Math.max(h + scrollY, sh) : h + scrollY));
+  };
   addEventListener("error", (e) => post("error", String(e.message || e)));`
   }
   const ro = new ResizeObserver(size);
   ro.observe(document.documentElement);
-  addEventListener("DOMContentLoaded", () => { const r = document.getElementById("root"); if (r) ro.observe(r); size(); });
+  addEventListener("DOMContentLoaded", () => { const r = document.getElementById("root"); if (r) ro.observe(r); if (document.body) ro.observe(document.body); size(); });
   addEventListener("load", size);
   addEventListener("message", (e) => { if (e.source === parent && e.data && e.data.__irisTheme) { const s = document.getElementById("iris-theme"); if (s) s.textContent = e.data.__irisTheme; } });
   document.addEventListener("click", (e) => {

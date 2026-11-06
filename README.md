@@ -7,7 +7,7 @@
 
 <p align="center">
   <a href="https://github.com/vburojevic/bb-plugin-iris/releases"><img alt="Latest release" src="https://img.shields.io/github/v/tag/vburojevic/bb-plugin-iris?label=release&style=flat-square&labelColor=10141c&color=e6b450"></a>
-  <a href="#components"><img alt="120 components" src="https://img.shields.io/badge/components-120-e6b450?style=flat-square&labelColor=10141c"></a>
+  <a href="#components"><img alt="122 components" src="https://img.shields.io/badge/components-122-e6b450?style=flat-square&labelColor=10141c"></a>
   <a href="#evals"><img alt="Eval score 95.2 of 100" src="https://img.shields.io/badge/evals-95.2%2F100-e6b450?style=flat-square&labelColor=10141c"></a>
   <a href="https://getbb.app"><img alt="A plugin for bb" src="https://img.shields.io/badge/plugin%20for-bb-e6b450?style=flat-square&labelColor=10141c"></a>
   <a href="LICENSE"><img alt="Apache-2.0 license" src="https://img.shields.io/badge/license-Apache--2.0-e6b450?style=flat-square&labelColor=10141c"></a>
@@ -62,7 +62,7 @@ That's it. New agent sessions learn Iris on their own, and the gallery appears i
 <td width="50%" valign="top">
 <picture><source media="(prefers-color-scheme: light)" srcset="docs/icons/light/blocks.svg"><img src="docs/icons/dark/blocks.svg" width="40" height="40" alt=""></picture>
 
-**120 components.** Layout, charts, data grids, diagrams, code and diffs, test and coverage reports, plans, decisions, maps, media, 3D, math, sheets, API inspectors, whiteboards and more. [See every one.](#components)
+**122 components.** Layout, charts, data grids, diagrams, code and diffs, test and coverage reports, plans, decisions, maps, media, 3D, math, sheets, API inspectors, whiteboards and more. [See every one.](#components)
 </td>
 </tr>
 <tr>
@@ -81,7 +81,7 @@ That's it. New agent sessions learn Iris on their own, and the gallery appears i
 <td valign="top">
 <picture><source media="(prefers-color-scheme: light)" srcset="docs/icons/light/mouse-pointer-click.svg"><img src="docs/icons/dark/mouse-pointer-click.svg" width="40" height="40" alt=""></picture>
 
-**Interactive both ways.** Inputs recompute cards in place, buttons put text in your composer, and `iris_ask` opens a rich picker that waits for your answer, like bb's own ask mode.
+**Interactive both ways.** Inputs recompute cards in place, buttons put text in your composer, and `iris_ask` opens a rich picker that waits for your answer, like bb's own ask mode: ranked checklists with badges, or design variants you flip through in a large preview.
 </td>
 <td valign="top">
 <picture><source media="(prefers-color-scheme: light)" srcset="docs/icons/light/app-window.svg"><img src="docs/icons/dark/app-window.svg" width="40" height="40" alt=""></picture>
@@ -275,11 +275,12 @@ Open a family to see each card as it renders in bb. Every picture links to its l
 </details>
 
 <details>
-<summary><b>Pickers</b> · 3 components: FollowUps, Choices, Submit</summary>
+<summary><b>Pickers</b> · 5 components: FollowUps, Choices, Submit, Variants, Variant</summary>
 <br>
 
 <table>
 <tr><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/FollowUps"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/FollowUps.webp"><img src="docs/atlas/dark/FollowUps.webp" alt="FollowUps: Suggested next prompts after a finished answer." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/FollowUps"><b>FollowUps</b></a><br><sub>Suggested next prompts after a finished answer.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Choices"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Choices.webp"><img src="docs/atlas/dark/Choices.webp" alt="Choices: Optional next steps after a finished turn as tappable cards; the pick goes into the composer." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Choices"><b>Choices</b></a><br><sub>Optional next steps after a finished turn as tappable cards; the pick goes into the composer.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Submit"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Submit.webp"><img src="docs/atlas/dark/Submit.webp" alt="Submit: Only inside an iris_ask picker: sends the answer back to you." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Submit"><b>Submit</b></a><br><sub>Only inside an iris_ask picker: sends the answer back to you.</sub></td></tr>
+<tr><td></td><td></td><td></td></tr>
 </table>
 
 </details>

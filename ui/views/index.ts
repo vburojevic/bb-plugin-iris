@@ -10,6 +10,7 @@ import { ChangesView, CommitsView, EnvironmentsView, PipelineView, PullRequestVi
 import { BoardView, CalendarView, DecisionView, EstimateView, PlanView, RoadmapView, StatusView, StepsView, TimelineView } from "./planning";
 import { ButtonView, ChecklistView, DateInputView, InputView, RadioView, RatingView, SegmentedView, SelectView, SliderView, StepperView, TextAreaView, ToggleView } from "./inputs";
 import { ChoicesView, FollowUpsView, SubmitView } from "./pickers";
+import { VariantView, VariantsView } from "./variants";
 import { GalleryView, HotspotsView, MapView, PhotoSearchView } from "./media";
 import { AnnotateView, DeviceFrameView, SwatchesView, TypeSpecimenView } from "./design";
 import { DataGridView } from "./grid";
@@ -39,7 +40,7 @@ export const VIEWS: Record<string, View> = {
   Plan: PlanView, Steps: StepsView, Timeline: TimelineView, Decision: DecisionView, Board: BoardView, Roadmap: RoadmapView, Estimate: EstimateView, Calendar: CalendarView, Status: StatusView,
   Slider: SliderView, Stepper: StepperView, Toggle: ToggleView, Segmented: SegmentedView, Select: SelectView, Radio: RadioView, Checklist: ChecklistView,
   Input: InputView, TextArea: TextAreaView, DateInput: DateInputView, Rating: RatingView, Button: ButtonView,
-  FollowUps: FollowUpsView, Choices: ChoicesView, Submit: SubmitView,
+  FollowUps: FollowUpsView, Choices: ChoicesView, Submit: SubmitView, Variants: VariantsView, Variant: VariantView,
   Gallery: GalleryView, Hotspots: HotspotsView, Map: MapView, PhotoSearch: PhotoSearchView,
   DeviceFrame: DeviceFrameView, Swatches: SwatchesView, TypeSpecimen: TypeSpecimenView, Annotate: AnnotateView,
   DataGrid: DataGridView, Math: MathView, FunctionPlot: FunctionPlotView, Graph: GraphView, LiveLog: LiveLogView, LiveProgress: LiveProgressView,

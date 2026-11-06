@@ -253,4 +253,45 @@ export const PICKERS = [
     example: `<state runner="Convex" />\n<Radio bind="runner" options={["Convex", "pg-boss", "BullMQ"]} />\n<Submit />`,
     aliases: ["Send", "Answer"],
   }),
+  component({
+    name: "Variants",
+    group: "Pickers",
+    summary:
+      "Design directions to flip through: one large preview at a time with a switcher, arrows and keys. The state holds the one on screen, so in an iris_ask picker <Submit /> sends it. For palettes, layouts, copy or mockups to choose between.",
+    props: { bind: p.bind("Optional state holding the shown variant's value", { required: false }), label: p.str("Question above the switcher") },
+    children: "nodes",
+    childrenDoc: "<Variant label=\"...\"> elements, each holding its preview",
+    example: `<state pick="ember" note="" />
+<Variants bind="pick" label="Which palette?">
+  <Variant value="obsidian" label="Obsidian" colors={["#0B0B0D", "#E8E8EA", "#F5A524"]} detail="Near-black with one amber accent">
+    <Swatches backgrounds={[{ name: "Surface", value: "#0B0B0D" }]} colors={[{ name: "Text", value: "#E8E8EA" }, { name: "Accent", value: "#F5A524" }]} />
+  </Variant>
+  <Variant value="ember" label="Ember" colors={["#17110E", "#F2E6DC", "#FF7A3D"]} detail="Warm charcoal with orange highlights">
+    <Swatches backgrounds={[{ name: "Surface", value: "#17110E" }]} colors={[{ name: "Text", value: "#F2E6DC" }, { name: "Accent", value: "#FF7A3D" }]} />
+  </Variant>
+  <Variant value="slate" label="Slate" colors={["#0F1513", "#E3ECE8", "#2BB3A3"]} detail="Green-tinted grays, teal accent">
+    <Swatches backgrounds={[{ name: "Surface", value: "#0F1513" }]} colors={[{ name: "Text", value: "#E3ECE8" }, { name: "Accent", value: "#2BB3A3" }]} />
+  </Variant>
+</Variants>
+<TextArea bind="note" label="Anything to change?" placeholder="Optional" />
+<Submit />`,
+    aliases: ["Directions", "VariantPicker", "DesignOptions"],
+  }),
+  component({
+    name: "Variant",
+    group: "Pickers",
+    summary: "One direction inside Variants: its preview is its children, or html for a sandboxed mock page.",
+    props: {
+      label: p.str("Name on the switcher", { required: true }),
+      value: p.any("What the state holds when it is shown; default the label"),
+      detail: p.str("One line under the preview"),
+      colors: p.list("Up to six colors drawn as dots on its switcher chip", "string[]"),
+      html: p.str("A full HTML page shown sandboxed instead of the children, for a mock UI in this direction's colors and type"),
+    },
+    children: "nodes",
+    example: `<Variants label="Hero copy">
+  <Variant label="Plain"><Heading>Ship cards, not walls of text</Heading></Variant>
+  <Variant label="Bold"><Heading>Your agent, now with a UI</Heading></Variant>
+</Variants>`,
+  }),
 ];

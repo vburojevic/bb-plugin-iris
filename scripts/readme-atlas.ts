@@ -24,9 +24,12 @@ const HIGHLIGHTS: [string, string][] = [
 ];
 
 const escape = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+/** The summary's first sentence; a long one ends at its first semicolon. A colon stays, so "A test run: counts, failures first" keeps what follows it. */
 const firstSentence = (s: string) => {
-  const m = /^(.+?[.;:])(\s|$)/.exec(s);
-  return (m ? m[1] : s).replace(/[;:]$/, ".");
+  const m = /^(.+?\.)(\s|$)/.exec(s);
+  let out = m ? m[1] : s;
+  if (out.length > 150 && out.includes(";")) out = `${out.slice(0, out.indexOf(";"))}.`;
+  return out;
 };
 
 function tile(name: string, moment?: string): string {

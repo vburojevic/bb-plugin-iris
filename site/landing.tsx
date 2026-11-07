@@ -281,7 +281,7 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
       <section className="site-section" aria-labelledby="keep-title">
         <div className="site-wrap">
           <SectionHead id="keep-title" kicker="Beyond the reply" title="Keep a card, ask for one, take it anywhere." />
-          <ul className="site-facts">
+          <ul className="site-facts site-facts-3">
             <li>
               <Glyph name="pin" size={18} />
               <b>Pin it beside the chat.</b> A pinned card stays live next to the conversation while the thread scrolls on: a build, a pull request, context use.
@@ -291,8 +291,16 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
               <b>Ask for a card.</b> One click on any message asks the agent to show that answer as a card.
             </li>
             <li>
+              <Glyph name="list-checks" size={18} />
+              <b>Answer in a picker.</b> When an agent needs your call, it opens a picker that waits for you: a ranked checklist, design variants in a live preview, a color with its contrast, marks on a screenshot, comments on a spec, or a list to put in order.
+            </li>
+            <li>
               <Glyph name="external-link" size={18} />
               <b>Open it in the browser.</b> Any card opens in this playground. Its source travels in the link and never reaches a server.
+            </li>
+            <li>
+              <Glyph name="smartphone" size={18} />
+              <b>At home on your phone.</b> Cards stack to fit a narrow screen, and a drag on a divider, map or board stays in the card instead of swiping the thread away.
             </li>
             <li>
               <Glyph name="feather" size={18} />
@@ -316,7 +324,7 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
             </li>
             <li>
               <Glyph name="send" size={18} />
-              <b>You confirm every send.</b> When an app wants to send a message or answer for you, Iris shows the exact text in a bar the app can't reach, and waits for your click.
+              <b>You confirm every send.</b> When an app wants to send a message for you, Iris shows the exact text in a bar the app can't reach, and waits for your click. A picker page answers only right after your own click inside it.
             </li>
             <li>
               <Glyph name="scan-search" size={18} />

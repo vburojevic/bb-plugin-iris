@@ -1,33 +1,35 @@
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="docs/hero-light.png">
-    <img src="docs/hero-dark.png" alt="Iris: live, interactive UI in your bb chat" width="100%">
-  </picture>
-</p>
+<h1 align="center">
+  <a href="https://vburojevic.github.io/bb-plugin-iris/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/mark-dark.svg"><img src="docs/mark-light.svg" width="30" height="30" alt=""></picture></a>
+  Iris
+</h1>
+
+<p align="center"><b>Live, interactive UI in your <a href="https://getbb.app">bb</a> chat.</b><br>Agents answer with charts, plans, test runs, decisions and small apps instead of walls of text, drawn in your bb theme.</p>
 
 <p align="center">
-  <a href="https://github.com/vburojevic/bb-plugin-iris/releases"><img alt="Latest release" src="https://img.shields.io/github/v/tag/vburojevic/bb-plugin-iris?label=release&style=flat-square&labelColor=10141c&color=e6b450"></a>
-  <a href="#components"><img alt="129 components" src="https://img.shields.io/badge/components-129-e6b450?style=flat-square&labelColor=10141c"></a>
-  <a href="#evals"><img alt="Eval score 95.2 of 100" src="https://img.shields.io/badge/evals-95.2%2F100-e6b450?style=flat-square&labelColor=10141c"></a>
-  <a href="https://getbb.app"><img alt="A plugin for bb" src="https://img.shields.io/badge/plugin%20for-bb-e6b450?style=flat-square&labelColor=10141c"></a>
-  <a href="LICENSE"><img alt="Apache-2.0 license" src="https://img.shields.io/badge/license-Apache--2.0-e6b450?style=flat-square&labelColor=10141c"></a>
+<a href="https://github.com/vburojevic/bb-plugin-iris/releases/latest"><img src="https://img.shields.io/github/v/release/vburojevic/bb-plugin-iris?style=flat-square&label=release&color=57606a" alt="Latest release"></a>
+<a href="https://getbb.app"><img src="https://img.shields.io/badge/bb-0.48%2B-57606a?style=flat-square" alt="Needs bb 0.48 or later"></a>
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-57606a?style=flat-square" alt="Apache-2.0 license"></a>
+<a href="https://github.com/get-bb/marketplace"><img src="https://img.shields.io/badge/BB%20Community-marketplace-57606a?style=flat-square" alt="Listed in the BB Community marketplace"></a>
 </p>
 
-<h3 align="center">
-  <a href="https://vburojevic.github.io/bb-plugin-iris/">Website</a>
-  <span>·</span>
-  <a href="https://vburojevic.github.io/bb-plugin-iris/#/play">Playground</a>
-  <span>·</span>
-  <a href="#install">Install</a>
-  <span>·</span>
-  <a href="#components">Components</a>
-  <span>·</span>
-  <a href="#live-data-from-bb-itself">Live data</a>
-  <span>·</span>
-  <a href="#for-agents">For agents</a>
-</h3>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/hero-dark.png">
+  <img src="docs/hero-light.png" width="100%" alt="Iris: live, interactive UI in your bb chat. Cards for a migration forecast, a ranked decision and session spend">
+</picture>
 
-<br>
+<p align="center">
+  <a href="https://vburojevic.github.io/bb-plugin-iris/"><b>Website</b></a>
+  &nbsp;·&nbsp;
+  <a href="https://vburojevic.github.io/bb-plugin-iris/#/play"><b>Playground</b></a>
+  &nbsp;·&nbsp;
+  <a href="#install"><b>Install</b></a>
+  &nbsp;·&nbsp;
+  <a href="#components"><b>Components</b></a>
+  &nbsp;·&nbsp;
+  <a href="#live-data-from-bb-itself"><b>Live data</b></a>
+  &nbsp;·&nbsp;
+  <a href="#for-agents"><b>For agents</b></a>
+</p>
 
 **Iris** is a [bb](https://getbb.app) plugin that lets agents answer with live, interactive UI instead of walls of text. An agent writes a short ```` ```iris ```` block, and bb draws it as a real card inside the reply: charts you can hover, sliders that recompute, tables you can sort, test runs that fill in while they run, pickers that wait for your answer. Every card wears your bb theme and follows it when you switch.
 
@@ -39,7 +41,13 @@
 
 ## Install
 
-On a Mac running bb 0.48 or later:
+Iris is listed in the [BB Community marketplace](https://github.com/get-bb/marketplace), so bb installs it by name. On a Mac running bb 0.48 or later:
+
+```sh
+bb plugin install iris
+```
+
+Or straight from this repository, following its release tags:
 
 ```sh
 bb plugin install "git:https://github.com/vburojevic/bb-plugin-iris.git@^1.0.0"
@@ -55,50 +63,50 @@ That's it. New agent sessions learn Iris on their own, and the gallery appears i
 <table>
 <tr>
 <td width="50%" valign="top">
-<picture><source media="(prefers-color-scheme: light)" srcset="docs/icons/light/presentation.svg"><img src="docs/icons/dark/presentation.svg" width="40" height="40" alt=""></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/icons/dark/presentation.svg"><img src="docs/icons/light/presentation.svg" width="32" height="32" alt=""></picture>
 
 **Show, don't tell.** Status reports, proof that work is done, PR and CI state, comparisons and plans come back as cards, with the answer in a sentence or two above them.
 </td>
 <td width="50%" valign="top">
-<picture><source media="(prefers-color-scheme: light)" srcset="docs/icons/light/blocks.svg"><img src="docs/icons/dark/blocks.svg" width="40" height="40" alt=""></picture>
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/icons/dark/blocks.svg"><img src="docs/icons/light/blocks.svg" width="32" height="32" alt=""></picture>
 
 **129 components.** Layout, charts, data grids, diagrams, code and diffs, test and coverage reports, plans, decisions, maps, media, 3D, math, sheets, API inspectors, whiteboards and more. [See every one.](#components)
 </td>
 </tr>
 <tr>
-<td valign="top">
-<picture><source media="(prefers-color-scheme: light)" srcset="docs/icons/light/palette.svg"><img src="docs/icons/dark/palette.svg" width="40" height="40" alt=""></picture>
+<td width="50%" valign="top">
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/icons/dark/palette.svg"><img src="docs/icons/light/palette.svg" width="32" height="32" alt=""></picture>
 
 **Your theme, live.** Colors come only from your bb theme: the accent is its primary, tones use its success, warning and danger colors, and nothing has a palette of its own.
 </td>
-<td valign="top">
-<picture><source media="(prefers-color-scheme: light)" srcset="docs/icons/light/activity.svg"><img src="docs/icons/dark/activity.svg" width="40" height="40" alt=""></picture>
+<td width="50%" valign="top">
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/icons/dark/activity.svg"><img src="docs/icons/light/activity.svg" width="32" height="32" alt=""></picture>
 
 **Live data.** A live card re-reads its files every 2 seconds. `load("bb:...")` reads bb itself, and any plugin can feed cards through a [public data contract](#for-plugin-authors-live-data-in-iris-cards).
 </td>
 </tr>
 <tr>
-<td valign="top">
-<picture><source media="(prefers-color-scheme: light)" srcset="docs/icons/light/mouse-pointer-click.svg"><img src="docs/icons/dark/mouse-pointer-click.svg" width="40" height="40" alt=""></picture>
+<td width="50%" valign="top">
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/icons/dark/mouse-pointer-click.svg"><img src="docs/icons/light/mouse-pointer-click.svg" width="32" height="32" alt=""></picture>
 
 **Interactive both ways.** Inputs recompute cards in place, buttons put text in your composer, and `iris_ask` opens a rich picker that waits for your answer, like bb's own ask mode: ranked checklists with badges, design variants you flip through in a large preview, a color with its contrast, boxes and notes drawn on a screenshot, comments on a spec, or a list to put in order.
 </td>
-<td valign="top">
-<picture><source media="(prefers-color-scheme: light)" srcset="docs/icons/light/app-window.svg"><img src="docs/icons/dark/app-window.svg" width="40" height="40" alt=""></picture>
+<td width="50%" valign="top">
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/icons/dark/app-window.svg"><img src="docs/icons/light/app-window.svg" width="32" height="32" alt=""></picture>
 
 **Apps when you need them.** ```` ```iris-react ```` and ```` ```iris-app ```` run full React or HTML apps in a sandbox with no network, styled like native cards.
 </td>
 </tr>
 <tr>
-<td valign="top">
-<picture><source media="(prefers-color-scheme: light)" srcset="docs/icons/light/shield-check.svg"><img src="docs/icons/dark/shield-check.svg" width="40" height="40" alt=""></picture>
+<td width="50%" valign="top">
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/icons/dark/shield-check.svg"><img src="docs/icons/light/shield-check.svg" width="32" height="32" alt=""></picture>
 
 **Safe by design.** No `eval`: a sandboxed interpreter runs every expression under a step budget, cards make no network requests of their own, and web images load only when their URL is in the block. [More](#security)
 </td>
-<td valign="top">
-<picture><source media="(prefers-color-scheme: light)" srcset="docs/icons/light/gauge.svg"><img src="docs/icons/dark/gauge.svg" width="40" height="40" alt=""></picture>
+<td width="50%" valign="top">
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/icons/dark/gauge.svg"><img src="docs/icons/light/gauge.svg" width="32" height="32" alt=""></picture>
 
-**Measured.** Every release passes an [eval suite](#evals) that runs real chat moments through an agent and scores whether it showed the right card.
+**Measured.** Every release passes an [eval suite](#evals) that runs real chat moments through an agent and scores whether it showed the right card. It scores 95.2 of 100 today.
 </td>
 </tr>
 </table>
@@ -124,8 +132,8 @@ An agent writes JSX-style markup with live values, and bb renders it as you read
 ```
 
 <picture>
-  <source media="(prefers-color-scheme: light)" srcset="docs/estimate-light.webp">
-  <img src="docs/estimate-dark.webp" alt="The Estimate card: a plan toggle, a seats slider and two metrics that recompute as you move them" width="100%">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/estimate-dark.webp">
+  <img src="docs/estimate-light.webp" alt="The Estimate card: a plan toggle, a seats slider and two metrics that recompute as you move them" width="100%">
 </picture>
 <sub>That block, as bb draws it. Try it, and change it, in the <a href="https://vburojevic.github.io/bb-plugin-iris/#/play">playground</a>.</sub>
 
@@ -269,7 +277,7 @@ Open a family to see each card as it renders in bb. Every picture links to its l
 <table>
 <tr><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Slider"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Slider.webp"><img src="docs/atlas/dark/Slider.webp" alt="Slider: Pick a number on a range; the card recomputes live." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Slider"><b>Slider</b></a><br><sub>Pick a number on a range; the card recomputes live.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Stepper"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Stepper.webp"><img src="docs/atlas/dark/Stepper.webp" alt="Stepper: A count with minus and plus buttons." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Stepper"><b>Stepper</b></a><br><sub>A count with minus and plus buttons.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Toggle"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Toggle.webp"><img src="docs/atlas/dark/Toggle.webp" alt="Toggle: An on/off switch." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Toggle"><b>Toggle</b></a><br><sub>An on/off switch.</sub></td></tr>
 <tr><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Segmented"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Segmented.webp"><img src="docs/atlas/dark/Segmented.webp" alt="Segmented: Pick one of a few short options." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Segmented"><b>Segmented</b></a><br><sub>Pick one of a few short options.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Select"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Select.webp"><img src="docs/atlas/dark/Select.webp" alt="Select: Pick one of many options from a menu." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Select"><b>Select</b></a><br><sub>Pick one of many options from a menu.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Radio"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Radio.webp"><img src="docs/atlas/dark/Radio.webp" alt="Radio: Pick one option, each with a detail line." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Radio"><b>Radio</b></a><br><sub>Pick one option, each with a detail line.</sub></td></tr>
-<tr><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Checklist"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Checklist.webp"><img src="docs/atlas/dark/Checklist.webp" alt="Checklist: Pick several options; the state is a list of the picked values." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Checklist"><b>Checklist</b></a><br><sub>Pick several options; the state is a list of the picked values.</sub></td><td></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/ColorInput"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/ColorInput.webp"><img src="docs/atlas/dark/ColorInput.webp" alt="ColorInput: Pick a color: a swatch that opens the system picker, a hex field, optional presets, and the contrast on each background it will sit on." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/ColorInput"><b>ColorInput</b></a><br><sub>Pick a color: a swatch that opens the system picker, a hex field, optional presets, and the contrast on each background it will sit on.</sub></td></tr>
+<tr><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Checklist"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Checklist.webp"><img src="docs/atlas/dark/Checklist.webp" alt="Checklist: Pick several options; the state is a list of the picked values." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Checklist"><b>Checklist</b></a><br><sub>Pick several options; the state is a list of the picked values.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Rank"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Rank.webp"><img src="docs/atlas/dark/Rank.webp" alt="Rank: The person puts options in order: drag the grip, or the up and down buttons, or Alt and the arrow keys." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Rank"><b>Rank</b></a><br><sub>The person puts options in order: drag the grip, or the up and down buttons, or Alt and the arrow keys.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/ColorInput"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/ColorInput.webp"><img src="docs/atlas/dark/ColorInput.webp" alt="ColorInput: Pick a color: a swatch that opens the system picker, a hex field, optional presets, and the contrast on each background it will sit on." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/ColorInput"><b>ColorInput</b></a><br><sub>Pick a color: a swatch that opens the system picker, a hex field, optional presets, and the contrast on each background it will sit on.</sub></td></tr>
 <tr><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Input"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Input.webp"><img src="docs/atlas/dark/Input.webp" alt="Input: A one-line text field." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Input"><b>Input</b></a><br><sub>A one-line text field.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/TextArea"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/TextArea.webp"><img src="docs/atlas/dark/TextArea.webp" alt="TextArea: A multi-line text field." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/TextArea"><b>TextArea</b></a><br><sub>A multi-line text field.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/DateInput"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/DateInput.webp"><img src="docs/atlas/dark/DateInput.webp" alt="DateInput: Pick a date (yyyy-mm-dd)." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/DateInput"><b>DateInput</b></a><br><sub>Pick a date (yyyy-mm-dd).</sub></td></tr>
 <tr><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Rating"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Rating.webp"><img src="docs/atlas/dark/Rating.webp" alt="Rating: One to N stars." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Rating"><b>Rating</b></a><br><sub>One to N stars.</sub></td><td width="33%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Button"><picture><source media="(prefers-color-scheme: light)" srcset="docs/atlas/light/Button.webp"><img src="docs/atlas/dark/Button.webp" alt="Button: Runs an action: change state, put text in the composer, send it, copy, open a file or URL." width="100%"></picture></a><br><a href="https://vburojevic.github.io/bb-plugin-iris/#/Button"><b>Button</b></a><br><sub>Runs an action: change state, put text in the composer, send it, copy, open a file or URL.</sub></td><td></td></tr>
 </table>
@@ -487,7 +495,27 @@ Open a family to see each card as it renders in bb. Every picture links to its l
 
 ## Live data from bb itself
 
-Cards read bb's own live data with `load("bb:<source>")`, scoped to the card's thread (its project and the threads it started), and draw it with any component. Inside `<Card state="live">` it re-reads every 2 seconds; `iris_check` reads the real values, so the agent sees what the card will.
+<table>
+<tr>
+<td width="50%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Changes"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/atlas/dark/Changes.webp"><img src="docs/atlas/light/Changes.webp" width="100%" alt="Changes: files changed in this thread's checkout with line counts, each opening its diff"></picture></a><br><sub><a href="https://vburojevic.github.io/bb-plugin-iris/#/Changes"><code>Changes</code></a> This thread's changed files, each opening its diff.</sub></td>
+<td width="50%" valign="top"><a href="https://vburojevic.github.io/bb-plugin-iris/#/Threads"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/atlas/dark/Threads.webp"><img src="docs/atlas/light/Threads.webp" width="100%" alt="Threads: live status of the threads this thread started"></picture></a><br><sub><a href="https://vburojevic.github.io/bb-plugin-iris/#/Threads"><code>Threads</code></a> The threads it started: running, waiting on you, done or failed.</sub></td>
+</tr>
+</table>
+
+Cards read bb's own live data with `load("bb:<source>")`, scoped to the card's thread (its project and the threads it started), and draw it with any component. Inside `<Card state="live">` it re-reads every 2 seconds; `iris_check` reads the real values, so the agent sees what the card will. The live project components, `<Changes>`, `<Commits>`, `<PullRequest>`, `<Threads>` and `<Environments>`, read bb themselves and update as soon as bb reports a change.
+
+```iris
+<let t={load("bb:thread")} />
+<let kids={load("bb:threads?usage=1")} />
+<Card title="This session" state="live">
+  <Gauge label="Context" value={t.context ? t.context.percent : 0} format="percent" />
+  <Table rows={kids} columns={["title", "status", {key: "waitingOnYou", label: "Needs you"}]} />
+</Card>
+```
+
+<details>
+<summary><b>Every <code>bb:</code> source</b></summary>
+<br>
 
 | Source | What it returns |
 |---|---|
@@ -502,14 +530,7 @@ Cards read bb's own live data with `load("bb:<source>")`, scoped to the card's t
 | `bb:plugins` | Installed plugins and their health |
 | `bb:terminals` | This thread's terminals: title, status, exit code; `?output=1` adds the tail of what each prints, for a live `<Logs>` |
 
-```iris
-<let t={load("bb:thread")} />
-<let kids={load("bb:threads?usage=1")} />
-<Card title="This session" state="live">
-  <Gauge label="Context" value={t.context ? t.context.percent : 0} format="percent" />
-  <Table rows={kids} columns={["title", "status", {key: "waitingOnYou", label: "Needs you"}]} />
-</Card>
-```
+</details>
 
 ### Pin a card beside the conversation
 
@@ -536,6 +557,12 @@ Cards then read it with `load("plugin:<your-plugin-id>/status")`. Iris fetches `
 
 ## For agents
 
+Agents get four tools, and the same checks run from a shell.
+
+<details>
+<summary><b>Agent tools</b></summary>
+<br>
+
 | Tool | What it does |
 |---|---|
 | `iris_check` | Validates a block, reads its files, moves every input to its extremes, and returns an outline of what the person will see; an iris-react module is compiled and its imports checked |
@@ -543,11 +570,28 @@ Cards then read it with `load("plugin:<your-plugin-id>/status")`. Iris fetches `
 | `iris_examples` | Working examples for whole component families |
 | `iris_ask` | A waiting picker written in Iris markup, an iris-react app or HTML; the answer comes back as JSON |
 
-The same from a shell: `bb iris check <file>`, `bb iris components`, `bb iris docs <Name>`, and `bb iris try "<prompt>"` to run a prompt in a subthread that knows Iris.
+</details>
+
+<details>
+<summary><b>CLI</b></summary>
+<br>
+
+| Command | What it does |
+|---|---|
+| `bb iris check <file>` | Checks a block or iris-react app from a file and prints what the person will see |
+| `bb iris components` | Lists every component with its one-line summary |
+| `bb iris docs <Name>` | Every prop and an example for the named components |
+| `bb iris try "<prompt>"` | Runs a prompt in a subthread that knows Iris |
+
+</details>
 
 ## Settings
 
 Iris reaches every top-level thread, whoever started it, and leaves threads that agents spawn under them alone unless you turn `workers` on.
+
+<details>
+<summary><b>Every setting</b></summary>
+<br>
 
 | Setting | Values | Default |
 |---|---|---|
@@ -558,6 +602,8 @@ Iris reaches every top-level thread, whoever started it, and leaves threads that
 | `webLookups` | Maps, place search and photos through Iris's server (OpenStreetMap, Photon, Wikimedia Commons) | `true` |
 
 Change one with `bb plugin config iris set <key> <value>`, then `bb plugin reload iris`.
+
+</details>
 
 ## Security
 
@@ -571,9 +617,13 @@ Change one with `bb plugin config iris set <key> <value>`, then `bb plugin reloa
 
 ## Evals
 
-`npm run eval` runs 24 generic chat moments (status reports, mid-task progress updates, proof that something is done, PR and CI state, data to decide on) through Claude Code headless with exactly the instructions and tools Iris gives agents in bb (`iris_docs`, `iris_examples` and `iris_check`, served by `evals/mcp-server.ts`). Each answer is scored on an Iris block, a clean check, a fitting component and no markdown tables, plus a 1 to 5 judgment of fit. `npm run release:check` runs the tests, the type check and the eval gate, which fails when the score drops more than 3 points below `evals/baseline.json`.
+`npm run eval` runs 24 generic chat moments (status reports, mid-task progress updates, proof that something is done, PR and CI state, data to decide on) through Claude Code headless with exactly the instructions and tools Iris gives agents in bb (`iris_docs`, `iris_examples` and `iris_check`, served by `evals/mcp-server.ts`). Each answer is scored on an Iris block, a clean check, a fitting component and no markdown tables, plus a 1 to 5 judgment of fit. The current baseline scores 95.2 of 100. `npm run release:check` runs the tests, the type check and the eval gate, which fails when the score drops more than 3 points below `evals/baseline.json`.
 
 ## Develop
+
+<details>
+<summary><b>Build, test and record from a checkout</b></summary>
+<br>
 
 ```sh
 npm install
@@ -588,6 +638,8 @@ Develop against the one installed Iris: install the checkout once (`bb plugin in
 
 The playground is the real gallery with bb's SDK swapped for a stand-in (`site/`). `node scripts/build-site.mjs` builds it into `site-dist/`; `scripts/capture-site-css.mjs` refreshes bb's CSS from a running bb, `scripts/capture-atlas.mjs` re-shoots the component pictures from the built site, `npx tsx scripts/readme-atlas.ts` rewrites the atlas above, `node scripts/readme-icons.mjs` redraws the feature icons, and `scripts/record-demo.mjs` with `scripts/encode-demo.sh` re-records the demo frame by frame from a separate dev bb.
 
+</details>
+
 ## License
 
 [Apache-2.0](LICENSE)
@@ -595,7 +647,7 @@ The playground is the real gallery with bb's SDK swapped for a stand-in (`site/`
 <br>
 
 <p align="center">
-  <a href="https://vburojevic.github.io/bb-plugin-iris/"><picture><source media="(prefers-color-scheme: light)" srcset="docs/mark-light.svg"><img src="docs/mark-dark.svg" width="40" height="40" alt="Iris"></picture></a>
+  <a href="https://vburojevic.github.io/bb-plugin-iris/"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/mark-dark.svg"><img src="docs/mark-light.svg" width="40" height="40" alt="Iris"></picture></a>
   <br>
-  <sub>Made for <a href="https://getbb.app">bb</a>. <a href="https://vburojevic.github.io/bb-plugin-iris/#/play">Open the playground</a>.</sub>
+  <sub>Made for <a href="https://getbb.app">bb</a> by <a href="https://github.com/vburojevic">Vedran Burojević</a>. <a href="https://vburojevic.github.io/bb-plugin-iris/#/play">Open the playground</a>.</sub>
 </p>

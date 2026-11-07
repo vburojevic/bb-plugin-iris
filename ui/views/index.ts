@@ -13,6 +13,7 @@ import { ChoicesView, FollowUpsView, SubmitView } from "./pickers";
 import { VariantView, VariantsView } from "./variants";
 import { MarkUpView } from "./markup";
 import { DocReviewView } from "./docreview";
+import { RankView } from "./rank";
 import { GalleryView, HotspotsView, MapView, PhotoSearchView, ScreensView } from "./media";
 import { AnnotateView, DeviceFrameView, SwatchesView, TypeSpecimenView } from "./design";
 import { DataGridView } from "./grid";
@@ -42,7 +43,7 @@ export const VIEWS: Record<string, View> = {
   Plan: PlanView, Steps: StepsView, Timeline: TimelineView, Decision: DecisionView, Board: BoardView, Roadmap: RoadmapView, Estimate: EstimateView, Calendar: CalendarView, Status: StatusView,
   Slider: SliderView, Stepper: StepperView, Toggle: ToggleView, Segmented: SegmentedView, Select: SelectView, Radio: RadioView, Checklist: ChecklistView,
   Input: InputView, TextArea: TextAreaView, DateInput: DateInputView, Rating: RatingView, Button: ButtonView,
-  FollowUps: FollowUpsView, Choices: ChoicesView, Submit: SubmitView, Variants: VariantsView, Variant: VariantView, ColorInput: ColorInputView,
+  FollowUps: FollowUpsView, Choices: ChoicesView, Submit: SubmitView, Variants: VariantsView, Variant: VariantView, ColorInput: ColorInputView, Rank: RankView,
   Gallery: GalleryView, Screens: ScreensView, Hotspots: HotspotsView, Map: MapView, PhotoSearch: PhotoSearchView,
   DeviceFrame: DeviceFrameView, MarkUp: MarkUpView, Swatches: SwatchesView, TypeSpecimen: TypeSpecimenView, Annotate: AnnotateView,
   DataGrid: DataGridView, Math: MathView, FunctionPlot: FunctionPlotView, Graph: GraphView, LiveLog: LiveLogView, LiveProgress: LiveProgressView,

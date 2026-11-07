@@ -17,7 +17,7 @@ export function useBound(props: Record<string, unknown>): [unknown, (v: unknown)
   return [value, set, name];
 }
 
-interface Opt {
+export interface Opt {
   value: unknown;
   label: string;
   detail?: string;
@@ -34,7 +34,7 @@ function badges(raw: unknown): Opt["badges"] {
   return out.length ? out : undefined;
 }
 
-function options(raw: unknown): Opt[] {
+export function options(raw: unknown): Opt[] {
   return (Array.isArray(raw) ? raw : []).map((o) => {
     if (o && typeof o === "object") {
       const x = o as Record<string, unknown>;
@@ -45,7 +45,7 @@ function options(raw: unknown): Opt[] {
   });
 }
 
-const same = (a: unknown, b: unknown) => a === b || toText(a) === toText(b);
+export const same = (a: unknown, b: unknown) => a === b || toText(a) === toText(b);
 
 function Field({ label, htmlFor, children, right }: { label?: string; htmlFor?: string; children: React.ReactNode; right?: React.ReactNode }) {
   return (

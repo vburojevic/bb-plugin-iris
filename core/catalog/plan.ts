@@ -170,6 +170,25 @@ export const INPUTS = [
     aliases: ["MultiSelect", "Checkboxes"],
   }),
   component({
+    name: "Rank",
+    group: "Inputs",
+    summary: "The person puts options in order: drag the grip, or the up and down buttons, or Alt and the arrow keys. The state is the list of values, first is first; it holds the order on screen from the start. For what to build first, priorities, a shortlist.",
+    props: {
+      bind: p.bind(),
+      options: p.list("Options, same shape as Radio", "(string | {value, label?, detail?, icon?, badges?})[]", { required: true }),
+      label: p.str("Question"),
+    },
+    children: "none",
+    example: `<state order={[]} />
+<Rank bind="order" label="What should we build first?" options={[
+  { value: "variants", label: "Variants", detail: "Pick a direction in a live preview" },
+  { value: "color", label: "ColorInput", detail: "A color field with contrast" },
+  { value: "screens", label: "Screens", detail: "A screenshot matrix" },
+]} />
+<Submit label="Send order" />`,
+    aliases: ["Ranking", "Reorder", "SortableList", "Prioritize"],
+  }),
+  component({
     name: "ColorInput",
     group: "Inputs",
     summary: "Pick a color: a swatch that opens the system picker, a hex field, optional presets, and the contrast on each background it will sit on. The state is an opaque hex string like \"#FF7A3D\" (alpha is dropped).",

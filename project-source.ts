@@ -299,7 +299,7 @@ export function createProjectSource(bb: BbPluginApi): ProjectSource {
         const shown = new Set(files.map((f) => f.path));
         const patches: Record<string, FilePatch> = {};
         for (const p of answer.initialPatches) if (shown.has(p.path)) patches[p.path] = p;
-        return { ok: true, scope: r.scope, files, totalFiles: all.length, truncated: answer.truncated, patches };
+        return { ok: true, environmentId: r.environmentId, scope: r.scope, files, totalFiles: all.length, truncated: answer.truncated, patches };
       } catch (cause) {
         return failure("unavailable", `bb couldn't read the changes: ${message(cause)}`);
       }
@@ -335,7 +335,7 @@ export function createProjectSource(bb: BbPluginApi): ProjectSource {
         const commits = (w.mergeBase?.commits ?? [])
           .map((c) => ({ sha: c.sha, shortSha: c.shortSha, subject: c.subject, author: c.authorName, authoredAt: epochMs(c.authoredAt) }))
           .reverse();
-        return { ok: true, branch, base, onBase: branch === base, noBase: !w.mergeBase && branch !== base, ahead: w.mergeBase?.aheadCount ?? null, behind: w.mergeBase?.behindCount ?? null, commits, total: commits.length };
+        return { ok: true, environmentId: env.environmentId, branch, base, onBase: branch === base, noBase: !w.mergeBase && branch !== base, ahead: w.mergeBase?.aheadCount ?? null, behind: w.mergeBase?.behindCount ?? null, commits, total: commits.length };
       } catch (cause) {
         return failure("unavailable", `bb couldn't read the commits: ${message(cause)}`);
       }
@@ -348,9 +348,10 @@ export function createProjectSource(bb: BbPluginApi): ProjectSource {
         const [rows, ws] = await Promise.all([pullRequests([env.environmentId]), workspaceOf(env.environmentId).catch(() => null)]);
         const row = rows[env.environmentId];
         const branch = ws && ws.ok ? branchOf(ws.workspace) : null;
-        if (!row || row.outcome === "absent") return { ok: true, branch, pullRequest: null, unavailable: null };
-        if (row.outcome === "unavailable") return { ok: true, branch, pullRequest: null, unavailable: row.message };
-        return { ok: true, branch, pullRequest: pullRequestInfo(row.pullRequest), unavailable: null };
+        const environmentId = env.environmentId;
+        if (!row || row.outcome === "absent") return { ok: true, environmentId, branch, pullRequest: null, unavailable: null };
+        if (row.outcome === "unavailable") return { ok: true, environmentId, branch, pullRequest: null, unavailable: row.message };
+        return { ok: true, environmentId, branch, pullRequest: pullRequestInfo(row.pullRequest), unavailable: null };
       } catch (cause) {
         return failure("unavailable", `bb couldn't read the pull request: ${message(cause)}`);
       }

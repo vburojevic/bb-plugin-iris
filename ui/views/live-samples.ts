@@ -33,6 +33,7 @@ const VIEW_PATCH = `@@ -12,4 +12,4 @@ export function CardView({ props, children
 export function sampleChanges(sha: string | null): ChangesData {
   return {
     ok: true,
+    environmentId: "env_sample",
     scope: sha
       ? { kind: "commit", branch: "streaming-parser", base: "main", onBase: false, noBase: false, sha, subject: "Keep the last good tree while a tag streams" }
       : { kind: "branch", branch: "streaming-parser", base: "main", onBase: false, noBase: false, sha: null, subject: null },
@@ -55,6 +56,7 @@ export function sampleCommits(): CommitsData {
   const now = Date.now();
   return {
     ok: true,
+    environmentId: "env_sample",
     branch: "streaming-parser",
     base: "main",
     onBase: false,
@@ -73,6 +75,7 @@ export function sampleCommits(): CommitsData {
 export function samplePullRequest(): PullRequestData {
   return {
     ok: true,
+    environmentId: "env_sample",
     branch: "streaming-parser",
     unavailable: null,
     pullRequest: {

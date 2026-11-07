@@ -265,7 +265,7 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
           </div>
           <div>
             <SectionHead id="live-title" kicker="Live data" title="Cards that read bb itself.">
-              <code>load("bb:...")</code> reads bb's own live data, scoped to the card's thread. Inside a live card it re-reads every 2 seconds. Any plugin can feed cards too, through a public data contract.
+              <code>load("bb:...")</code> reads bb's own live data, scoped to the card's thread. Inside a live card it re-reads every 2 seconds. The live project cards, Changes, Commits, PullRequest, Threads and Environments, update the moment bb reports a change. Any plugin can feed cards too, through a public data contract.
             </SectionHead>
             <ul className="site-chips" aria-label="bb data sources">
               {BB_SOURCE_NAMES.map((s) => (

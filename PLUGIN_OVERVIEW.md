@@ -12,6 +12,7 @@ The agent writes a short `iris` code block in its reply, and bb draws it as a ca
 - Buttons put text in your message, and `iris_ask` opens a picker that waits for your answer, like ask mode: a ranked checklist, design variants in a live preview, a color with its contrast, marks on a screenshot, comments on a spec, or a list to put in order.
 - A live card re-reads its files every 2 seconds, so a running job's log, progress or test results fill in as they land.
 - `load("bb:...")` reads bb's own data for the card's thread: its context use, the threads it started, its pull request, commits and changes, plan usage, machines and plugins.
+- The live project cards (changes, commits, pull request, threads and environments) update the moment bb reports a change, and make no requests while nothing changes.
 - Other plugins can publish JSON that cards read with `load("plugin:<id>/<name>")`.
 - `iris-react` and `iris-app` blocks run small React or HTML apps in a sandbox with no network.
 

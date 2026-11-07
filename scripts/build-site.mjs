@@ -65,7 +65,7 @@ const prePaint = `(function () {
   document.documentElement.style.colorScheme = themes[name][1] ? "dark" : "light";
 })();`;
 const title = "Iris: live, interactive UI for bb chat";
-const description = "120 components agents draw as live cards in bb: charts, tables, plans, diffs, test runs, pickers and small apps, in your theme. Try every one here.";
+const description = "129 components agents draw as live cards in bb: charts, tables, plans, diffs, test runs, pickers and small apps, in your theme. Try every one here.";
 await writeFile(
   join(out, "index.html"),
   `<!doctype html>

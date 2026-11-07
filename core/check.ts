@@ -4,7 +4,7 @@
 
 import { betterWay } from "./better";
 import { normalizeTone } from "./tones";
-import type { ElementNode, Node } from "./ast";
+import type { ElementNode, Expr, Node } from "./ast";
 import { findComponent, ALL_TAG_NAMES, type ComponentSpec, type PropSpec } from "./catalog";
 import { IrisError, Scope, isActionValue, isElementValue, isFnValue, isPendingValue, toText } from "./evaluate";
 import { FORMAT_NAMES } from "./format";
@@ -217,6 +217,16 @@ function walk(nodes: Node[], rt: CardRuntime, scope: Scope, depth: number, out: 
     if (!spec) continue;
     out.push(`${pad}${describe(spec, props)}`);
     if (hint) for (const h of layoutHints(spec.name, props, n)) hint(`<${spec.name}> ${h}`, n.start);
+    // A required prop that is written but comes out empty is usually a field name that the data
+    // doesn't have (f.ship for f.ships): say so, with the fields it does have.
+    if (hint) {
+      for (const [k, prop] of Object.entries(spec.props)) {
+        if (!prop.required || props[k] !== undefined) continue;
+        const a = n.attrs.find((x) => x.name === k);
+        if (!a?.value) continue;
+        hint(`<${spec.name} ${k}> is empty${fieldsHint(a.value, rt, scope)}`, a.start);
+      }
+    }
     for (const problem of CONTENT_CHECKS[spec.name]?.(props) ?? []) fail(new IrisError(`<${spec.name}> ${problem}`, n.start, n.end));
     for (const [k, v] of Object.entries(props)) {
       if (isElementValue(v)) renderValue(v, rt, depth + 1, out, fail);
@@ -235,6 +245,21 @@ function walk(nodes: Node[], rt: CardRuntime, scope: Scope, depth: number, out: 
       }
     }
     if (spec.children !== "raw") walk(n.children, rt, scope, depth + 1, out, fail, hint);
+  }
+}
+
+/** For x.field that came out empty: the fields x does have, when x is a plain object. */
+function fieldsHint(e: Expr, rt: CardRuntime, scope: Scope): string {
+  if (e.t !== "mem" || e.computed || e.prop.t !== "lit" || typeof e.prop.v !== "string") return "";
+  const field = e.prop.v;
+  try {
+    rt.interp.steps = 0;
+    const obj = rt.interp.eval(e.obj, scope);
+    if (!obj || typeof obj !== "object" || Array.isArray(obj) || isPendingValue(obj)) return "";
+    const keys = Object.keys(obj).slice(0, 12);
+    return keys.length ? `: it has no field "${field}"; its fields are ${keys.join(", ")}` : "";
+  } catch {
+    return "";
   }
 }
 

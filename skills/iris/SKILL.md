@@ -8,12 +8,13 @@ description: Iris draws live, interactive UI in bb chat from ```iris blocks (JSX
 Iris renders ```iris blocks in assistant replies as live UI in the person's bb theme. The full syntax and every component's props are in your instructions (the iris_* tools carry them); `bb iris docs <Name>` prints one component.
 
 ## Commands
-- `bb iris check <file>`: validates a block and prints an outline of what the person will see. Exit 1 on errors.
+- `bb iris check <file>`: validates a block and prints an outline of what the person will see, reading the thread's files, bb data and plugin: feeds when run from a thread. Exit 1 on errors.
 - `bb iris components`: every component with its one-line summary.
 - `bb iris docs <Name> [Name...]`: props and an example.
 - `bb iris try "<prompt>"`: runs a prompt in a subthread whose agent knows Iris (works in trial rollout too).
 - `bb iris pin <file> [--id <id>] [--title <title>] [--once]`: pins the card in the file beside this thread's conversation and follows the file (re-read every 3 s), so rewriting it updates the pin; `--once` stores the card as it is now. Checked first; at most 5 pins per thread; the same id replaces a pin. The iris_pin tool does the same.
 - `bb iris unpin <id>` or `--all`, and `bb iris pins [--json]`: remove and list this thread's pins (iris_unpin, iris_pins).
+- `bb iris cards [--json]`: this thread's cards with what the person set in each (iris_cards; the cards.list RPC for other clients).
 - `bb plugin rpc call iris pins.list|pins.set|pins.remove --input-file <json>`: the same pins for any client, by threadId.
 
 ## Settings (`bb plugin config iris`)

@@ -43,3 +43,14 @@ export const pinsContract = defineRpcContract({
 });
 
 export type PinsContract = typeof pinsContract;
+
+/** The thread's own Iris cards and what the person set in each. */
+export const cardsContract = defineRpcContract({
+  "cards.list": {
+    experimental_description: "The thread's Iris cards, newest last: message id, block index, title, language, and the inputs the person set in each (sliders, choices, text, stored values).",
+    input: z.object({ threadId }),
+    output: z.object({
+      cards: z.array(z.object({ n: z.number(), message: z.string(), index: z.number(), language: z.string(), title: z.string(), inputs: z.record(z.string(), z.unknown()) })),
+    }),
+  },
+});

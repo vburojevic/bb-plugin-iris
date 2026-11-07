@@ -37,10 +37,19 @@ describe("pins", () => {
 describe("pins RPC", () => {
   it("publishes every schema as JSON Schema, so bb can list the methods", async () => {
     const { z } = await import("zod");
-    const { pinsContract } = await import("../shared/pins-rpc");
-    for (const [name, m] of Object.entries(pinsContract)) {
+    const { cardsContract, pinsContract } = await import("../shared/pins-rpc");
+    for (const [name, m] of Object.entries({ ...pinsContract, ...cardsContract })) {
       expect(() => z.toJSONSchema(m.input as never), `${name} input`).not.toThrow();
       expect(() => z.toJSONSchema(m.output as never), `${name} output`).not.toThrow();
     }
+  });
+});
+
+describe("check", () => {
+  it("warns when a required prop comes out empty, naming the fields the data has", async () => {
+    const { check, formatReport } = await import("../core/check");
+    const r = check('<let f={{ ships: 3, status: "underway" }} />\n<Metric label="Ships" value={f.ship} />');
+    expect(r.ok).toBe(true);
+    expect(formatReport(r)).toContain('<Metric value> is empty: it has no field "ship"; its fields are ships, status');
   });
 });

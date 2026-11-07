@@ -542,6 +542,14 @@ The thread's agent can pin too, for a status it keeps current:
 - From a shell: `bb iris pin <file> [--id fleet] [--title ...] [--once]`, `bb iris unpin <id>|--all` and `bb iris pins [--json]`. These act on the thread they run in only.
 - Any client can use the same pins through `bb plugin rpc call iris pins.list|pins.set|pins.remove` (listed by `bb plugin rpc list iris`).
 
+### Read back what the person set
+
+`iris_cards` (or `bb iris cards [--json]`, or the `cards.list` RPC) lists the thread's cards, newest last, with what the person set in each: a slider's value, a pick, typed notes, stored values. An agent can act on a card's state without asking again.
+
+### Checks that read the real data
+
+iris_check and `bb iris check` read the card's files, bb data and plugin feeds (`plugin:` sources, up to 5 seconds each) the way the card will, and warn when a required prop comes out empty, naming the fields the data does have (`<Metric value> is empty: it has no field "ship"; its fields are ships, status`).
+
 ### Ask for a card, or take one to the browser
 
 - **Show as an Iris card.** In a message's menu, this asks the agent to redo that answer as a card. Select part of a message first to ask about just that part. The composer has the same command.

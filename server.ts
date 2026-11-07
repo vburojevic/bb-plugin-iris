@@ -8,13 +8,14 @@ import { PluginCliError, defineCli, cliCommand, type BbPluginApi } from "@get-bb
 import { z } from "zod";
 import { check, formatReport } from "./core/check";
 import { parseDataFile } from "./core/data";
-import { isPluginSource, parsePluginSource } from "./core/plugin-data";
+import { isPluginSource, loadPluginData, parsePluginSource } from "./core/plugin-data";
 import { tailText } from "./core/live";
 import type { LoadResult } from "./core/program";
 import { CODE_WORK_INSTRUCTIONS, docsFor, examplesForGroups, indexSections, mainInstructions, type Stance } from "./core/prompt";
 import { CATALOG, GROUPS } from "./core/catalog";
 import { rpcContract, type FileUrlResult, type FolderFilesResult } from "./shared/rpc";
-import { pinsContract } from "./shared/pins-rpc";
+import { cardsContract, pinsContract } from "./shared/pins-rpc";
+import { cardsInMessage, isCardKey, personInputs, type CardRef } from "./core/cards";
 import { MAX_PINS, MAX_PIN_SOURCE, type Pin, type PinBy, cardFromFile, cardTitle, normalizePins, pinId, removePin, upsertPin, validPinId } from "./core/pins";
 import { failure, parseChangesTarget, parsePathFilter, parseThreadIds } from "./core/project";
 import { createProjectSource } from "./project-source";
@@ -457,6 +458,49 @@ export default async function plugin(bb: BbPluginApi) {
   const pinList = (pins: Pin[]) =>
     pins.length ? pins.map((p) => `- ${p.id}: "${p.title}", ${p.file ? `follows ${p.file}` : "card source"}, pinned by ${p.by === "agent" ? "the agent" : "the person"}`).join("\n") : "No pinned cards in this thread.";
 
+  // ---------- the thread's own cards ----------
+  // The agent reads back what the person set in its cards (a slider, a pick, notes) without asking.
+
+  const MAX_CARDS = 30;
+  type CardWithInputs = Omit<CardRef, "source"> & { n: number; inputs: Record<string, unknown> };
+  async function threadCards(threadId: string): Promise<CardWithInputs[]> {
+    // Finished items, newest first, a page of 100 at a time until MAX_CARDS cards turn up (at most 5
+    // pages), then read oldest first. An agent message's text is final in its item/completed event.
+    type Row = { seq?: number | string; type?: string; data?: { item?: { type?: string; id?: string; text?: string } } };
+    const pages: Row[] = [];
+    let before: string | undefined;
+    for (let page = 0; page < 5; page++) {
+      const rows = (await bb.sdk.threads.events.list({ threadId, types: ["item/completed"], order: "desc", limit: "100", ...(before ? { beforeSeq: before } : {}) })) as unknown as Row[];
+      if (!Array.isArray(rows) || !rows.length) break;
+      pages.push(...rows);
+      const found = pages.reduce((n, r) => n + (r.data?.item?.type === "agentMessage" ? (r.data.item.text?.match(/```iris/g)?.length ?? 0) : 0), 0);
+      if (rows.length < 100 || found >= MAX_CARDS) break;
+      before = String(rows[rows.length - 1].seq);
+    }
+    const events = pages.reverse();
+    // One entry per message, its last completed text, kept in the order the messages first appeared.
+    const messages = new Map<string, string>();
+    for (const e of Array.isArray(events) ? events : []) {
+      const item = e.type === "item/completed" ? e.data?.item : undefined;
+      if (item?.type === "agentMessage" && typeof item.id === "string" && typeof item.text === "string") messages.set(item.id, item.text);
+    }
+    const cards: CardRef[] = [...messages].flatMap(([id, text]) => cardsInMessage(id, text));
+    const recent = cards.slice(-MAX_CARDS);
+    const keys = await bb.storage.kv.list(`state:${threadId}:`);
+    return Promise.all(
+      recent.map(async ({ source: _source, ...card }, k) => {
+        const key = keys.find((x) => isCardKey(x, { ...card, source: "" }));
+        return { ...card, n: cards.length - recent.length + k + 1, inputs: key ? personInputs(await bb.storage.kv.get<unknown>(key)) : {} };
+      }),
+    );
+  }
+  const cardList = (cards: CardWithInputs[]) =>
+    cards.length
+      ? cards.map((c) => `#${c.n} "${c.title}" (${c.language})${Object.keys(c.inputs).length ? `: ${JSON.stringify(c.inputs)}` : ": nothing set"}`).join("\n")
+      : "No Iris cards in this thread yet.";
+
+  bb.rpc.register(cardsContract, { "cards.list": async ({ threadId }) => ({ cards: await threadCards(threadId) }) }, { experimental_discoverable: true, experimental_description: "Iris: the thread's cards and what the person set in them." });
+
   bb.rpc.register(
     pinsContract,
     {
@@ -510,18 +554,41 @@ export default async function plugin(bb: BbPluginApi) {
         );
         continue;
       }
-      // A plugin's data is read by the card from bb's page; here it stays pending (shown as loading).
+      // A plugin's data is read here as the card reads it: from bb's own loopback address, where the
+      // plugin's iris/ routes answer (at most 5 s). Unreachable, it stays pending and is named below.
       if (isPluginSource(p)) {
         const parsed = parsePluginSource(p);
-        if (!parsed.ok) preloaded.set(key, parsed);
-        else live.push(p);
+        if (!parsed.ok) {
+          preloaded.set(key, parsed);
+          continue;
+        }
+        let base: string | null = null;
+        try {
+          base = bb.server.loopbackBaseUrl;
+        } catch {
+          base = null;
+        }
+        if (!base) {
+          live.push(p);
+          continue;
+        }
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const timeout = new Promise<LoadResult | null>((resolve) => (timer = setTimeout(() => resolve(null), 5000)));
+        bbReads.push(
+          Promise.race([loadPluginData(p, threadId, raw || tail, fetch, base), timeout]).then((r) => {
+            clearTimeout(timer);
+            if (r === null) live.push(p);
+            else if (tail && r.ok) preloaded.set(key, { ok: true, value: { text: String(r.value), size: String(r.value).length, truncated: false } });
+            else preloaded.set(key, r);
+          }),
+        );
         continue;
       }
       preloaded.set(key, threadId ? await loadFile(threadId, p, raw, tail) : { ok: false, error: "no thread to read files from" });
     }
     await Promise.all(bbReads);
     const report = formatReport(check(source, { preloaded, load: () => new Promise<LoadResult>(() => undefined) }));
-    return live.length ? `${report}\n\nRead live by the card, not checked here: ${[...new Set(live)].join(", ")}` : report;
+    return live.length ? `${report}\n\nDidn't answer within 5 s, so not checked here (the card reads them live): ${[...new Set(live)].join(", ")}` : report;
   }
 
   // A dev copy installed under another id (bb-plugin-iris-dev-*) gets its own
@@ -691,10 +758,21 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
+  bb.agents.registerTool({
+    name: "iris_cards",
+    description: "Lists this thread's Iris cards, newest last, with what the person set in each (slider values, picks, typed notes, stored values), so you can act on a card's state without asking.",
+    parameters: { type: "object", properties: {}, additionalProperties: false },
+    presentation: { label: { pending: "Reading cards", completed: "Read cards" }, suppress: true },
+    async execute(_input: unknown, ctx: { threadId?: string | null }) {
+      if (!ctx.threadId) return { content: [{ type: "text", text: "iris_cards works only inside a thread" }], isError: true };
+      return { content: [{ type: "text", text: cardList(await threadCards(ctx.threadId)) }] };
+    },
+  });
+
   // ---------- instructions ----------
 
   const personThreads = new Set<string>();
-  const toolNames = ["iris_check", "iris_ask", "iris_docs", "iris_examples", "iris_pin", "iris_unpin", "iris_pins"];
+  const toolNames = ["iris_check", "iris_ask", "iris_docs", "iris_examples", "iris_pin", "iris_unpin", "iris_pins", "iris_cards"];
   bb.agents.configure((context) => {
     const trial = context.pluginMetadata?.iris === "trial";
     // Every top-level thread is one a person reads, whoever started it (the person, a side chat,
@@ -721,7 +799,7 @@ export default async function plugin(bb: BbPluginApi) {
         check: cliCommand({
           summary: "Check an Iris block or iris-react app from a file and print what the person will see",
           positionals: [{ name: "file", description: "A file holding the block (with or without the ``` lines)", required: true }] as const,
-          async run({ positionals }) {
+          async run({ positionals }, ctx) {
             const fs = await import("node:fs/promises");
             const source = await fs.readFile(positionals.file, "utf8");
             const body = source.replace(/^\s*```[\w-]*[^\n]*\n/, "").replace(/```\s*$/, "");
@@ -729,8 +807,9 @@ export default async function plugin(bb: BbPluginApi) {
               const text = await checkReact(body);
               return { exitCode: text.startsWith("Error") ? 1 : 0, stdout: `${text}\n` };
             }
-            const report = check(body);
-            return { exitCode: report.ok ? 0 : 1, stdout: `${formatReport(report)}\n` };
+            // From a thread's shell it reads that thread's files, bb data and plugin feeds, as iris_check does.
+            const report = await checkSource(body, ctx.threadId ?? null);
+            return { exitCode: report.startsWith("Error") || report.includes("\nError") ? 1 : 0, stdout: `${report}\n` };
           },
         }),
         pin: cliCommand({
@@ -766,6 +845,16 @@ export default async function plugin(bb: BbPluginApi) {
             if (!input.positionals.id && !input.options.all) throw new PluginCliError("name the pin's id, or pass --all", { code: "invalid" });
             const r = await unpinCards(threadId, input.positionals.id, input.options.all === true);
             return r.ok ? { exitCode: 0, stdout: `Unpinned ${r.removed.join(", ")}.\n` } : { exitCode: 1, stdout: "", stderr: `No pin "${input.positionals.id}" here.\n${pinList(await readPins(threadId))}\n` };
+          },
+        }),
+        cards: cliCommand({
+          summary: "List this thread's Iris cards with what the person set in each",
+          options: { json: { type: "boolean", description: "Print the cards as JSON" } },
+          async run(input, ctx) {
+            const threadId = ctx.threadId;
+            if (!threadId) throw new PluginCliError("cards reads the thread it runs in", { code: "thread_required", hint: "Run it from an agent's shell in bb, where BB_THREAD_ID is set" });
+            const cards = await threadCards(threadId);
+            return { exitCode: 0, stdout: `${input.options.json ? JSON.stringify(cards, null, 2) : cardList(cards)}\n` };
           },
         }),
         pins: cliCommand({

@@ -1,7 +1,7 @@
 // Iris backend: the agent tools (iris_check, iris_docs, iris_ask and the
 // reference carriers), the instructions agents get, the file reads behind
 // load() and Snippet, saved card state, and the `bb iris` command.
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { PluginCliError, defineCli, cliCommand, type BbPluginApi } from "@get-bb/plugin-sdk";
@@ -146,6 +146,27 @@ export default async function plugin(bb: BbPluginApi) {
     const rel = path.relative(path.resolve(root), target);
     return rel !== ".." && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel);
   };
+  /** A path with its symlinks resolved (macOS's /var is /private/var), as far as it exists on this machine. */
+  const real = (p: string): string => {
+    try {
+      return realpathSync(p);
+    } catch {
+      try {
+        return path.join(realpathSync(path.dirname(p)), path.basename(p));
+      } catch {
+        return p;
+      }
+    }
+  };
+  /** The target written under the root's own form of its path, when the two only differ by a symlink. */
+  const underRoot = (root: string, target: string): string | null => {
+    if (inside(root, target)) return target;
+    // Symlinks are this machine's: a root on another host is compared as written.
+    if (!existsSync(root)) return null;
+    const r = real(root);
+    const t = real(target);
+    return inside(r, t) ? path.join(root, path.relative(r, t)) : null;
+  };
 
   /** Where a requested path lands: only inside the thread's workspace, its thread storage, or another thread's storage folder. */
   async function resolvePath(threadId: string, requested: string): Promise<{ ok: true; root: Root; target: string; storage: boolean; own: boolean } | { ok: false; error: string }> {
@@ -161,10 +182,17 @@ export default async function plugin(bb: BbPluginApi) {
       root = roots.storage;
       if (root) target = path.resolve(root.path, requested.replace(/^\$BB_THREAD_STORAGE\/?/, ""));
     } else if (path.isAbsolute(requested)) {
-      const t = path.resolve(requested);
-      if (roots.storage && inside(roots.storage.path, t)) root = roots.storage;
-      else if (roots.workspace && inside(roots.workspace.path, t)) root = roots.workspace;
-      else if (roots.storage && path.basename(roots.storage.path) === threadId) {
+      let t = path.resolve(requested);
+      const inStorage = roots.storage ? underRoot(roots.storage.path, t) : null;
+      const inWorkspace = !inStorage && roots.workspace ? underRoot(roots.workspace.path, t) : null;
+      if (inStorage && roots.storage) {
+        root = roots.storage;
+        t = inStorage;
+      } else if (inWorkspace && roots.workspace) {
+        root = roots.workspace;
+        t = inWorkspace;
+      }
+      if (!root && roots.storage && path.basename(roots.storage.path) === threadId) {
         // Another thread's storage on the same machine (a parent thread showing its subthreads' screenshots):
         // only inside a real thread folder of bb's thread-storage directory, never loose files there.
         const all = path.dirname(roots.storage.path);
@@ -410,8 +438,9 @@ export default async function plugin(bb: BbPluginApi) {
     if (input.file && path.isAbsolute(input.file)) {
       try {
         const storage = (await threadRoots(threadId)).storage?.path;
-        const rel = storage ? path.relative(storage, input.file) : null;
-        if (rel !== null && rel && !rel.startsWith("..") && !path.isAbsolute(rel)) input = { ...input, file: `$BB_THREAD_STORAGE/${rel.split(path.sep).join("/")}` };
+        const within = storage ? underRoot(storage, input.file) : null;
+        const rel = storage && within ? path.relative(storage, within) : null;
+        if (rel) input = { ...input, file: `$BB_THREAD_STORAGE/${rel.split(path.sep).join("/")}` };
       } catch {
         // keep the path as given
       }
@@ -791,6 +820,22 @@ export default async function plugin(bb: BbPluginApi) {
 
   // ---------- CLI (hoisted: a dev instance registers it too, under its own id) ----------
 
+  /** A card file's text through the thread's own roots, or a CLI error that says why it can't be read. */
+  async function readCardFile(threadId: string, file: string): Promise<string> {
+    const read = await loadFile(threadId, file, true);
+    if (!read.ok || typeof read.value !== "string") throw new PluginCliError(`couldn't read ${file}${read.ok ? ": not a text file" : `: ${read.error}`}`, { code: "unreadable" });
+    return read.value;
+  }
+
+  /**
+   * A path from a shell command, as the caller meant it: relative to the shell's own folder
+   * (ctx.cwd), not to bb's. Absolute and $BB_THREAD_STORAGE paths pass through as they are.
+   */
+  function callerPath(file: string, cwd: string | undefined): string {
+    if (path.isAbsolute(file) || file.startsWith("$BB_THREAD_STORAGE") || !cwd) return file;
+    return path.resolve(cwd, file);
+  }
+
   function cliSpec() {
     return defineCli({
       name: bb.pluginId,
@@ -801,7 +846,9 @@ export default async function plugin(bb: BbPluginApi) {
           positionals: [{ name: "file", description: "A file holding the block (with or without the ``` lines)", required: true }] as const,
           async run({ positionals }, ctx) {
             const fs = await import("node:fs/promises");
-            const source = await fs.readFile(positionals.file, "utf8");
+            const file = callerPath(positionals.file, ctx.cwd);
+            // From a thread, the file is read through bb on the thread's own host, like the card reads it.
+            const source = ctx.threadId ? await readCardFile(ctx.threadId, file) : await fs.readFile(file, "utf8");
             const body = source.replace(/^\s*```[\w-]*[^\n]*\n/, "").replace(/```\s*$/, "");
             if (isReactApp(body)) {
               const text = await checkReact(body);
@@ -824,13 +871,10 @@ export default async function plugin(bb: BbPluginApi) {
           async run(input, ctx) {
             const threadId = ctx.threadId;
             if (!threadId) throw new PluginCliError("pin acts on the thread it runs in", { code: "thread_required", hint: "Run it from an agent's shell in bb, where BB_THREAD_ID is set" });
+            const file = callerPath(input.positionals.file, ctx.cwd);
             let source: string | undefined;
-            if (input.options.once) {
-              const read = await loadFile(threadId, input.positionals.file, true);
-              if (!read.ok || typeof read.value !== "string") throw new PluginCliError(`couldn't read ${input.positionals.file}${read.ok ? "" : `: ${read.error}`}`, { code: "unreadable" });
-              source = cardFromFile(read.value);
-            }
-            const r = await pinCard(threadId, { id: input.options.id, title: input.options.title, ...(source ? { source } : { file: input.positionals.file }), by: "agent" });
+            if (input.options.once) source = cardFromFile(await readCardFile(threadId, file));
+            const r = await pinCard(threadId, { id: input.options.id, title: input.options.title, ...(source ? { source } : { file }), by: "agent" });
             if (!r.ok) return { exitCode: 1, stdout: "", stderr: `${r.error}\n` };
             return { exitCode: 0, stdout: `${pinnedText(r, (await readPins(threadId)).length)}\n` };
           },

@@ -102,6 +102,8 @@ async function call(name: string, input: Record<string, unknown>): Promise<unkno
     }
     case "photo_search":
       return { ok: true, photo: await (await fetch(new URL("samples/photo.json", location.href))).json() };
+    case "pins.list":
+      return { pins: [] };
     case "load_model":
     case "file_url":
     case "folder_files":
@@ -121,6 +123,9 @@ export function useRpc<_T = unknown>() {
 export function useSdk() {
   return { subscribe: () => () => {} };
 }
+
+/** The site gets no realtime signals from bb: handlers never run. */
+export function useRealtime(_channel: string, _handler: (payload: unknown) => void) {}
 
 export function experimental_useRpcKeyedQuery(_options: unknown) {
   return { data: undefined as Record<string, unknown> | undefined };

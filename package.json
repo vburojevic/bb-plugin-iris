@@ -85,7 +85,7 @@
     "typecheck": "tsc --noEmit",
     "eval": "tsx evals/run.ts",
     "eval:gate": "tsx evals/run.ts --gate",
-    "release:check": "vitest run && tsc --noEmit && tsx evals/run.ts --gate"
+    "release:check": "vitest run && tsc --noEmit && node scripts/build-site.mjs && tsx evals/run.ts --gate"
   },
   "license": "Apache-2.0"
 }

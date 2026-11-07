@@ -3,7 +3,7 @@
   Iris
 </h1>
 
-<p align="center"><b>Live, interactive UI in your <a href="https://getbb.app">bb</a> chat.</b><br>Agents answer with charts, plans, test runs, decisions and small apps instead of walls of text, drawn in your bb theme.</p>
+<p align="center"><b>Agents answer in live cards you can use, not walls of text.</b></p>
 
 <p align="center">
 <a href="https://github.com/vburojevic/bb-plugin-iris/releases/latest"><img src="https://img.shields.io/github/v/release/vburojevic/bb-plugin-iris?style=flat-square&label=release&color=57606a" alt="Latest release"></a>
@@ -18,16 +18,11 @@
 </picture>
 
 <p align="center">
-  <a href="https://vburojevic.github.io/bb-plugin-iris/"><b>Website</b></a>
-  &nbsp;·&nbsp;
-  <a href="https://vburojevic.github.io/bb-plugin-iris/#/play"><b>Playground</b></a>
-  &nbsp;·&nbsp;
-  <a href="#install"><b>Install</b></a>
-  &nbsp;·&nbsp;
-  <a href="#components"><b>Components</b></a>
-  &nbsp;·&nbsp;
-  <a href="#live-data-from-bb-itself"><b>Live data</b></a>
-  &nbsp;·&nbsp;
+  <a href="https://vburojevic.github.io/bb-plugin-iris/"><b>Website</b></a>&nbsp;·
+  <a href="https://vburojevic.github.io/bb-plugin-iris/#/play"><b>Playground</b></a>&nbsp;·
+  <a href="#install"><b>Install</b></a>&nbsp;·
+  <a href="#components"><b>Components</b></a>&nbsp;·
+  <a href="#live-data-from-bb-itself"><b>Live data</b></a>&nbsp;·
   <a href="#for-agents"><b>For agents</b></a>
 </p>
 

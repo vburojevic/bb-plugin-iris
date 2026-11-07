@@ -12,6 +12,7 @@ import { ButtonView, ChecklistView, ColorInputView, DateInputView, InputView, Ra
 import { ChoicesView, FollowUpsView, SubmitView } from "./pickers";
 import { VariantView, VariantsView } from "./variants";
 import { MarkUpView } from "./markup";
+import { DocReviewView } from "./docreview";
 import { GalleryView, HotspotsView, MapView, PhotoSearchView, ScreensView } from "./media";
 import { AnnotateView, DeviceFrameView, SwatchesView, TypeSpecimenView } from "./design";
 import { DataGridView } from "./grid";
@@ -48,7 +49,7 @@ export const VIEWS: Record<string, View> = {
   Quiz: QuizView, Flashcards: FlashcardsView, Walkthrough: WalkthroughView, Timer: TimerView,
   Scene: SceneView, Shader: ShaderView,
   Sheet: SheetView, HttpExchange: HttpExchangeView, Waterfall: WaterfallView, ErDiagram: ErDiagramView, QueryPlan: QueryPlanView,
-  CodeTour: CodeTourView, Redline: RedlineView, TerminalReplay: TerminalReplayView, DevServers: DevServersView,
+  CodeTour: CodeTourView, Redline: RedlineView, DocReview: DocReviewView, TerminalReplay: TerminalReplayView, DevServers: DevServersView,
   Whiteboard: WhiteboardView, StringsTable: StringsTableView,
   VideoPlayer: VideoPlayerView, AudioPlayer: AudioPlayerView, FileTree: FileTreeView, AssetGallery: AssetGalleryView, PdfViewer: PdfViewerView, FontPreview: FontPreviewView,
   Cells: CellsView, TimeZones: TimeZonesView, Cron: CronView, DateDiff: DateDiffView, Release: ReleaseView,

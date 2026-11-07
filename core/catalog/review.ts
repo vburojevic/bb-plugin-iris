@@ -25,6 +25,34 @@ export const REVIEW = [
     heavy: true,
   }),
   component({
+    name: "DocReview",
+    group: "Review",
+    summary:
+      "A spec, plan or doc (markdown) the person reads and comments on, block by block, then approves or asks for changes. The state is {verdict: approve|changes|null, comments: [{block, quote, note}]}; use it in an iris_ask picker with <Submit />.",
+    props: {
+      bind: p.bind("State holding the review; start it as {}"),
+      text: p.str("The document as markdown, e.g. load(path, {raw: true}); or put it between the tags"),
+      title: p.str("Caption above the document"),
+    },
+    children: "raw",
+    childrenDoc: "The document as markdown",
+    example: `<state review={{}} />
+<DocReview bind="review" title="Spec: theme picker">
+## Goal
+Let people pick a palette from a live preview instead of a hand-built page.
+
+## Plan
+- Variants for the directions
+- ColorInput for the accent
+- Ship each as its own release
+
+## Open
+Should the preview use the person's own bb theme?
+</DocReview>
+<Submit label="Send review" />`,
+    aliases: ["SpecReview", "PlanReview", "ReviewDoc"],
+  }),
+  component({
     name: "Redline",
     group: "Review",
     summary: "A word-level redline of prose (docs, copy, specs): deletions struck, insertions marked inline. The person accepts or rejects each change (click, or A and R on a focused change), then inserts the result into the composer.",

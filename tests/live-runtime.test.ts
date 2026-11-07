@@ -51,3 +51,58 @@ describe("live refresh", () => {
     expect(calls.sort()).toEqual(["big.csv", "tail:job.log", "tail:job.log"].sort());
   });
 });
+
+describe("failed refreshes", () => {
+  function flaky() {
+    let answer: LoadResult = { ok: true, value: { n: 1 } };
+    let t = 1_000;
+    const calls: string[] = [];
+    const r = new CardRuntime(compile(`<Card />`), {
+      now: () => t,
+      load: async (path): Promise<LoadResult> => {
+        calls.push(path);
+        return answer;
+      },
+    });
+    return { r, calls, set: (a: LoadResult) => (answer = a), tick: (ms: number) => (t += ms) };
+  }
+  it("keep the last good value and say since when, until a read works again", async () => {
+    const { r, set, tick } = flaky();
+    r.load("s.json");
+    await flush();
+    set({ ok: false, error: "plugin didn't answer within 10 s" });
+    tick(2_000);
+    r.reloadFiles();
+    await flush();
+    expect(r.load("s.json")).toEqual({ n: 1 });
+    expect(r.staleness()).toEqual({ since: 1_000, error: "plugin didn't answer within 10 s" });
+    set({ ok: true, value: { n: 2 } });
+    r.reloadFiles();
+    await flush();
+    expect(r.load("s.json")).toEqual({ n: 2 });
+    expect(r.staleness()).toBeNull();
+  });
+  it("error only when a source never read fine, unless the card gives a fallback", async () => {
+    const { r, set } = flaky();
+    set({ ok: false, error: "nope" });
+    r.load("x.json");
+    await flush();
+    expect(() => r.load("x.json")).toThrow(/nope/);
+    expect(r.load("x.json", { fallback: { slow: true } })).toEqual({ slow: true });
+  });
+  it("re-read plugin sources at most every 10 s", async () => {
+    const { r, calls, tick } = flaky();
+    r.load("plugin:admiral/fleet");
+    r.load("a.json");
+    await flush();
+    tick(2_000);
+    r.reloadFiles();
+    await flush();
+    expect(calls.filter((c) => c.startsWith("plugin:"))).toHaveLength(1);
+    expect(calls.filter((c) => c === "a.json")).toHaveLength(2);
+    tick(10_000);
+    r.reloadFiles();
+    await flush();
+    expect(calls.filter((c) => c.startsWith("plugin:"))).toHaveLength(2);
+  });
+});

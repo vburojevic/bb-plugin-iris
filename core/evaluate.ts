@@ -80,7 +80,7 @@ export interface Host {
   hasLet(name: string): boolean;
   getLet(name: string): unknown;
   /** Data from a file: the parsed value, a PendingValue while loading, or a thrown IrisError. */
-  load(path: string, options?: { raw?: boolean; tail?: boolean }): unknown;
+  load(path: string, options?: { raw?: boolean; tail?: boolean; fallback?: unknown }): unknown;
   /** Seconds-resolution clock for live cards. */
   now(): number;
 }

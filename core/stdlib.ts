@@ -141,7 +141,7 @@ export function createGlobals(it: () => Interpreter, host: () => Host): Scope {
     isList: (x: unknown) => Array.isArray(x),
     load: (path: unknown, options?: unknown) => {
       if (typeof path !== "string" || !path) throw new IrisError('load() needs a file path, like load("$BB_THREAD_STORAGE/tests.json")');
-      return host().load(path, (options ?? undefined) as { raw?: boolean; tail?: boolean } | undefined);
+      return host().load(path, (options ?? undefined) as { raw?: boolean; tail?: boolean; fallback?: unknown } | undefined);
     },
     // actions: they describe what a click does
     send: (text: unknown) => action("send", [toText(text)]),

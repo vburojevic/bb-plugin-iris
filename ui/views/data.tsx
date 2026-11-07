@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { betterWay } from "../../core/better";
 import { defaultCompare, isElementValue, isFnValue, isPendingValue, toText } from "../../core/evaluate";
 import { useEnv } from "../env";
 import { heatGrid, heatPosition } from "../../core/heatmap";
@@ -459,7 +460,7 @@ export function HeatmapView({ props }: ViewProps) {
   const lo = domain[0] ?? grid.min;
   const hi = domain[1] ?? grid.max;
   const mid = num(props.mid);
-  const down = props.better === "down";
+  const down = betterWay(props.better) === "down";
   const show = (v: number) => fmt(v, props.format);
   const ramp = sequentialRamp(env.palette, 9);
   // Sequential: the theme's ramp, light to deep. With mid: good above it and bad below (or the

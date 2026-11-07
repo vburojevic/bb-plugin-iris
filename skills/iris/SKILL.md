@@ -12,6 +12,9 @@ Iris renders ```iris blocks in assistant replies as live UI in the person's bb t
 - `bb iris components`: every component with its one-line summary.
 - `bb iris docs <Name> [Name...]`: props and an example.
 - `bb iris try "<prompt>"`: runs a prompt in a subthread whose agent knows Iris (works in trial rollout too).
+- `bb iris pin <file> [--id <id>] [--title <title>] [--once]`: pins the card in the file beside this thread's conversation and follows the file (re-read every 3 s), so rewriting it updates the pin; `--once` stores the card as it is now. Checked first; at most 5 pins per thread; the same id replaces a pin. The iris_pin tool does the same.
+- `bb iris unpin <id>` or `--all`, and `bb iris pins [--json]`: remove and list this thread's pins (iris_unpin, iris_pins).
+- `bb plugin rpc call iris pins.list|pins.set|pins.remove --input-file <json>`: the same pins for any client, by threadId.
 
 ## Settings (`bb plugin config iris`)
 - `stance`: `eager` (default) shows anything that can be shown; `balanced` keeps short answers as prose.
@@ -24,3 +27,4 @@ Settings apply after `bb plugin reload iris`, in sessions that start afterwards.
 - ```iris-app pages and ```iris-react apps run sandboxed with no network; window.iris.insert/send/copy/submit are the only way out, and each works only from a click.
 - ```iris-react apps import only react, react-dom, lucide-react and "iris" (the kit: `bb iris docs React`). iris_check compiles them; compile and runtime errors show under the app with their line.
 - iris_ask waits up to 60 minutes by default (timeoutMinutes up to 7 days).
+- Live cards re-read files every 2 s and plugin: sources every 10 s; a failed refresh keeps the last good value with a "retrying" note. load(path, {fallback: x}) returns x instead of an error.

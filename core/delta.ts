@@ -1,5 +1,7 @@
 // Delta: before and after for any values, with the change and whether it went the right way.
 
+import { betterWay } from "./better";
+
 export type Better = "up" | "down" | "none";
 export type Verdict = "better" | "worse" | "same" | "changed";
 
@@ -37,12 +39,12 @@ const stable = (v: unknown): string =>
 
 /** Rows of {label, before, after, better?, format?}; better says which way is good: up, down or none. */
 export function deltaRows(v: unknown, defaultBetter: unknown = "none"): DeltaRow[] {
-  const fallback: Better = defaultBetter === "up" || defaultBetter === "down" ? defaultBetter : "none";
+  const fallback: Better = betterWay(defaultBetter) ?? "none";
   const out: DeltaRow[] = [];
   for (const item of Array.isArray(v) ? v : []) {
     if (!item || typeof item !== "object") continue;
     const o = item as Record<string, unknown>;
-    const better: Better = o.better === "up" || o.better === "down" || o.better === "none" ? o.better : fallback;
+    const better: Better = betterWay(o.better) ?? fallback;
     const b = deltaNumber(o.before);
     const a = deltaNumber(o.after);
     let change = a != null && b != null ? a - b : null;

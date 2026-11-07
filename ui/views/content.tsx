@@ -1,4 +1,5 @@
 import { normalizeTone } from "../../core/tones";
+import { betterWay } from "../../core/better";
 import { useState, type ReactNode } from "react";
 import { isElementValue, isPendingValue, toText } from "../../core/evaluate";
 import { formatValue } from "../../core/format";
@@ -53,7 +54,7 @@ export function MetricView({ props }: ViewProps) {
   const { palette } = useEnv();
   const tone = useTone(props.tone);
   const delta = num(props.delta);
-  const better = str(props.better) ?? "up";
+  const better = betterWay(props.better) ?? "up";
   const good = delta === undefined || delta === 0 ? null : better === "up" ? delta > 0 : delta < 0;
   const deltaColor = good === null ? palette.tone.neutral : good ? palette.tone.good : palette.tone.bad;
   const trend = Array.isArray(props.trend) ? props.trend.map(Number).filter(Number.isFinite) : null;

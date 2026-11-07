@@ -9,6 +9,7 @@ There are 129 components in 30 families: layout, charts, data grids, diagrams, c
 The agent writes a short `iris` code block in its reply, and bb draws it as a card while the reply streams in. Before sending, the agent checks the block with the `iris_check` tool, which reads the files it loads, moves every input to its extremes and returns an outline of what you will see.
 
 - Sliders, toggles and pickers recompute the card in place.
+- Pin up to five live cards beside the conversation, or let the agent pin and update a status card for you; each shows who pinned it, with one-tap Unpin.
 - Buttons put text in your message, and `iris_ask` opens a picker that waits for your answer, like ask mode: a ranked checklist, design variants in a live preview, a color with its contrast, marks on a screenshot, comments on a spec, or a list to put in order.
 - A live card re-reads its files every 2 seconds, so a running job's log, progress or test results fill in as they land.
 - `load("bb:...")` reads bb's own data for the card's thread: its context use, the threads it started, its pull request, commits and changes, plan usage, machines and plugins.

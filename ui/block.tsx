@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { isPluginSource, loadPluginData } from "../core/plugin-data";
+import type { Parsed } from "../core/data";
 import { isBbSource } from "../core/bb-data";
 import { experimental_copyToClipboard, experimental_useAppPanel, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
 import { toast } from "sonner";
@@ -15,7 +16,8 @@ import { MAX_LINK_SOURCE, PLAYGROUND_URL, playLink } from "../shared/playground"
 import type { RpcContract } from "../shared/rpc";
 import { EnvContext, type IrisEnv, type IrisMode, useActions } from "./env";
 import { usePalette, raisedSurface } from "./palette";
-import { setPin, usePin } from "./pin-store";
+import { pinFromCard, unpin, usePins } from "./pin-store";
+import type { PinsContract } from "../shared/pins-rpc";
 import { InlineError, renderNodes } from "./render";
 import { Glyph, cn } from "./views/kit";
 import { BlockContext } from "./views/layout";
@@ -35,6 +37,22 @@ export interface BlockProps {
 }
 
 const LIVE_INTERVAL_MS = 2000;
+
+/**
+ * One plugin read at a time per source, shared by every card on the page that asks within a
+ * moment of it: a pinned card and the same card in the chat cost bb one request, not two.
+ */
+const pluginReads = new Map<string, { at: number; result: Promise<Parsed> }>();
+const SHARED_READ_MS = 1_500;
+function sharedPluginRead(path: string, threadId: string | null, raw: boolean): Promise<Parsed> {
+  const key = `${threadId ?? ""}|${raw ? "raw" : ""}|${path}`;
+  const hit = pluginReads.get(key);
+  if (hit && performance.now() - hit.at < SHARED_READ_MS) return hit.result;
+  const result = loadPluginData(path, threadId, raw);
+  pluginReads.set(key, { at: performance.now(), result });
+  if (pluginReads.size > 200) pluginReads.delete(pluginReads.keys().next().value as string);
+  return result;
+}
 
 export function IrisBlock(props: BlockProps) {
   const { source, streaming, threadId, mode, stateKey } = props;
@@ -59,7 +77,7 @@ export function IrisBlock(props: BlockProps) {
       }
       // A plugin's own Iris data (the public plugin data contract) reads from bb's page, in or out of a thread.
       if (isPluginSource(path)) {
-        const r = await loadPluginData(path, threadId, raw || tail === true);
+        const r = await sharedPluginRead(path, threadId, raw || tail === true);
         if (!r.ok || !tail) return r;
         const text = String(r.value);
         return { ok: true, value: { text, size: text.length, truncated: false } };
@@ -240,12 +258,15 @@ function Toolbar(p: { source: string; language: string; showSource: boolean; onT
   const panel = experimental_useAppPanel();
   const rpc = useRpc<RpcContract>();
   const navigate = useBbNavigate();
-  const pin = usePin(p.threadId);
+  const pinsRpc = useRpc<PinsContract>();
+  const pins = usePins(p.threadId);
   const pinnable = p.threadId !== null && !p.streaming && !/-(app|react)$/.test(p.language);
-  const pinned = pinnable && pin?.source === p.source;
+  // This card is pinned when a pin holds its exact source (whoever pinned it).
+  const pinnedAs = pinnable ? pins?.find((x) => x.source === p.source)?.id : undefined;
+  const pinned = pinnedAs !== undefined;
   const togglePin = () => {
     if (!p.threadId) return;
-    void setPin(rpc, p.threadId, pinned ? null : { source: p.source, title: titleOf(p.source) });
+    void (pinnedAs ? unpin(pinsRpc, p.threadId, pinnedAs) : pinFromCard(pinsRpc, p.threadId, p.source));
   };
   const open = () => {
     const ok = panel.openTab({ tab: { id: "iris-card", context: { kind: "thread" }, availability: "action" }, params: { source: p.source, language: p.language }, title: titleOf(p.source) });

@@ -26,12 +26,12 @@ This chat renders \`\`\`iris blocks as live, interactive UI in the person's bb t
 - <state seats={10} /> declares values inputs change; <let total={seats * 29} /> derives values. Inputs bind by name: <Slider bind="seats" />.
 - Expressions are JavaScript: map, filter, reduce, ternaries, template strings, arrow functions, JSX inside: {rows.map((r) => <Item title={r.name} />)}. Put spaces around < and >.
 - Helpers: fmt(x, "usd"|"percent"|"ms"|"bytes"|"duration"|"compact"|"date"), round(x, d), sum(list, key), avg, median, sortBy(list, key, "desc"), groupBy, countBy, unique, range(n), plural(n, "test").
-- Files: load("$BB_THREAD_STORAGE/tests.json") reads JSON, JSONL, CSV or TSV from the workspace or thread storage; load(path, {raw: true}) gives text; load("plugin:<id>/<name>") reads data a bb plugin publishes for Iris; load("bb:thread"), bb:threads, bb:usage, bb:pr, bb:commits, bb:changes, bb:environments, bb:machines and bb:plugins read bb's own live data (iris_docs(["bb"]) has their shapes).
+- Files: load("$BB_THREAD_STORAGE/tests.json") reads JSON, JSONL, CSV or TSV from the workspace or thread storage; load(path, {raw: true}) gives text, {fallback: x} gives x on failure; load("plugin:<id>/<name>") reads data a bb plugin publishes for Iris; load("bb:thread"), bb:threads, bb:usage, bb:pr, bb:commits, bb:changes, bb:environments, bb:machines and bb:plugins read bb's own live data (iris_docs(["bb"]) has their shapes).
 - Handlers: assign state (onClick={() => count += 1}) or act: insert(text) puts text in the composer, send(text) sends it, copy(text), openFile(path, line), openUrl(url), explain(topic).
 - Text between tags is Markdown. Mermaid, code, diffs, logs and stack traces go verbatim between their tags.
 
 ## Rules
-- One Card per idea; the first Card carries the toolbar. state="live" on a Card re-reads its load() files every 2 s: use it for running jobs, with LiveLog and LiveProgress over the files the job writes.
+- One Card per idea; the first Card carries the toolbar. state="live" on a Card re-reads its load() files every 2 s (plugin: 10 s); iris_pin pins one: use it for running jobs, with LiveLog and LiveProgress over the files the job writes.
 - Math in TeX goes in <Math> ($inline$ and $$display$$), never in Text or code.
 - Never retype data a file holds: save tool output to $BB_THREAD_STORAGE and load() it.
 - Show only the facts you have: no invented severities, statuses, tones or numbers. Don't repeat in a card what another component in it already shows.

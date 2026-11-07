@@ -36,3 +36,14 @@ describe("Delta", () => {
     expect(rows[3].change).toBeNull();
   });
 });
+
+describe("better", () => {
+  it("reads lower and higher as down and up everywhere", async () => {
+    const { betterWay } = await import("../core/better");
+    const { check } = await import("../core/check");
+    expect([betterWay("lower"), betterWay("Higher"), betterWay("none"), betterWay("sideways")]).toEqual(["down", "up", "none", undefined]);
+    expect(check('<Metric label="p95" value={515} delta={-0.1} better="lower" />').ok).toBe(true);
+    expect(check('<Metric label="p95" value={515} better="sideways" />').ok).toBe(false);
+    expect(deltaRows([{ label: "p95", before: 600, after: 500, better: "lower" }])[0].verdict).toBe("better");
+  });
+});

@@ -14,6 +14,8 @@ import type { LoadResult } from "./core/program";
 import { CODE_WORK_INSTRUCTIONS, docsFor, examplesForGroups, indexSections, mainInstructions, type Stance } from "./core/prompt";
 import { CATALOG, GROUPS } from "./core/catalog";
 import { rpcContract, type FileUrlResult, type FolderFilesResult } from "./shared/rpc";
+import { pinsContract } from "./shared/pins-rpc";
+import { MAX_PINS, MAX_PIN_SOURCE, type Pin, type PinBy, cardFromFile, cardTitle, normalizePins, pinId, removePin, upsertPin, validPinId } from "./core/pins";
 import { failure, parseChangesTarget, parsePathFilter, parseThreadIds } from "./core/project";
 import { createProjectSource } from "./project-source";
 import { createBbSource } from "./bb-source";
@@ -369,6 +371,102 @@ export default async function plugin(bb: BbPluginApi) {
     photo_search: ({ query, width }) => web.photo(query, width),
   });
 
+  // ---------- pinned cards ----------
+  // A thread keeps up to MAX_PINS live cards beside its conversation. The person pins from a card's
+  // toolbar; the thread's agent pins with iris_pin or `bb iris pin`; any client can use the
+  // discoverable pins.* RPCs. Every change is checked first, written once, and announced so open
+  // views refresh.
+
+  const pinsKey = (threadId: string) => `state:pins:${threadId}`;
+  const legacyPinKey = (threadId: string) => `state:pin:${threadId}`;
+  const pinLocks = new Map<string, Promise<unknown>>();
+  /** One change at a time per thread, so two quick pins never overwrite each other. */
+  function withPins<T>(threadId: string, fn: () => Promise<T>): Promise<T> {
+    const prev = pinLocks.get(threadId) ?? Promise.resolve();
+    const next = prev.then(fn, fn);
+    pinLocks.set(threadId, next.catch(() => undefined));
+    return next;
+  }
+  async function readPins(threadId: string): Promise<Pin[]> {
+    const stored = await bb.storage.kv.get<unknown>(pinsKey(threadId));
+    // Before 1.10 a thread had one pin under its own key: it reads as the person's pin.
+    return normalizePins(stored ?? (await bb.storage.kv.get<unknown>(legacyPinKey(threadId))));
+  }
+  async function writePins(threadId: string, pins: Pin[]): Promise<void> {
+    await bb.storage.kv.set(pinsKey(threadId), { pins });
+    await bb.storage.kv.set(legacyPinKey(threadId), { source: null });
+    bb.realtime.publish("iris-pins", { threadId });
+  }
+
+  type PinInput = { id?: string; title?: string; source?: string; file?: string; by: PinBy };
+  type PinResult = { ok: true; pin: Pin; replaced: boolean; report: string } | { ok: false; error: string };
+  async function pinCard(threadId: string, input: PinInput): Promise<PinResult> {
+    if (Boolean(input.source) === Boolean(input.file)) return { ok: false, error: "give the card's source or a file holding it, not both" };
+    if (input.id !== undefined && !validPinId(input.id)) return { ok: false, error: `"${input.id}" can't be a pin id: use lowercase letters, digits and dashes` };
+    let body = input.source ?? "";
+    // A path the shell expanded inside this thread's storage reads back as $BB_THREAD_STORAGE/..., for
+    // the person and in iris_pins.
+    if (input.file && path.isAbsolute(input.file)) {
+      try {
+        const storage = (await threadRoots(threadId)).storage?.path;
+        const rel = storage ? path.relative(storage, input.file) : null;
+        if (rel !== null && rel && !rel.startsWith("..") && !path.isAbsolute(rel)) input = { ...input, file: `$BB_THREAD_STORAGE/${rel.split(path.sep).join("/")}` };
+      } catch {
+        // keep the path as given
+      }
+    }
+    if (input.file) {
+      const read = await loadFile(threadId, input.file, true);
+      if (!read.ok) return { ok: false, error: `couldn't read ${input.file}: ${read.error}` };
+      if (typeof read.value !== "string") return { ok: false, error: `${input.file} isn't a text file` };
+      body = cardFromFile(read.value);
+    }
+    if (isReactApp(body)) return { ok: false, error: "only ```iris cards can be pinned, not iris-react apps" };
+    if (body.length > MAX_PIN_SOURCE) return { ok: false, error: `the card is longer than ${MAX_PIN_SOURCE.toLocaleString("en-US")} characters; pin a file it loads its data from instead` };
+    // Only the card itself can block a pin. A file it loads may not exist yet or a feed may be slow
+    // right now: the pinned card shows that live, so the check reports it but doesn't refuse.
+    const own = check(body, { load: () => new Promise<LoadResult>(() => undefined) });
+    if (!own.ok) return { ok: false, error: `The card has errors, so it wasn't pinned. Fix them and pin again.\n${formatReport(own)}` };
+    const report = await checkSource(body, threadId);
+    const title = input.title ?? cardTitle(body, input.file ? path.basename(input.file).replace(/\.[^.]+$/, "") : "Iris card");
+    const pin: Pin = { id: input.id ?? pinId(title, input.file ?? body), title, ...(input.file ? { file: input.file } : { source: body }), by: input.by, at: Date.now() };
+    return withPins(threadId, async () => {
+      const change = upsertPin(await readPins(threadId), pin);
+      if (!change.ok) return { ok: false as const, error: change.error };
+      await writePins(threadId, change.pins);
+      return { ok: true as const, pin, replaced: change.replaced, report };
+    });
+  }
+  async function unpinCards(threadId: string, id: string | undefined, all: boolean): Promise<{ ok: boolean; removed: string[] }> {
+    return withPins(threadId, async () => {
+      const pins = await readPins(threadId);
+      if (all) {
+        if (pins.length) await writePins(threadId, []);
+        return { ok: pins.length > 0, removed: pins.map((p) => p.id) };
+      }
+      const change = removePin(pins, id ?? "");
+      if (change.ok) await writePins(threadId, change.pins);
+      return { ok: change.ok, removed: change.ok ? [id ?? ""] : [] };
+    });
+  }
+  /** What the agent is told after a pin: where it shows and what the person can do with it. */
+  function pinnedText(r: Extract<PinResult, { ok: true }>, count: number): string {
+    const follows = r.pin.file ? ` It re-reads ${r.pin.file} every 3 seconds while it shows, so rewrite that file to update it.` : "";
+    return `${r.replaced ? "Replaced" : "Pinned"} "${r.pin.title}" (id ${r.pin.id}) beside this thread's conversation, ${count} of ${MAX_PINS} pins. The person sees it in the thread's right panel (Info tab, under Pinned cards), marked as pinned by the agent, with Unpin.${follows}\n\n${r.report}`;
+  }
+  const pinList = (pins: Pin[]) =>
+    pins.length ? pins.map((p) => `- ${p.id}: "${p.title}", ${p.file ? `follows ${p.file}` : "card source"}, pinned by ${p.by === "agent" ? "the agent" : "the person"}`).join("\n") : "No pinned cards in this thread.";
+
+  bb.rpc.register(
+    pinsContract,
+    {
+      "pins.list": async ({ threadId }) => ({ pins: await readPins(threadId) }),
+      "pins.set": ({ threadId, id, title, source, file, by }) => pinCard(threadId, { id, title, source, file, by: by ?? "agent" }),
+      "pins.remove": ({ threadId, id, all }) => unpinCards(threadId, id, all === true),
+    },
+    { experimental_discoverable: true, experimental_description: "Iris: the live cards pinned beside a thread's conversation." },
+  );
+
   // ---------- agent tools ----------
 
   /** iris-react apps compile with the same chunk the frontend loads; nothing is run. */
@@ -531,10 +629,72 @@ export default async function plugin(bb: BbPluginApi) {
     }),
   });
 
+  // ---------- pin tools: the thread's own pins only ----------
+
+  const PIN_PARAMS = z
+    .object({
+      source: z.string().min(1).max(100_000).optional(),
+      file: z.string().min(1).max(2000).optional(),
+      title: z.string().min(1).max(120).optional(),
+      id: z.string().min(1).max(40).optional(),
+    })
+    .strict();
+  bb.agents.registerTool({
+    name: "iris_pin",
+    description:
+      "Pins a live Iris card beside this thread's conversation, where it stays in view and keeps refreshing while the chat scrolls on (a build, a fleet's status, a job). Give source (Iris markup) or file (a thread storage or workspace path holding the card, re-read every 3 s, so rewriting the file updates the pin). The card is checked first; one with errors isn't pinned. Pinning again with the same id replaces the pin. At most 5 pins per thread.",
+    ...params(PIN_PARAMS, {
+      type: "object",
+      properties: {
+        source: { type: "string", minLength: 1, maxLength: 100_000, description: "The card's Iris markup, without the ``` lines" },
+        file: { type: "string", minLength: 1, maxLength: 2000, description: "A path such as $BB_THREAD_STORAGE/status.iris whose content is the card; the pin follows the file" },
+        title: { type: "string", minLength: 1, maxLength: 120, description: "Shown above the pin; default the card's title" },
+        id: { type: "string", minLength: 1, maxLength: 40, description: "Stable id (lowercase, digits, dashes); default from the title" },
+      },
+      additionalProperties: false,
+    }),
+    presentation: { label: { pending: "Pinning a card", completed: "Pinned a card" } },
+    execute: validated(PIN_PARAMS, async (input, ctx: { threadId?: string | null }) => {
+      if (!ctx.threadId) return { content: [{ type: "text", text: "iris_pin works only inside a thread" }], isError: true };
+      const r = await pinCard(ctx.threadId, { ...input, by: "agent" });
+      if (!r.ok) return { content: [{ type: "text", text: r.error }], isError: true };
+      return { content: [{ type: "text", text: pinnedText(r, (await readPins(ctx.threadId)).length) }] };
+    }),
+  });
+
+  const UNPIN_PARAMS = z.object({ id: z.string().min(1).max(40).optional(), all: z.boolean().optional() }).strict();
+  bb.agents.registerTool({
+    name: "iris_unpin",
+    description: "Unpins a card from beside this thread's conversation by its id, or every pin with all: true.",
+    ...params(UNPIN_PARAMS, {
+      type: "object",
+      properties: { id: { type: "string", minLength: 1, maxLength: 40, description: "The pin's id, from iris_pins" }, all: { type: "boolean", description: "Unpin every card in this thread" } },
+      additionalProperties: false,
+    }),
+    presentation: { label: { pending: "Unpinning", completed: "Unpinned" } },
+    execute: validated(UNPIN_PARAMS, async ({ id, all }, ctx: { threadId?: string | null }) => {
+      if (!ctx.threadId) return { content: [{ type: "text", text: "iris_unpin works only inside a thread" }], isError: true };
+      if (!id && !all) return { content: [{ type: "text", text: "Name the pin's id, or pass all: true" }], isError: true };
+      const r = await unpinCards(ctx.threadId, id, all === true);
+      return r.ok ? { content: [{ type: "text", text: `Unpinned ${r.removed.join(", ")}.` }] } : { content: [{ type: "text", text: `No pin "${id}" here.\n${pinList(await readPins(ctx.threadId))}` }], isError: true };
+    }),
+  });
+
+  bb.agents.registerTool({
+    name: "iris_pins",
+    description: "Lists the cards pinned beside this thread's conversation: id, title, source or file, and who pinned each.",
+    parameters: { type: "object", properties: {}, additionalProperties: false },
+    presentation: { label: { pending: "Reading pins", completed: "Read pins" }, suppress: true },
+    async execute(_input: unknown, ctx: { threadId?: string | null }) {
+      if (!ctx.threadId) return { content: [{ type: "text", text: "iris_pins works only inside a thread" }], isError: true };
+      return { content: [{ type: "text", text: pinList(await readPins(ctx.threadId)) }] };
+    },
+  });
+
   // ---------- instructions ----------
 
   const personThreads = new Set<string>();
-  const toolNames = ["iris_check", "iris_ask", "iris_docs", "iris_examples"];
+  const toolNames = ["iris_check", "iris_ask", "iris_docs", "iris_examples", "iris_pin", "iris_unpin", "iris_pins"];
   bb.agents.configure((context) => {
     const trial = context.pluginMetadata?.iris === "trial";
     // Every top-level thread is one a person reads, whoever started it (the person, a side chat,
@@ -571,6 +731,51 @@ export default async function plugin(bb: BbPluginApi) {
             }
             const report = check(body);
             return { exitCode: report.ok ? 0 : 1, stdout: `${formatReport(report)}\n` };
+          },
+        }),
+        pin: cliCommand({
+          summary: "Pin a card beside this thread's conversation; the pin follows the file, so rewriting it updates the card",
+          description: "Checked first: a card with errors isn't pinned. With --once the card's source is stored instead of the file's path. Pinning again with the same --id replaces the pin. At most 5 pins per thread.",
+          positionals: [{ name: "file", description: "A file holding the card, e.g. $BB_THREAD_STORAGE/status.iris (with or without the ``` lines)", required: true }] as const,
+          options: {
+            title: { type: "string", description: "Shown above the pin; default the card's title" },
+            id: { type: "string", description: "Stable id (lowercase, digits, dashes); default from the title" },
+            once: { type: "boolean", description: "Pin the card as it is now instead of following the file" },
+          },
+          async run(input, ctx) {
+            const threadId = ctx.threadId;
+            if (!threadId) throw new PluginCliError("pin acts on the thread it runs in", { code: "thread_required", hint: "Run it from an agent's shell in bb, where BB_THREAD_ID is set" });
+            let source: string | undefined;
+            if (input.options.once) {
+              const read = await loadFile(threadId, input.positionals.file, true);
+              if (!read.ok || typeof read.value !== "string") throw new PluginCliError(`couldn't read ${input.positionals.file}${read.ok ? "" : `: ${read.error}`}`, { code: "unreadable" });
+              source = cardFromFile(read.value);
+            }
+            const r = await pinCard(threadId, { id: input.options.id, title: input.options.title, ...(source ? { source } : { file: input.positionals.file }), by: "agent" });
+            if (!r.ok) return { exitCode: 1, stdout: "", stderr: `${r.error}\n` };
+            return { exitCode: 0, stdout: `${pinnedText(r, (await readPins(threadId)).length)}\n` };
+          },
+        }),
+        unpin: cliCommand({
+          summary: "Unpin a card from beside this thread's conversation",
+          positionals: [{ name: "id", description: "The pin's id, from `bb iris pins`" }] as const,
+          options: { all: { type: "boolean", description: "Unpin every card in this thread" } },
+          async run(input, ctx) {
+            const threadId = ctx.threadId;
+            if (!threadId) throw new PluginCliError("unpin acts on the thread it runs in", { code: "thread_required", hint: "Run it from an agent's shell in bb, where BB_THREAD_ID is set" });
+            if (!input.positionals.id && !input.options.all) throw new PluginCliError("name the pin's id, or pass --all", { code: "invalid" });
+            const r = await unpinCards(threadId, input.positionals.id, input.options.all === true);
+            return r.ok ? { exitCode: 0, stdout: `Unpinned ${r.removed.join(", ")}.\n` } : { exitCode: 1, stdout: "", stderr: `No pin "${input.positionals.id}" here.\n${pinList(await readPins(threadId))}\n` };
+          },
+        }),
+        pins: cliCommand({
+          summary: "List the cards pinned beside this thread's conversation",
+          options: { json: { type: "boolean", description: "Print the pins as JSON" } },
+          async run(input, ctx) {
+            const threadId = ctx.threadId;
+            if (!threadId) throw new PluginCliError("pins reads the thread it runs in", { code: "thread_required", hint: "Run it from an agent's shell in bb, where BB_THREAD_ID is set" });
+            const pins = await readPins(threadId);
+            return { exitCode: 0, stdout: `${input.options.json ? JSON.stringify(pins, null, 2) : pinList(pins)}\n` };
           },
         }),
         try: cliCommand({

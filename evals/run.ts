@@ -18,6 +18,32 @@
 //   npx tsx evals/run.ts --save-baseline run, then store the score as the new baseline
 
 import { spawn } from "node:child_process";
+
+/**
+ * The child claude runs on the person's own login, isolated from their setup: an empty config folder
+ * holding only a copy of the login (no CLAUDE.md, settings, hooks, plugins or memory), run in this
+ * repo as with --bare (it has no CLAUDE.md or .claude of its own). Inside a bb thread whose provider the host manages, the host's variables would
+ * point it elsewhere ("Not logged in"), so they are dropped. Without a login file it falls back to
+ * --bare, which needs an API key.
+ */
+const LOGIN = path.join(os.homedir(), ".claude", ".credentials.json");
+let isolated: { config: string } | null | undefined;
+function isolation(): { config: string } | null {
+  if (isolated !== undefined) return isolated;
+  if (!fs.existsSync(LOGIN)) return (isolated = null);
+  const config = fs.mkdtempSync(path.join(os.tmpdir(), "iris-eval-config-"));
+  fs.copyFileSync(LOGIN, path.join(config, ".credentials.json"));
+  fs.chmodSync(path.join(config, ".credentials.json"), 0o600);
+  process.on("exit", () => fs.rmSync(config, { recursive: true, force: true }));
+  return (isolated = { config });
+}
+function evalEnv(): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  for (const k of ["ANTHROPIC_BASE_URL", "CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST", "CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_CHILD_SESSION", "CLAUDE_CODE_SESSION_ID", "CLAUDE_CODE_MESSAGING_SOCKET", "CLAUDE_CODE_MESSAGING_TOKEN"]) delete env[k];
+  const iso = isolation();
+  if (iso) env.CLAUDE_CONFIG_DIR = iso.config;
+  return env;
+}
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -75,7 +101,8 @@ function claude(prompt: string, system: string, timeoutMs = 300_000, withIris = 
     // No tools and no MCP servers: the agent can only answer in text.
     // Built-in tools off; the agent gets only Iris's own tools, the judge none.
     const iris = withIris ? ["--mcp-config", MCP_CONFIG, "--allowedTools", IRIS_TOOLS] : [];
-    const child = spawn("claude", ["-p", "--bare", "--strict-mcp-config", ...iris, "--model", MODEL, "--append-system-prompt-file", sysFile, "--tools", "", "--output-format", "json", "--no-session-persistence"], { stdio: ["pipe", "pipe", "pipe"] });
+    const iso = isolation();
+    const child = spawn("claude", ["-p", ...(iso ? [] : ["--bare"]), "--strict-mcp-config", ...iris, "--model", MODEL, "--append-system-prompt-file", sysFile, "--tools", "", "--output-format", "json", "--no-session-persistence"], { stdio: ["pipe", "pipe", "pipe"], env: evalEnv() });
     child.on("error", (e) => {
       fs.rmSync(dir, { recursive: true, force: true });
       reject(e);

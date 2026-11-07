@@ -527,9 +527,20 @@ Cards read bb's own live data with `load("bb:<source>")`, scoped to the card's t
 
 </details>
 
+### Live cards that ride out a slow answer
+
+A live card keeps showing its last good values when a refresh fails, with a quiet "Last updated 14:02 · retrying" under it, and shows an error only for a source that never read fine. `load(path, {fallback: value})` gives the card a value of its own to show instead of an error. Plugin data (`plugin:` sources) refreshes every 10 seconds rather than every 2, and cards on the page share one read of the same source.
+
 ### Pin a card beside the conversation
 
-Hover any card in a thread and press the pin button: the card stays in view while the chat scrolls on, still live. It shows in the thread's Info tab, and in the thread context card when that is on in bb (Settings, Experiments). One card per thread; pinning another replaces it, and the pin follows the thread to your other devices.
+Hover any card in a thread and press the pin button: the card stays in view while the chat scrolls on, still live. Pins show in the thread's right panel (Info tab, under Pinned cards), and in the thread context card when that is on in bb (Settings, Experiments). A thread keeps up to five pins, each marked with who pinned it and with its own Unpin, and pins follow the thread to your other devices.
+
+The thread's agent can pin too, for a status it keeps current:
+
+- `iris_pin` pins a card from its source, or from a file such as `$BB_THREAD_STORAGE/status.iris`. A file pin re-reads the file every 3 seconds, so the agent updates the card by rewriting the file. The card is checked first; one with errors isn't pinned. Pinning again with the same `id` replaces the pin in place.
+- `iris_unpin` and `iris_pins` remove and list the thread's pins.
+- From a shell: `bb iris pin <file> [--id fleet] [--title ...] [--once]`, `bb iris unpin <id>|--all` and `bb iris pins [--json]`. These act on the thread they run in only.
+- Any client can use the same pins through `bb plugin rpc call iris pins.list|pins.set|pins.remove` (listed by `bb plugin rpc list iris`).
 
 ### Ask for a card, or take one to the browser
 

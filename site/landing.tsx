@@ -284,7 +284,7 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
           <ul className="site-facts site-facts-3">
             <li>
               <Glyph name="pin" size={18} />
-              <b>Pin it beside the chat.</b> A pinned card stays live next to the conversation while the thread scrolls on: a build, a pull request, context use.
+              <b>Pin it beside the chat.</b> Up to five cards stay live next to the conversation while the thread scrolls on. The agent can pin and update its own status card, marked as its pin, with one-tap Unpin.
             </li>
             <li>
               <Glyph name="message-square-plus" size={18} />

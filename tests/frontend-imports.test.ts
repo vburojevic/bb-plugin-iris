@@ -9,8 +9,8 @@ import { describe, expect, it } from "vitest";
 const ROOT = join(__dirname, "..");
 // What app.tsx bundles (chunks/ is prebuilt into dist/chunks and not part of it).
 const FRONTEND = ["app.tsx", "ui", "core", "lib", "shared"];
-// The server imports the RPC contract at runtime; the frontend imports only its types.
-const SERVER_ONLY = new Set(["shared/rpc.ts"]);
+// The server imports the RPC contracts at runtime; the frontend imports only their types.
+const SERVER_ONLY = new Set(["shared/rpc.ts", "shared/pins-rpc.ts"]);
 
 function files(path: string): string[] {
   const full = join(ROOT, path);

@@ -73,7 +73,16 @@ interface LoadEntry {
   fetching?: boolean;
   /** When a render last read it (ms). */
   readAt?: number;
+  /** When it last read fine (ms). */
+  goodAt?: number;
+  /** A refresh after a good read failed: the last good value stays, and this says why it's old. */
+  retryError?: string;
+  /** When the current or last fetch started (ms), so slow sources can be re-read less often. */
+  fetchedAt?: number;
 }
+
+/** Plugin sources are read from bb's page over HTTP: live cards re-read them at most this often. */
+export const PLUGIN_REFRESH_MS = 10_000;
 
 export class CardRuntime implements Host {
   program: Program;
@@ -196,13 +205,17 @@ export class CardRuntime implements Host {
   now() {
     return (this.options.now ?? Date.now)();
   }
-  load(path: string, options?: { raw?: boolean; tail?: boolean }): unknown {
+  load(path: string, options?: { raw?: boolean; tail?: boolean; fallback?: unknown }): unknown {
     const tail = options?.tail === true;
     const raw = !tail && options?.raw === true;
+    // With a fallback, a source that can't be read gives that value instead of an error, so a card
+    // can say "slow to answer" in its own words.
+    const hasFallback = options !== undefined && options !== null && Object.prototype.hasOwnProperty.call(options, "fallback");
     const key = `${tail ? "tail:" : raw ? "raw:" : ""}${path}`;
     const pre = this.options.preloaded?.get(key);
     if (pre) {
       if (pre.ok) return pre.value;
+      if (hasFallback) return options?.fallback;
       throw new IrisError(`load("${path}"): ${pre.error}`);
     }
     const entry = this.loads.get(key);
@@ -218,7 +231,10 @@ export class CardRuntime implements Host {
     }
     if (!entry || (entry.stale && !entry.fetching)) this.fetch(key, path, raw, tail, entry);
     if (entry?.status === "ok") return entry.value;
-    if (entry?.status === "error") throw new IrisError(`load("${path}"): ${entry.error}`);
+    if (entry?.status === "error") {
+      if (hasFallback) return options?.fallback;
+      throw new IrisError(`load("${path}"): ${entry.error}`);
+    }
     return mint({ $iris: "pending", path } satisfies PendingValue);
   }
   private fetch(key: string, path: string, raw: boolean, tail: boolean, previous: LoadEntry | undefined) {
@@ -227,23 +243,35 @@ export class CardRuntime implements Host {
       return;
     }
     // A live re-read keeps the entry's last read time: only a render reading it counts as use.
-    this.loads.set(key, previous ? { ...previous, fetching: true, stale: false } : { status: "loading", fetching: true, readAt: this.now() });
+    const started = this.now();
+    this.loads.set(key, previous ? { ...previous, fetching: true, stale: false, fetchedAt: started } : { status: "loading", fetching: true, readAt: started, fetchedAt: started });
+    const failed = (error: string) => {
+      if (!this.loads.has(key)) return;
+      const before = this.loads.get(key);
+      // A refresh that fails after a good read keeps the good value on screen and says it's old;
+      // only a source that never read fine shows an error. One slow answer never breaks a card.
+      if (before?.status === "ok") {
+        const changed = before.retryError !== error;
+        this.loads.set(key, { ...before, fetching: false, retryError: error });
+        if (changed) this.notify();
+        return;
+      }
+      this.loads.set(key, { status: "error", error, readAt: before?.readAt, fetchedAt: before?.fetchedAt });
+      this.notify();
+    };
     this.options.load(path, raw, tail).then(
       (r) => {
         if (!this.loads.has(key)) return; // dropped while it was in flight
+        if (!r.ok) return failed(r.error);
         const before = this.loads.get(key);
-        const next: LoadEntry = r.ok ? { status: "ok", value: r.value } : { status: "error", error: r.error };
-        const same = before !== undefined && before.status === next.status && before.error === next.error && JSON.stringify(before.value) === JSON.stringify(next.value);
+        const goodAt = this.now();
+        const same = before !== undefined && before.status === "ok" && !before.retryError && JSON.stringify(before.value) === JSON.stringify(r.value);
         // A live refresh that changed nothing keeps the old value, so views keep
         // their memos (a 20,000-row grid doesn't re-index), and doesn't re-render.
-        this.loads.set(key, same ? { status: before.status, value: before.value, error: before.error, readAt: before.readAt } : { ...next, readAt: before?.readAt });
+        this.loads.set(key, same ? { status: "ok", value: before.value, readAt: before.readAt, goodAt, fetchedAt: before.fetchedAt } : { status: "ok", value: r.value, readAt: before?.readAt, goodAt, fetchedAt: before?.fetchedAt });
         if (!same) this.notify();
       },
-      (cause: unknown) => {
-        if (!this.loads.has(key)) return;
-        this.loads.set(key, { status: "error", error: cause instanceof Error ? cause.message : String(cause) });
-        this.notify();
-      },
+      (cause: unknown) => failed(cause instanceof Error ? cause.message : String(cause)),
     );
   }
 
@@ -264,13 +292,28 @@ export class CardRuntime implements Host {
    * ones arrive. "watched" re-reads only the files live components asked for.
    */
   reloadFiles(which: "all" | "watched" = "all") {
+    const now = this.now();
     for (const [key, entry] of this.loads) {
       if (entry.fetching) continue;
       if (which === "watched" && !this.watched.has(key)) continue;
       const raw = key.startsWith("raw:");
       const tail = key.startsWith("tail:");
-      this.fetch(key, raw ? key.slice(4) : tail ? key.slice(5) : key, raw, tail, entry);
+      const path = raw ? key.slice(4) : tail ? key.slice(5) : key;
+      // Another plugin's data costs bb an HTTP round trip: it refreshes every PLUGIN_REFRESH_MS, not every tick.
+      if (path.startsWith("plugin:") && entry.fetchedAt !== undefined && now - entry.fetchedAt < PLUGIN_REFRESH_MS) continue;
+      this.fetch(key, path, raw, tail, entry);
     }
+  }
+
+  /** When some source failed its last refresh: the oldest last-good time among them, and why. */
+  staleness(): { since: number; error: string } | null {
+    let out: { since: number; error: string } | null = null;
+    for (const e of this.loads.values()) {
+      if (e.status !== "ok" || !e.retryError) continue;
+      const since = e.goodAt ?? 0;
+      if (!out || since < out.since) out = { since, error: e.retryError };
+    }
+    return out;
   }
   loadedPaths(): string[] {
     return [...new Set([...this.loads.keys()].map((k) => k.replace(/^(raw|tail):/, "")))];

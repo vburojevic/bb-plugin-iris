@@ -21,6 +21,8 @@ export function CardView({ props, children, node }: ViewProps) {
   const hasHeader = Boolean(title || subtitle || props.icon || status || block.toolsFor === node.start);
   const footer = props.footer != null ? renderElementValue(props.footer) : null;
   const source = str(props.source);
+  // A live card whose refresh failed keeps its last good values and says how old they are.
+  const stale = state === "live" ? env.runtime.staleness() : null;
   return (
     <section
       className="iris-card relative my-1 min-w-0 rounded-[14px] bg-card px-4 pt-3.5 pb-3 text-foreground shadow-[0_0_0_1px_var(--border),0_10px_28px_-22px_rgb(0_0_0/0.45)]"
@@ -57,8 +59,14 @@ export function CardView({ props, children, node }: ViewProps) {
         </header>
       ) : null}
       <div className={cn("flex min-w-0 flex-col gap-3", hasHeader && "pt-3")}>{children}</div>
-      {footer || source ? (
+      {footer || source || stale ? (
         <footer className="mt-3 flex min-w-0 flex-wrap items-center gap-2 pt-0.5 text-xs text-muted-foreground">
+          {stale ? (
+            <span className="inline-flex items-center gap-1.5" title={stale.error} role="status">
+              <Glyph name="clock-alert" size={12} />
+              {stale.since ? `Last updated ${new Date(stale.since).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}` : "Not updated"} · retrying
+            </span>
+          ) : null}
           {source ? <span className="truncate">{source}</span> : null}
           <div className="ml-auto flex flex-wrap items-center justify-end gap-2">{footer}</div>
         </footer>

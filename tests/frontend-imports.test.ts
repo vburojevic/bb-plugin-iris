@@ -7,7 +7,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const ROOT = join(__dirname, "..");
-const FRONTEND = ["app.tsx", "ui", "chunks", "components", "hooks", "lib", "core"];
+// What app.tsx bundles (chunks/ is prebuilt into dist/chunks and not part of it).
+const FRONTEND = ["app.tsx", "ui", "core", "lib", "shared"];
 
 function files(path: string): string[] {
   const full = join(ROOT, path);
@@ -18,7 +19,7 @@ function files(path: string): string[] {
 describe("frontend imports", () => {
   it("never imports the SDK root at runtime", () => {
     const offenders: string[] = [];
-    for (const file of FRONTEND.flatMap((p) => { try { return files(p); } catch { return []; } })) {
+    for (const file of FRONTEND.flatMap(files)) {
       const source = readFileSync(join(ROOT, file), "utf8");
       for (const m of source.matchAll(/^\s*import\s+(?!type\b)[^;]*?from\s+["']@get-bb\/plugin-sdk["']/gm)) {
         offenders.push(`${file}: ${m[0].trim()}`);

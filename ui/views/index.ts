@@ -4,7 +4,7 @@ import { CalendarHeatmapView, JsonView, SegmentedBarView, SparklineView, TableVi
 import { CardView, DetailsView, DividerView, GridView, RowView, StackView, TabView, TabsView } from "./layout";
 import { ChartView } from "./chart";
 import { CodeView, DiagramView, DiffView, LogsView, SnippetView, StackTraceView, TreeView } from "./code";
-import { BenchmarkView, CoverageView, FindingsView, TestsView } from "./project";
+import { BenchmarkView, CoverageView, DeltaView, FindingsView, TestsView } from "./project";
 import { AcceptanceView, CompareView, ProvenanceView } from "./evidence";
 import { ChangesView, CommitsView, EnvironmentsView, PipelineView, PullRequestView, ThreadsView } from "./live";
 import { BoardView, CalendarView, DecisionView, EstimateView, PlanView, RoadmapView, StatusView, StepsView, TimelineView } from "./planning";
@@ -35,7 +35,7 @@ export const VIEWS: Record<string, View> = {
   Table: TableView, Json: JsonView, SegmentedBar: SegmentedBarView, Sparkline: SparklineView, CalendarHeatmap: CalendarHeatmapView,
   Chart: ChartView, Diagram: DiagramView, Tree: TreeView,
   Code: CodeView, Snippet: SnippetView, Diff: DiffView, Logs: LogsView, StackTrace: StackTraceView,
-  Tests: TestsView, Findings: FindingsView, Coverage: CoverageView, Benchmark: BenchmarkView,
+  Tests: TestsView, Findings: FindingsView, Coverage: CoverageView, Benchmark: BenchmarkView, Delta: DeltaView,
   Acceptance: AcceptanceView, Compare: CompareView, Provenance: ProvenanceView,
   Changes: ChangesView, Commits: CommitsView, PullRequest: PullRequestView, Environments: EnvironmentsView, Threads: ThreadsView, Pipeline: PipelineView,
   Plan: PlanView, Steps: StepsView, Timeline: TimelineView, Decision: DecisionView, Board: BoardView, Roadmap: RoadmapView, Estimate: EstimateView, Calendar: CalendarView, Status: StatusView,

@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { isPendingValue } from "../../core/evaluate";
+import { type DeltaRow, deltaNumber, deltaRows, deltaTally } from "../../core/delta";
+import { isPendingValue, toText } from "../../core/evaluate";
 import { formatValue } from "../../core/format";
 import { type Finding, normalizeBench, normalizeCoverage, normalizeFindings, normalizeTests } from "../../core/reports";
 import { useEnv } from "../env";
 import type { ViewProps } from "../render";
-import { Chip, Glyph, Shimmer, cn, num, str } from "./kit";
+import { Chip, Glyph, Shimmer, cn, fmt, num, str } from "./kit";
 
 function FileRef({ file, line }: { file?: string; line?: number }) {
   const env = useEnv();
@@ -259,5 +260,87 @@ export function BenchmarkView({ props }: ViewProps) {
         );
       })}
     </ul>
+  );
+}
+
+/** A delta's change in words: +12%, −630 ms, or the new value when the values aren't numbers. */
+function changeText(r: DeltaRow, show: (v: unknown) => string, format: unknown): string {
+  if (r.change == null) return r.verdict === "same" ? "Same" : "Changed";
+  if (r.change === 0) return "Same";
+  const sign = r.change > 0 ? "+" : "−";
+  const abs = show(Math.abs(r.change));
+  // A percent already says how much; its own percent change would read as the same number twice.
+  if (r.ratio == null || format === "percent") return `${sign}${abs}`;
+  return `${sign}${abs} (${sign}${Math.abs(r.ratio * 100).toFixed(Math.abs(r.ratio) < 0.1 ? 1 : 0)}%)`;
+}
+
+export function DeltaView({ props }: ViewProps) {
+  if (isPendingValue(props.rows)) return <Shimmer className="h-24" />;
+  return <DeltaTable props={props} />;
+}
+
+function DeltaTable({ props }: { props: Record<string, unknown> }) {
+  const env = useEnv();
+  const rows = deltaRows(props.rows, props.better);
+  const tally = deltaTally(rows);
+  const from = str(props.from) ?? "Before";
+  const to = str(props.to) ?? "After";
+  const showFor = (r: DeltaRow) => (v: unknown) => {
+    const n = deltaNumber(v);
+    return n != null ? fmt(n, r.format ?? props.format) : v == null || v === "" ? "–" : toText(v);
+  };
+  const tone = (r: DeltaRow) => (r.verdict === "better" ? env.palette.tone.good : r.verdict === "worse" ? env.palette.tone.bad : undefined);
+  const summary = (["better", "worse", "same", "changed"] as const).filter((k) => tally[k]).map((k) => `${tally[k]} ${k}`).join(" · ");
+  if (!rows.length) return <div className="text-xs text-muted-foreground">Delta has no rows</div>;
+  return (
+    <div className="min-w-0">
+      <div className="mb-1.5 flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
+        <span className="min-w-0 truncate">{str(props.title)}</span>
+        <span className="shrink-0 tabular-nums">{summary}</span>
+      </div>
+      {/* Wide cards: aligned columns under a header. Narrow: each row stacks its values under its label. */}
+      <div role="table" aria-label={str(props.title) ?? "Before and after"} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] @lg/iris:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_2rem_minmax(0,1fr)_minmax(0,1.1fr)]">
+        <div role="row" className="contents text-xs text-muted-foreground">
+          <span role="columnheader" className="hidden pb-1 @lg/iris:block">
+            <span className="sr-only">Item</span>
+          </span>
+          <span role="columnheader" className="hidden pb-1 pl-4 text-right @lg/iris:block">{from}</span>
+          <span className="hidden @lg/iris:block" aria-hidden />
+          <span role="columnheader" className="hidden pb-1 text-right @lg/iris:block">{to}</span>
+          <span role="columnheader" className="hidden pb-1 pl-4 text-right @lg/iris:block">Change</span>
+        </div>
+        {rows.map((r, k) => {
+          const show = showFor(r);
+          const color = tone(r);
+          return (
+            <div role="row" key={k} className="contents">
+              {/* Row lines run unbroken: the columns have no gaps, the cells carry the spacing. */}
+              <span role="cell" className="min-w-0 border-t border-border py-2 text-[13px]">
+                <span className="block truncate" title={r.label}>
+                  {r.label}
+                </span>
+                <span className="block break-words text-xs tabular-nums text-muted-foreground @lg/iris:hidden">
+                  {show(r.before)} → <span className="text-foreground">{show(r.after)}</span>
+                </span>
+              </span>
+              <span role="cell" className="hidden border-t border-border py-2 pl-4 text-right text-[13px] tabular-nums text-muted-foreground @lg/iris:block">
+                {show(r.before)}
+              </span>
+              <span className="hidden border-t border-border py-2 text-center text-[13px] text-muted-foreground @lg/iris:block" aria-hidden>
+                →
+              </span>
+              <span role="cell" className="hidden border-t border-border py-2 text-right text-[13px] font-medium tabular-nums @lg/iris:block">
+                {show(r.after)}
+              </span>
+              <span role="cell" className="flex items-start justify-end gap-1.5 border-t border-border py-2 pl-4 text-right text-[13px] tabular-nums" style={color ? { color } : undefined}>
+                {r.verdict === "better" || r.verdict === "worse" ? <Glyph name={r.verdict === "better" ? "check" : "triangle-alert"} size={13} className="mt-[3px] shrink-0" /> : null}
+                <span className={cn(!color && "text-muted-foreground")}>{changeText(r, show, r.format ?? props.format)}</span>
+                {r.verdict === "better" || r.verdict === "worse" ? <span className="sr-only">{r.verdict}</span> : null}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

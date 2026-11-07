@@ -184,4 +184,26 @@ export const PROJECT = [
     example: `<Benchmark unit="ms" results={[{ name: "Parse 17 KB block", before: 1900, after: 4.2 }, { name: "Cold launch", before: 742, after: 486 }]} />`,
     aliases: ["Timings", "Perf"],
   }),
+  component({
+    name: "Delta",
+    group: "Project",
+    summary: "Before and after for any values: each row's change, its percent and whether it went the right way, with a tally of better, worse and same. For a release, a migration or a config change; Benchmark is for timings.",
+    props: {
+      rows: p.list("Each {label, before, after, better?: up|down|none, format?}; non-numbers show as changed or same", "{label, before, after, better?, format?}[]", { required: true }),
+      better: p.oneOf(["up", "down", "none"], "Which way is good for rows that don't say", { def: "none" }),
+      format: p.str("Number format for every row: ms, bytes, percent, usd, compact, duration"),
+      from: p.str("Name of the before column, e.g. a version", { def: "Before" }),
+      to: p.str("Name of the after column", { def: "After" }),
+      title: p.str("Caption above the rows"),
+    },
+    children: "none",
+    example: `<Delta title="Build 212 against 211" from="211" to="212" rows={[
+  { label: "Cold start", before: 1840, after: 1210, better: "down", format: "ms" },
+  { label: "App size", before: 48200000, after: 51900000, better: "down", format: "bytes" },
+  { label: "Crash-free users", before: 0.991, after: 0.996, better: "up", format: "percent" },
+  { label: "Tests", before: 517, after: 529, better: "up" },
+  { label: "JS engine", before: "JSC", after: "Hermes" },
+]} />`,
+    aliases: ["BeforeAfterTable", "DeltaTable", "MetricDiff"],
+  }),
 ];

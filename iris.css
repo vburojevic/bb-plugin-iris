@@ -19,6 +19,7 @@
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .inset-x-0, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).inset-x-0 { inset-inline: calc(var(--spacing) * 0); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .inset-y-0, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).inset-y-0 { inset-block: calc(var(--spacing) * 0); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .inset-y-1, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).inset-y-1 { inset-block: calc(var(--spacing) * 1); }
+  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .inset-y-1\.5, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).inset-y-1\.5 { inset-block: calc(var(--spacing) * 1.5); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .inset-y-2, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).inset-y-2 { inset-block: calc(var(--spacing) * 2); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .-top-1, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).-top-1 { top: calc(var(--spacing) * -1); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .-top-2\.5, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).-top-2\.5 { top: calc(var(--spacing) * -2.5); }
@@ -264,6 +265,7 @@
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .min-h-0, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).min-h-0 { min-height: calc(var(--spacing) * 0); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .min-h-5, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).min-h-5 { min-height: calc(var(--spacing) * 5); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .min-h-9, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).min-h-9 { min-height: calc(var(--spacing) * 9); }
+  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .min-h-14, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).min-h-14 { min-height: calc(var(--spacing) * 14); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .min-h-20, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).min-h-20 { min-height: calc(var(--spacing) * 20); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .min-h-32, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).min-h-32 { min-height: calc(var(--spacing) * 32); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .min-h-\[1\.55em\], :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).min-h-\[1\.55em\] { min-height: 1.55em; }
@@ -293,6 +295,7 @@
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .w-\[2\.5px\], :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).w-\[2\.5px\] { width: 2.5px; }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .w-\[2px\], :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).w-\[2px\] { width: 2px; }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .w-\[3\.25rem\], :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).w-\[3\.25rem\] { width: 3.25rem; }
+  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .w-\[3px\], :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).w-\[3px\] { width: 3px; }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .w-\[4\.5rem\], :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).w-\[4\.5rem\] { width: 4.5rem; }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .w-\[6\.5rem\], :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).w-\[6\.5rem\] { width: 6.5rem; }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .w-\[11px\], :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).w-\[11px\] { width: 11px; }
@@ -881,7 +884,14 @@
 }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .bg-secondary, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).bg-secondary { background-color: var(--secondary); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .bg-state-active, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).bg-state-active { background-color: var(--state-active); }
-  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .bg-state-hover, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).bg-state-hover { background-color: var(--state-hover); }
+  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .bg-state-hover, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).bg-state-hover, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .bg-state-hover\/60 { background-color: var(--state-hover); }
+  @supports (color:color-mix(in lab, red, red)) {
+  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .bg-state-hover\/60 { background-color: color-mix(in oklab, var(--state-hover) 60%, transparent); }
+}
+  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).bg-state-hover\/60 { background-color: var(--state-hover); }
+  @supports (color:color-mix(in lab, red, red)) {
+  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).bg-state-hover\/60 { background-color: color-mix(in oklab, var(--state-hover) 60%, transparent); }
+}
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .bg-transparent, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).bg-transparent { background-color: rgba(0, 0, 0, 0); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .\[box-decoration-break\:clone\], :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).\[box-decoration-break\:clone\] { -webkit-box-decoration-break: clone; box-decoration-break: clone; }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .fill-card, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).fill-card { fill: var(--card); }
@@ -959,6 +969,7 @@
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .pr-3, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).pr-3 { padding-right: calc(var(--spacing) * 3); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .pr-7, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).pr-7 { padding-right: calc(var(--spacing) * 7); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .pr-8, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).pr-8 { padding-right: calc(var(--spacing) * 8); }
+  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .pr-10, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).pr-10 { padding-right: calc(var(--spacing) * 10); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .pr-16, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).pr-16 { padding-right: calc(var(--spacing) * 16); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .pb-0\.5, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).pb-0\.5 { padding-bottom: calc(var(--spacing) * .5); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .pb-1, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).pb-1 { padding-bottom: calc(var(--spacing) * 1); }
@@ -1134,6 +1145,7 @@
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .opacity-60, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).opacity-60 { opacity: 0.6; }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .opacity-70, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).opacity-70 { opacity: 0.7; }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .opacity-90, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).opacity-90 { opacity: 0.9; }
+  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .opacity-100, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).opacity-100 { opacity: 1; }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .shadow, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).shadow { --tw-shadow: var(--shadow); box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .shadow-\[0_0_0_1\.5px_var\(--ring\)\], :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).shadow-\[0_0_0_1\.5px_var\(--ring\)\] { --tw-shadow: 0 0 0 1.5px var(--tw-shadow-color,var(--ring)); box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow); }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .shadow-\[0_0_0_1px_var\(--border\)\,0_6px_16px_-8px_rgb\(0_0_0\/0\.5\)\], :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).shadow-\[0_0_0_1px_var\(--border\)\,0_6px_16px_-8px_rgb\(0_0_0\/0\.5\)\] { --tw-shadow: 0 0 0 1px var(--tw-shadow-color,var(--border)), 0 6px 16px -8px var(--tw-shadow-color,#00000080); box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow); }
@@ -1256,7 +1268,7 @@
   @supports (color:color-mix(in lab, red, red)) {
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).group-hover\:bg-state-hover\/50:is(:where(.group):hover *) { background-color: color-mix(in oklab, var(--state-hover) 50%, transparent); }
 }
-  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .group-hover\:opacity-100:is(:where(.group):hover *), :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).group-hover\:opacity-100:is(:where(.group):hover *) { opacity: 1; }
+  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .group-hover\:opacity-100:is(:where(.group):hover *), :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).group-hover\:opacity-100:is(:where(.group):hover *), :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .group-hover\/block\:opacity-100:is(:where(.group\/block):hover *), :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).group-hover\/block\:opacity-100:is(:where(.group\/block):hover *) { opacity: 1; }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .group-hover\/cell\:opacity-0:is(:where(.group\/cell):hover *), :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).group-hover\/cell\:opacity-0:is(:where(.group\/cell):hover *) { opacity: 0; }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .group-hover\/cell\:opacity-100:is(:where(.group\/cell):hover *), :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).group-hover\/cell\:opacity-100:is(:where(.group\/cell):hover *) { opacity: 1; }
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .group-hover\/iris\:pointer-events-auto:is(:where(.group\/iris):hover *), :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).group-hover\/iris\:pointer-events-auto:is(:where(.group\/iris):hover *) { pointer-events: auto; }
@@ -1385,7 +1397,15 @@
   @supports (color:color-mix(in lab, red, red)) {
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).hover\:bg-secondary\/80:hover { background-color: color-mix(in oklab, var(--secondary) 80%, transparent); }
 }
-  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .hover\:bg-state-hover:hover, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).hover\:bg-state-hover:hover, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .hover\:bg-state-hover\/50:hover { background-color: var(--state-hover); }
+  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .hover\:bg-state-hover:hover, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).hover\:bg-state-hover:hover, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .hover\:bg-state-hover\/40:hover { background-color: var(--state-hover); }
+  @supports (color:color-mix(in lab, red, red)) {
+  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .hover\:bg-state-hover\/40:hover { background-color: color-mix(in oklab, var(--state-hover) 40%, transparent); }
+}
+  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).hover\:bg-state-hover\/40:hover { background-color: var(--state-hover); }
+  @supports (color:color-mix(in lab, red, red)) {
+  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).hover\:bg-state-hover\/40:hover { background-color: color-mix(in oklab, var(--state-hover) 40%, transparent); }
+}
+  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .hover\:bg-state-hover\/50:hover { background-color: var(--state-hover); }
   @supports (color:color-mix(in lab, red, red)) {
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .hover\:bg-state-hover\/50:hover { background-color: color-mix(in oklab, var(--state-hover) 50%, transparent); }
 }
@@ -1720,6 +1740,9 @@
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).\[\&\>td\]\:border-border\/60 > td { border-color: var(--border); }
   @supports (color:color-mix(in lab, red, red)) {
   :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).\[\&\>td\]\:border-border\/60 > td { border-color: color-mix(in oklab, var(--border) 60%, transparent); }
+}
+  @media (pointer: coarse) {
+  :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])) .\[\@media\(pointer\:coarse\)\]\:opacity-60, :where([data-bb-plugin="iris"], [data-bb-plugin-root]:not([data-bb-plugin])).\[\@media\(pointer\:coarse\)\]\:opacity-60 { opacity: 0.6; }
 }
 }
 @keyframes spin { 

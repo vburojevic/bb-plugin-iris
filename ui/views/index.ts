@@ -1,6 +1,6 @@
 import type { View } from "../render";
 import { CalloutView, BadgeView, EmptyView, GaugeView, HeadingView, IconView, ImageView, ItemView, KeyValueView, LinkView, ListView, MetricView, ProgressView, TextView } from "./content";
-import { CalendarHeatmapView, JsonView, SegmentedBarView, SparklineView, TableView } from "./data";
+import { CalendarHeatmapView, HeatmapView, JsonView, SegmentedBarView, SparklineView, TableView } from "./data";
 import { CardView, DetailsView, DividerView, GridView, RowView, StackView, TabView, TabsView } from "./layout";
 import { ChartView } from "./chart";
 import { CodeView, DiagramView, DiffView, LogsView, SnippetView, StackTraceView, TreeView } from "./code";
@@ -32,7 +32,7 @@ export const VIEWS: Record<string, View> = {
   Card: CardView, Stack: StackView, Row: RowView, Grid: GridView, Tabs: TabsView, Tab: TabView, Details: DetailsView, Divider: DividerView,
   Text: TextView, Heading: HeadingView, Callout: CalloutView, Metric: MetricView, Badge: BadgeView, Icon: IconView, KeyValue: KeyValueView,
   List: ListView, Item: ItemView, Link: LinkView, Image: ImageView, Progress: ProgressView, Gauge: GaugeView, Empty: EmptyView,
-  Table: TableView, Json: JsonView, SegmentedBar: SegmentedBarView, Sparkline: SparklineView, CalendarHeatmap: CalendarHeatmapView,
+  Table: TableView, Json: JsonView, SegmentedBar: SegmentedBarView, Sparkline: SparklineView, CalendarHeatmap: CalendarHeatmapView, Heatmap: HeatmapView,
   Chart: ChartView, Diagram: DiagramView, Tree: TreeView,
   Code: CodeView, Snippet: SnippetView, Diff: DiffView, Logs: LogsView, StackTrace: StackTraceView,
   Tests: TestsView, Findings: FindingsView, Coverage: CoverageView, Benchmark: BenchmarkView, Delta: DeltaView,

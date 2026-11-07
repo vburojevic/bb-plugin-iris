@@ -10,6 +10,7 @@ import { IrisBlock } from "./ui/block";
 import { GalleryPage } from "./ui/gallery";
 import { PinnedInfoSection, PinnedSection } from "./ui/pins";
 import { Glyph } from "./ui/views/kit";
+import { surfaceBehind } from "./ui/surface";
 
 function Fence({ code, language, status, index, message }: ExperimentalCodeFenceRendererProps) {
   const streaming = status === "streaming";
@@ -24,15 +25,6 @@ interface AskPayload {
   html?: string;
   react?: string;
   title?: string;
-}
-
-/** The alpha of a computed CSS color: rgb(), rgba(), or the "/ a" form of oklab, oklch and color(). */
-function alpha(color: string): number {
-  if (!color || color === "transparent") return 0;
-  const slash = color.match(/\/\s*([\d.]+)(%?)\s*\)$/);
-  if (slash) return Number(slash[1]) / (slash[2] ? 100 : 1);
-  const rgba = color.match(/^rgba\(.*,\s*([\d.]+)\s*\)$/);
-  return rgba ? Number(rgba[1]) : 1;
 }
 
 function AskPicker({ interaction, submit, cancel }: PluginPendingInteractionProps) {
@@ -62,17 +54,9 @@ function AskPicker({ interaction, submit, cancel }: PluginPendingInteractionProp
     }
     // Painted again on every resize and theme change, so the pinned row never shows a stale color.
     const paint = () => {
-      // bb's panels are often a translucent tint over the page, so stack every layer down to the
-      // first opaque one; a single translucent color would let options show through under Send.
-      const layers: string[] = [];
-      for (let up = el.parentElement; up; up = up.parentElement) {
-        const bg = getComputedStyle(up).backgroundColor;
-        const a = alpha(bg);
-        if (a <= 0) continue;
-        layers.push(a >= 1 ? bg : `linear-gradient(${bg}, ${bg})`);
-        if (a >= 1) break;
-      }
-      if (layers.length) el.style.setProperty("--iris-picker-bg", layers.join(", "));
+      // bb's panels are often a translucent tint over the page: every layer down to the first opaque one.
+      const bg = surfaceBehind(el);
+      if (bg) el.style.setProperty("--iris-picker-bg", bg);
       // The pinned row reaches through the panel's padding so nothing peeks out below or beside it.
       const pad = getComputedStyle(scroller);
       el.style.setProperty("--iris-picker-x", `${(parseFloat(pad.paddingRight) || 0) + (parseFloat(getComputedStyle(el).paddingRight) || 0)}px`);

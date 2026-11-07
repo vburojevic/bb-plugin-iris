@@ -1,7 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { defaultCompare, isElementValue, isFnValue, isPendingValue, toText } from "../../core/evaluate";
 import { useEnv } from "../env";
-import { toneColor, tooClose } from "../palette";
+import { heatGrid, heatPosition } from "../../core/heatmap";
+import { inkOn, sequentialRamp, toneColor, tooClose } from "../palette";
+import { surfaceBehind } from "../surface";
 import type { ViewProps } from "../render";
 import { renderElementValue } from "../render";
 import { Glyph, Shimmer, cn, fmt, num, str } from "./kit";
@@ -432,6 +434,107 @@ function HeatmapGrid({ cells, weeks, max, color, footer }: { cells: { date: stri
         </div>
       </div>
       <div className="mt-1.5 text-xs text-muted-foreground">{footer}</div>
+    </div>
+  );
+}
+
+/** A pinned header's paint: the surface behind the card. Columns have no gaps (each cell draws an inset tile), so nothing shows beside it. */
+const PINNED = { background: "var(--iris-surface, var(--card))" } as const;
+
+export function HeatmapView({ props }: ViewProps) {
+  const env = useEnv();
+  // The pinned row names are painted in the real surface behind the card (a picker's panel, a
+  // card, a muted box), so cells scrolling under them never show through.
+  const scroller = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = scroller.current;
+    const bg = el && surfaceBehind(el);
+    if (el && bg) el.style.setProperty("--iris-surface", bg);
+  });
+  const pending = isPendingValue(props.data);
+  const grid = useMemo(() => heatGrid(pending ? [] : props.data, props.rows, props.columns), [pending, props.data, props.rows, props.columns]);
+  if (pending) return <Shimmer className="h-32 w-full" />;
+  if (!grid.rows.length || !grid.columns.length) return <div className="text-xs text-muted-foreground">Heatmap has no cells</div>;
+  const domain = Array.isArray(props.domain) ? props.domain.map(num) : [];
+  const lo = domain[0] ?? grid.min;
+  const hi = domain[1] ?? grid.max;
+  const mid = num(props.mid);
+  const down = props.better === "down";
+  const show = (v: number) => fmt(v, props.format);
+  const ramp = sequentialRamp(env.palette, 9);
+  // Sequential: the theme's ramp, light to deep. With mid: good above it and bad below (or the
+  // other way when lower is better), stronger the further a value sits from mid.
+  const paint = (v: number): { fill: string; ink?: string } => {
+    if (mid == null) {
+      const fill = ramp[Math.round(heatPosition(v, lo, hi) * (ramp.length - 1))];
+      return { fill, ink: inkOn(fill) };
+    }
+    const reach = Math.max(Math.abs(lo - mid), Math.abs(hi - mid)) || 1;
+    const t = Math.min(1, Math.abs(v - mid) / reach);
+    const tone = v === mid ? env.palette.tone.neutral : (v > mid) !== down ? env.palette.tone.good : env.palette.tone.bad;
+    // The fill is the tone over the card; only where it is nearly solid does the tone's own ink apply.
+    const strength = Math.round(8 + t * 80);
+    return { fill: `color-mix(in oklab, ${tone} ${strength}%, transparent)`, ink: strength >= 78 ? inkOn(tone) : undefined };
+  };
+  const legend =
+    mid == null
+      ? `linear-gradient(to right, ${ramp.join(", ")})`
+      : `linear-gradient(to right, ${down ? env.palette.tone.good : env.palette.tone.bad}, transparent, ${down ? env.palette.tone.bad : env.palette.tone.good})`;
+  const values = props.values !== false;
+  return (
+    <div className="min-w-0">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
+        <span className="min-w-0 truncate">{str(props.title)}</span>
+        <span className="flex shrink-0 items-center gap-1.5 tabular-nums" aria-label={`Scale from ${show(lo)} to ${show(hi)}${mid != null ? `, centered on ${show(mid)}` : ""}`}>
+          {show(lo)}
+          <span className="h-2 w-20 rounded-full shadow-[0_0_0_1px_var(--border)]" style={{ background: legend }} />
+          {show(hi)}
+        </span>
+      </div>
+      {/* Many columns scroll sideways; the row names stay pinned at the left edge. */}
+      <div ref={scroller} className="iris-scroll-x -m-0.5 overflow-x-auto p-0.5">
+        <table className="border-separate border-spacing-x-0 border-spacing-y-[3px] text-[11.5px]">
+          <thead>
+            <tr>
+              <th className="sticky left-0 z-[1]" style={PINNED}>
+                <span className="sr-only">Row</span>
+              </th>
+              {grid.columns.map((c) => (
+                <th key={c} scope="col" className="max-w-[7rem] truncate px-[5px] pb-0.5 text-center font-normal text-muted-foreground" title={c}>
+                  {c}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {grid.rows.map((r, i) => (
+              <tr key={r}>
+                <th scope="row" className="sticky left-0 z-[1] max-w-[10rem] truncate pr-2 text-left text-[12.5px] font-normal" style={PINNED} title={r}>
+                  {r}
+                </th>
+                {grid.values[i].map((v, j) => {
+                  const label = `${r}, ${grid.columns[j]}: ${v == null ? "no value" : show(v)}`;
+                  if (v == null) {
+                    return (
+                      <td key={j} title={label} aria-label={label} className="p-0">
+                        <div className="mx-[1.5px] grid h-8 min-w-[2.75rem] place-items-center rounded-[5px] text-muted-foreground shadow-[inset_0_0_0_1px_var(--border)]">–</div>
+                      </td>
+                    );
+                  }
+                  const p = paint(v);
+                  return (
+                    <td key={j} title={label} aria-label={label} className="p-0">
+                      <div className="mx-[1.5px] grid h-8 min-w-[2.75rem] place-items-center rounded-[5px] px-1 font-medium tabular-nums" style={{ background: p.fill, color: p.ink }}>
+                        {values ? show(v) : null}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

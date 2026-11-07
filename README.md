@@ -81,7 +81,7 @@ That's it. New agent sessions learn Iris on their own, and the gallery appears i
 <td valign="top">
 <picture><source media="(prefers-color-scheme: light)" srcset="docs/icons/light/mouse-pointer-click.svg"><img src="docs/icons/dark/mouse-pointer-click.svg" width="40" height="40" alt=""></picture>
 
-**Interactive both ways.** Inputs recompute cards in place, buttons put text in your composer, and `iris_ask` opens a rich picker that waits for your answer, like bb's own ask mode: ranked checklists with badges, or design variants you flip through in a large preview.
+**Interactive both ways.** Inputs recompute cards in place, buttons put text in your composer, and `iris_ask` opens a rich picker that waits for your answer, like bb's own ask mode: ranked checklists with badges, design variants you flip through in a large preview, a color with its contrast, boxes and notes drawn on a screenshot, comments on a spec, or a list to put in order.
 </td>
 <td valign="top">
 <picture><source media="(prefers-color-scheme: light)" srcset="docs/icons/light/app-window.svg"><img src="docs/icons/dark/app-window.svg" width="40" height="40" alt=""></picture>

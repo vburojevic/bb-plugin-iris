@@ -4,7 +4,7 @@
 // Pipeline draws a CI run it is given. In the gallery (no thread) the live
 // ones draw sample data, marked as such.
 import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { defineRpcContract } from "@get-bb/plugin-sdk";
+import type { defineRpcContract as DefineRpcContract } from "@get-bb/plugin-sdk";
 import { experimental_Diff as HostDiff, experimental_useRpcKeyedQuery, useBbNavigate, useRpc, useSdk } from "@get-bb/plugin-sdk/app";
 import { z } from "zod";
 import { isPendingValue } from "../../core/evaluate";
@@ -56,6 +56,10 @@ function errorText(e: unknown): string {
 
 // The one read of bb's GitHub PR Status plugin a card holds: while it is held, bb keeps that
 // environment's pull request fresh from GitHub and says when it changed.
+// bb gives the frontend bundle only "@get-bb/plugin-sdk/app" at install, and a git install skips
+// devDependencies, so a runtime import of the SDK root fails to resolve there. defineRpcContract
+// only returns its argument; this keeps its types without the import.
+const defineRpcContract: typeof DefineRpcContract = (contract) => contract as never;
 const prStatus = defineRpcContract({
   pullRequests: {
     input: z.object({ keys: z.array(z.string()) }),

@@ -117,6 +117,15 @@ export function useRpc<_T = unknown>() {
 
 // ---------- navigation and composers ----------
 
+/** The site has no bb: live cards draw samples and follow no events. */
+export function useSdk() {
+  return { subscribe: () => () => {} };
+}
+
+export function experimental_useRpcKeyedQuery(_options: unknown) {
+  return { data: undefined as Record<string, unknown> | undefined };
+}
+
 export function useBbNavigate() {
   return useMemo(
     () => ({

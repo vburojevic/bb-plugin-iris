@@ -1,10 +1,14 @@
 // Live project components: Changes, Commits, PullRequest, Environments and
-// Threads read the card's own thread from bb and read again while on screen;
+// Threads read the card's own thread from bb and read again when bb announces
+// a change they show;
 // Pipeline draws a CI run it is given. In the gallery (no thread) the live
 // ones draw sample data, marked as such.
 import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { experimental_Diff as HostDiff, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { defineRpcContract } from "@get-bb/plugin-sdk";
+import { experimental_Diff as HostDiff, experimental_useRpcKeyedQuery, useBbNavigate, useRpc, useSdk } from "@get-bb/plugin-sdk/app";
+import { z } from "zod";
 import { isPendingValue } from "../../core/evaluate";
+import { environmentChangeMatters, projectChangeMatters, threadChangeMatters, type LiveWatch } from "../../core/live-events";
 import { formatValue } from "../../core/format";
 import { normalizePipeline, pipelineCounts, type PipelineJob, type PipelineRun, type PipelineStatus } from "../../core/pipeline";
 import {
@@ -50,56 +54,155 @@ function errorText(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
+// The one read of bb's GitHub PR Status plugin a card holds: while it is held, bb keeps that
+// environment's pull request fresh from GitHub and says when it changed.
+const prStatus = defineRpcContract({
+  pullRequests: {
+    input: z.object({ keys: z.array(z.string()) }),
+    output: z.record(z.string(), z.unknown()),
+  },
+});
+const NO_KEYS: string[] = [];
+
+/** Shortest gap between two reads of one card, so a burst of edits reads once. */
+const MIN_GAP_MS = 1000;
+/** How long a card waits for more events before it reads. */
+const SETTLE_MS = 250;
+/** How often an idle card on screen redraws, so "2 minutes ago" stays true. No read. */
+const CLOCK_MS = 30_000;
+
 /**
- * Reads once, then again every `every` ms while the card is on screen and the
- * window is visible. Without a thread (the gallery) it shows `sample`.
+ * Reads once, then again whenever bb announces a change the card shows (see `watchOf`), while
+ * the card is on screen and the window is visible. A change seen while hidden reads on return.
+ * A null `watchOf` reads once (a commit never changes). Without a thread (the gallery) it shows
+ * `sample`.
  */
-function useLive<T>(key: string, load: (threadId: string) => Promise<T>, sample: () => T, every: number): Live<T> {
+function useLive<T>(key: string, load: (threadId: string) => Promise<T>, sample: () => T, watchOf: ((data: T | null) => LiveWatch) | null): Live<T> {
   const { threadId } = useEnv();
+  const sdk = useSdk();
   const [state, setState] = useState<{ key: string; data: T | null; error: string | null; at: number | null }>(() => ({ key, data: threadId ? null : sample(), error: null, at: null }));
   const [busy, setBusy] = useState(false);
+  const [, setClock] = useState(0);
   const ref = useRef<HTMLDivElement | null>(null);
   const loadRef = useRef(load);
   loadRef.current = load;
   const seq = useRef(0);
+  /** The read in flight, by its seq number; 0 when none. */
+  const inFlight = useRef(0);
+  // A change marks the card stale; a stale card on screen reads again, at most once a second.
+  const stale = useRef(false);
+  const onScreen = useRef(true);
+  const lastRead = useRef(0);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const pokeRef = useRef<() => void>(() => {});
 
   const refresh = useCallback(() => {
     if (!threadId) return;
     const n = ++seq.current;
+    inFlight.current = n;
+    lastRead.current = Date.now();
     setBusy(true);
+    const settle = () => {
+      if (inFlight.current === n) inFlight.current = 0;
+      // Changes that arrived during the read get their own read.
+      if (stale.current) pokeRef.current();
+    };
     loadRef.current(threadId).then(
       (data) => {
         if (n !== seq.current) return;
         setState({ key, data, error: null, at: Date.now() });
         setBusy(false);
+        settle();
       },
       (e: unknown) => {
         if (n !== seq.current) return;
         setState((s) => ({ key, data: s.key === key ? s.data : null, error: errorText(e), at: Date.now() }));
         setBusy(false);
+        settle();
       },
     );
   }, [threadId, key]);
 
-  useEffect(() => {
-    if (!threadId) return;
-    refresh();
-    let onScreen = true;
-    const el = ref.current;
-    const io = el && typeof IntersectionObserver !== "undefined" ? new IntersectionObserver((entries) => (onScreen = entries.some((e) => e.isIntersecting))) : null;
-    if (io && el) io.observe(el);
-    const timer = setInterval(() => {
-      if (onScreen && document.visibilityState === "visible") refresh();
-    }, every);
-    return () => {
-      clearInterval(timer);
-      io?.disconnect();
-      seq.current++;
-    };
-  }, [threadId, every, refresh]);
+  const poke = useCallback(() => {
+    stale.current = true;
+    if (!onScreen.current || document.visibilityState !== "visible" || timer.current !== undefined || inFlight.current !== 0) return;
+    timer.current = setTimeout(() => {
+      timer.current = undefined;
+      if (!stale.current || !onScreen.current || document.visibilityState !== "visible" || inFlight.current !== 0) return;
+      stale.current = false;
+      refresh();
+    }, Math.max(SETTLE_MS, lastRead.current + MIN_GAP_MS - Date.now()));
+  }, [refresh]);
+  pokeRef.current = poke;
 
   const fresh = state.key === key;
-  return { data: fresh ? state.data : null, error: fresh ? state.error : null, busy, sample: !threadId, refresh, at: state.at, ref };
+  const data = fresh ? state.data : null;
+  const watchRef = useRef<LiveWatch>({});
+  watchRef.current = threadId && watchOf ? withOwnThread(watchOf(data), threadId) : {};
+
+  useEffect(() => {
+    if (!threadId) return;
+    stale.current = false;
+    refresh();
+    const el = ref.current;
+    const io =
+      el && typeof IntersectionObserver !== "undefined"
+        ? new IntersectionObserver((entries) => {
+            onScreen.current = entries.some((e) => e.isIntersecting);
+            if (onScreen.current && stale.current) poke();
+          })
+        : null;
+    if (io && el) io.observe(el);
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && stale.current) poke();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    const clock = setInterval(() => {
+      if (onScreen.current && document.visibilityState === "visible") setClock((c) => c + 1);
+    }, CLOCK_MS);
+    return () => {
+      io?.disconnect();
+      document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(clock);
+      clearTimeout(timer.current);
+      timer.current = undefined;
+      inFlight.current = 0;
+      seq.current++;
+    };
+  }, [threadId, refresh, poke]);
+
+  // bb's realtime events. A reconnect may have missed some, so it reads again too.
+  const follows = threadId !== null && watchOf !== null;
+  useEffect(() => {
+    if (!follows) return;
+    const offs = [
+      sdk.subscribe({ event: "thread:changed", callback: (e) => threadChangeMatters(watchRef.current, e) && poke() }),
+      sdk.subscribe({ event: "environment:changed", callback: (e) => environmentChangeMatters(watchRef.current, e) && poke() }),
+      sdk.subscribe({ event: "project:changed", callback: (e) => projectChangeMatters(watchRef.current, e) && poke() }),
+      sdk.subscribe({ event: "realtime:connection", callback: (e) => e.state === "connected" && e.reconnected && poke() }),
+    ];
+    return () => offs.forEach((off) => off());
+  }, [follows, sdk, poke]);
+
+  // Pull requests change on GitHub, not in bb: hold bb's own read so bb keeps them fresh, and read
+  // again when it says one changed.
+  const prList = watchRef.current.pullRequests;
+  const prKeys = prList?.length ? [...prList].sort() : NO_KEYS;
+  const pr = experimental_useRpcKeyedQuery({ pluginId: "bb--github-pr-status", contract: prStatus, method: "pullRequests", keys: prKeys, enabled: prKeys.length > 0 });
+  const prSeen = prKeys.length && pr.data ? JSON.stringify(prKeys.map((k) => pr.data?.[k] ?? null)) : null;
+  const prLast = useRef<string | null>(null);
+  useEffect(() => {
+    if (prSeen === null) return;
+    if (prLast.current !== null && prLast.current !== prSeen) poke();
+    prLast.current = prSeen;
+  }, [prSeen, poke]);
+
+  return { data, error: fresh ? state.error : null, busy, sample: !threadId, refresh, at: state.at, ref };
+}
+
+/** Every card follows its own thread: an environment attached later, a turn that ends. */
+function withOwnThread(watch: LiveWatch, threadId: string): LiveWatch {
+  return { ...watch, threads: [threadId, ...(watch.threads ?? [])] };
 }
 
 // ---------- shared pieces ----------
@@ -240,7 +343,12 @@ function ChangesBody({ target, paths, title, open, nested }: { target: ChangesTa
   const wire = targetKey(target);
   const key = JSON.stringify([wire, paths]);
   // A commit never changes; read it once.
-  const live = useLive(key, (threadId) => rpc.call("project_changes", { threadId, target: wire, paths }), () => sampleChanges(target.kind === "commit" ? target.sha : null), target.kind === "commit" ? 86_400_000 : 10_000);
+  const live = useLive(
+    key,
+    (threadId) => rpc.call("project_changes", { threadId, target: wire, paths }),
+    () => sampleChanges(target.kind === "commit" ? target.sha : null),
+    target.kind === "commit" ? null : (r) => ({ environments: r?.ok ? [r.environmentId] : [] }),
+  );
   const [all, setAll] = useState(false);
   const r = live.data;
   if (!r) return <div ref={live.ref}>{live.error ? <Problem error={live.error} /> : <Shimmer className="h-24" />}</div>;
@@ -356,7 +464,7 @@ function FileRow({ file, patch, target, sample, startOpen }: { file: ChangedFile
 export function CommitsView({ props }: ViewProps) {
   const rpc = useRpc<RpcContract>();
   const limit = parseCommitLimit(props.limit);
-  const live = useLive("commits", (threadId) => rpc.call("project_commits", { threadId }), sampleCommits, 15_000);
+  const live = useLive("commits", (threadId) => rpc.call("project_commits", { threadId }), sampleCommits, (r) => ({ environments: r?.ok ? [r.environmentId] : [] }));
   const [all, setAll] = useState(false);
   const r = live.data;
   if (!r) return <div ref={live.ref}>{live.error ? <Problem error={live.error} /> : <Shimmer className="h-24" />}</div>;
@@ -460,7 +568,7 @@ const MERGE: Record<PullRequestInfo["mergeability"], { label: string; tone: Tone
 export function PullRequestView() {
   const env = useEnv();
   const rpc = useRpc<RpcContract>();
-  const live = useLive("pr", (threadId) => rpc.call("project_pull_request", { threadId }), samplePullRequest, 30_000);
+  const live = useLive("pr", (threadId) => rpc.call("project_pull_request", { threadId }), samplePullRequest, (r) => (r?.ok ? { environments: [r.environmentId], pullRequests: [r.environmentId] } : {}));
   const r = live.data;
   if (!r) return <div ref={live.ref}>{live.error ? <Problem error={live.error} /> : <Shimmer className="h-24" />}</div>;
   if (!r.ok || !r.pullRequest) {
@@ -559,12 +667,19 @@ export function ThreadsView({ props }: ViewProps) {
   const navigate = useBbNavigate();
   const parsed = parseThreadIds(props.ids);
   const ids = parsed.ok ? parsed.value : null;
-  // Bad ids read nothing: the card shows why at once and never polls.
+  // Bad ids read nothing: the card shows why at once and follows nothing.
   const live = useLive(
     parsed.ok ? JSON.stringify(ids) : `invalid:${parsed.error}`,
     (threadId) => (parsed.ok ? rpc.call("project_threads", { threadId, ids }) : Promise.resolve(failure("invalid", parsed.error))),
     sampleThreads,
-    parsed.ok ? 5_000 : 86_400_000,
+    parsed.ok
+      ? (r) => ({
+          threads: ids ?? (r?.ok ? r.threads.map((t) => t.id) : []),
+          newThreads: ids === null,
+          // A row shows its thread's branch, which moves with its environment.
+          environments: r?.ok ? r.threads.flatMap((t) => (t.found && t.environmentId ? [t.environmentId] : [])) : [],
+        })
+      : null,
   );
   if (!parsed.ok) return <div ref={live.ref}><Problem error={parsed.error} /></div>;
   const r = live.data;
@@ -644,7 +759,16 @@ function ThreadChip({ t }: { t: { status: ThreadStatus; needsInput: boolean; arc
 
 export function EnvironmentsView({ props }: ViewProps) {
   const rpc = useRpc<RpcContract>();
-  const live = useLive("environments", (threadId) => rpc.call("project_environments", { threadId }), sampleEnvironments, 20_000);
+  const live = useLive("environments", (threadId) => rpc.call("project_environments", { threadId }), sampleEnvironments, (r) =>
+    r?.ok
+      ? {
+          newThreads: true,
+          environments: r.environments.map((e) => e.id),
+          threads: r.environments.flatMap((e) => e.threads.map((t) => t.id)),
+          pullRequests: r.environments.filter((e) => e.changedFiles !== null || e.pullRequest !== null).map((e) => e.id),
+        }
+      : { newThreads: true },
+  );
   const r = live.data;
   const title = str(props.title) ?? "Environments";
   if (!r) return <div ref={live.ref}>{live.error ? <Problem error={live.error} /> : <Shimmer className="h-28" />}</div>;

@@ -172,6 +172,8 @@ export interface ChangesScope {
 
 export interface ChangesData {
   ok: true;
+  /** The bb environment read, so the card can follow its changes. */
+  environmentId: string;
   scope: ChangesScope;
   files: ChangedFile[];
   /** Files before the paths filter. */
@@ -207,6 +209,8 @@ export interface CommitInfo {
 
 export interface CommitsData {
   ok: true;
+  /** The bb environment read, so the card can follow its changes. */
+  environmentId: string;
   branch: string | null;
   base: string | null;
   onBase: boolean;
@@ -249,6 +253,8 @@ export interface PullRequestInfo {
 
 export interface PullRequestData {
   ok: true;
+  /** The bb environment read, so the card can follow its pull request. */
+  environmentId: string;
   branch: string | null;
   /** null when the branch has no pull request. */
   pullRequest: PullRequestInfo | null;
@@ -316,6 +322,8 @@ export interface ThreadInfo {
   needsInput: boolean;
   archived: boolean;
   branch: string | null;
+  /** The bb environment it runs in, so a card can follow its branch. */
+  environmentId?: string | null;
   providerId: string;
   /** Background agents, commands and workflows running in it. */
   background: number;

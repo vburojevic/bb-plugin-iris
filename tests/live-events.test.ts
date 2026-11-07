@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { environmentChangeMatters, projectChangeMatters, threadChangeMatters, watchKey } from "../core/live-events";
+import { environmentChangeMatters, projectChangeMatters, threadChangeMatters } from "../core/live-events";
 
 describe("live card events", () => {
   it("follows the listed threads' visible changes, never their streaming output", () => {
@@ -32,11 +32,5 @@ describe("live card events", () => {
     expect(environmentChangeMatters(watch, { id: "env_b", changes: ["work-status-changed"] })).toBe(false);
     expect(environmentChangeMatters({ newThreads: true }, { id: "env_new", changes: ["environment-created"] })).toBe(true);
     expect(environmentChangeMatters({}, { id: "env_a", changes: ["work-status-changed"] })).toBe(false);
-  });
-
-  it("keys a watch by what it follows, not by order or repeats", () => {
-    expect(watchKey({ threads: ["b", "a", "a"], environments: ["e"] })).toBe(watchKey({ environments: ["e"], threads: ["a", "b"] }));
-    expect(watchKey({ threads: ["a"] })).not.toBe(watchKey({ threads: ["a"], newThreads: true }));
-    expect(watchKey({ pullRequests: ["e"] })).not.toBe(watchKey({ environments: ["e"] }));
   });
 });

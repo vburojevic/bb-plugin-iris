@@ -322,6 +322,8 @@ export interface ThreadInfo {
   needsInput: boolean;
   archived: boolean;
   branch: string | null;
+  /** The bb environment it runs in, so a card can follow its branch. */
+  environmentId?: string | null;
   providerId: string;
   /** Background agents, commands and workflows running in it. */
   background: number;

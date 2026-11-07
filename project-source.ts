@@ -258,6 +258,7 @@ export function createProjectSource(bb: BbPluginApi): ProjectSource {
     archivedAt: number | null;
     hasPendingInteraction: boolean;
     environmentBranchName: string | null;
+    environmentId: string | null;
     providerId: string;
     activity: { activeBackgroundAgentCount: number; activeBackgroundCommandCount: number; activeWorkflowCount: number };
     latestAttentionAt: number;
@@ -271,6 +272,7 @@ export function createProjectSource(bb: BbPluginApi): ProjectSource {
       needsInput: t.hasPendingInteraction,
       archived: t.archivedAt !== null,
       branch: t.environmentBranchName,
+      environmentId: t.environmentId,
       providerId: t.providerId,
       background: t.activity.activeBackgroundAgentCount + t.activity.activeBackgroundCommandCount + t.activity.activeWorkflowCount,
       updatedAt: Math.max(t.updatedAt, t.latestAttentionAt),

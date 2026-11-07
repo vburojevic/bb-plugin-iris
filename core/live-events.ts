@@ -51,9 +51,3 @@ export function environmentChangeMatters(watch: LiveWatch, e: EnvironmentChange)
 export function projectChangeMatters(watch: LiveWatch, e: ProjectChange): boolean {
   return watch.newThreads === true && e.changes.includes("threads-changed");
 }
-
-/** A stable string for a watch, so a card subscribes again only when what it follows changes. */
-export function watchKey(watch: LiveWatch): string {
-  const sorted = (list: readonly string[] | undefined) => (list ? [...new Set(list)].sort() : []);
-  return JSON.stringify([sorted(watch.threads), watch.newThreads === true, sorted(watch.environments), sorted(watch.pullRequests)]);
-}

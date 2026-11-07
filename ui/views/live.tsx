@@ -3,12 +3,12 @@
 // a change they show;
 // Pipeline draws a CI run it is given. In the gallery (no thread) the live
 // ones draw sample data, marked as such.
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { defineRpcContract } from "@get-bb/plugin-sdk";
 import { experimental_Diff as HostDiff, experimental_useRpcKeyedQuery, useBbNavigate, useRpc, useSdk } from "@get-bb/plugin-sdk/app";
 import { z } from "zod";
 import { isPendingValue } from "../../core/evaluate";
-import { environmentChangeMatters, projectChangeMatters, threadChangeMatters, watchKey, type LiveWatch } from "../../core/live-events";
+import { environmentChangeMatters, projectChangeMatters, threadChangeMatters, type LiveWatch } from "../../core/live-events";
 import { formatValue } from "../../core/format";
 import { normalizePipeline, pipelineCounts, type PipelineJob, type PipelineRun, type PipelineStatus } from "../../core/pipeline";
 import {
@@ -47,8 +47,7 @@ interface Live<T> {
   sample: boolean;
   refresh: () => void;
   at: number | null;
-  /** The card's outer element, whichever one it renders: the card reads only while it is on screen. */
-  ref: (el: HTMLDivElement | null) => void;
+  ref: RefObject<HTMLDivElement | null>;
 }
 
 function errorText(e: unknown): string {
@@ -69,6 +68,8 @@ const NO_KEYS: string[] = [];
 const MIN_GAP_MS = 1000;
 /** How long a card waits for more events before it reads. */
 const SETTLE_MS = 250;
+/** How often an idle card on screen redraws, so "2 minutes ago" stays true. No read. */
+const CLOCK_MS = 30_000;
 
 /**
  * Reads once, then again whenever bb announces a change the card shows (see `watchOf`), while
@@ -81,86 +82,91 @@ function useLive<T>(key: string, load: (threadId: string) => Promise<T>, sample:
   const sdk = useSdk();
   const [state, setState] = useState<{ key: string; data: T | null; error: string | null; at: number | null }>(() => ({ key, data: threadId ? null : sample(), error: null, at: null }));
   const [busy, setBusy] = useState(false);
+  const [, setClock] = useState(0);
+  const ref = useRef<HTMLDivElement | null>(null);
   const loadRef = useRef(load);
   loadRef.current = load;
   const seq = useRef(0);
-
-  const refresh = useCallback(() => {
-    if (!threadId) return;
-    const n = ++seq.current;
-    setBusy(true);
-    loadRef.current(threadId).then(
-      (data) => {
-        if (n !== seq.current) return;
-        setState({ key, data, error: null, at: Date.now() });
-        setBusy(false);
-      },
-      (e: unknown) => {
-        if (n !== seq.current) return;
-        setState((s) => ({ key, data: s.key === key ? s.data : null, error: errorText(e), at: Date.now() }));
-        setBusy(false);
-      },
-    );
-  }, [threadId, key]);
-
-  const fresh = state.key === key;
-  const data = fresh ? state.data : null;
-  const watch = threadId && watchOf ? withOwnThread(watchOf(data), threadId) : {};
-  const wkey = watchKey(watch);
-  const watchRef = useRef(watch);
-  watchRef.current = watch;
-
+  /** The read in flight, by its seq number; 0 when none. */
+  const inFlight = useRef(0);
   // A change marks the card stale; a stale card on screen reads again, at most once a second.
   const stale = useRef(false);
   const onScreen = useRef(true);
   const lastRead = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const pokeRef = useRef<() => void>(() => {});
+
+  const refresh = useCallback(() => {
+    if (!threadId) return;
+    const n = ++seq.current;
+    inFlight.current = n;
+    lastRead.current = Date.now();
+    setBusy(true);
+    const settle = () => {
+      if (inFlight.current === n) inFlight.current = 0;
+      // Changes that arrived during the read get their own read.
+      if (stale.current) pokeRef.current();
+    };
+    loadRef.current(threadId).then(
+      (data) => {
+        if (n !== seq.current) return;
+        setState({ key, data, error: null, at: Date.now() });
+        setBusy(false);
+        settle();
+      },
+      (e: unknown) => {
+        if (n !== seq.current) return;
+        setState((s) => ({ key, data: s.key === key ? s.data : null, error: errorText(e), at: Date.now() }));
+        setBusy(false);
+        settle();
+      },
+    );
+  }, [threadId, key]);
+
   const poke = useCallback(() => {
     stale.current = true;
-    if (!onScreen.current || document.visibilityState !== "visible" || timer.current !== undefined) return;
+    if (!onScreen.current || document.visibilityState !== "visible" || timer.current !== undefined || inFlight.current !== 0) return;
     timer.current = setTimeout(() => {
       timer.current = undefined;
-      if (!stale.current || !onScreen.current || document.visibilityState !== "visible") return;
+      if (!stale.current || !onScreen.current || document.visibilityState !== "visible" || inFlight.current !== 0) return;
       stale.current = false;
-      lastRead.current = Date.now();
       refresh();
     }, Math.max(SETTLE_MS, lastRead.current + MIN_GAP_MS - Date.now()));
   }, [refresh]);
-
-  // The card renders a different outer element as it loads, fails or fills, so the observer
-  // follows whichever one is mounted now.
-  const io = useRef<IntersectionObserver | null>(null);
-  const element = useRef<HTMLDivElement | null>(null);
-  const pokeRef = useRef(poke);
   pokeRef.current = poke;
-  const ref = useCallback((el: HTMLDivElement | null) => {
-    if (el === element.current) return;
-    if (element.current) io.current?.unobserve(element.current);
-    element.current = el;
-    if (!el || typeof IntersectionObserver === "undefined") return;
-    io.current ??= new IntersectionObserver((entries) => {
-      const last = entries[entries.length - 1];
-      if (last.target !== element.current) return;
-      onScreen.current = last.isIntersecting;
-      if (onScreen.current && stale.current) pokeRef.current();
-    });
-    io.current.observe(el);
-  }, []);
-  useEffect(() => () => io.current?.disconnect(), []);
+
+  const fresh = state.key === key;
+  const data = fresh ? state.data : null;
+  const watchRef = useRef<LiveWatch>({});
+  watchRef.current = threadId && watchOf ? withOwnThread(watchOf(data), threadId) : {};
 
   useEffect(() => {
     if (!threadId) return;
     stale.current = false;
-    lastRead.current = Date.now();
     refresh();
+    const el = ref.current;
+    const io =
+      el && typeof IntersectionObserver !== "undefined"
+        ? new IntersectionObserver((entries) => {
+            onScreen.current = entries.some((e) => e.isIntersecting);
+            if (onScreen.current && stale.current) poke();
+          })
+        : null;
+    if (io && el) io.observe(el);
     const onVisible = () => {
       if (document.visibilityState === "visible" && stale.current) poke();
     };
     document.addEventListener("visibilitychange", onVisible);
+    const clock = setInterval(() => {
+      if (onScreen.current && document.visibilityState === "visible") setClock((c) => c + 1);
+    }, CLOCK_MS);
     return () => {
+      io?.disconnect();
       document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(clock);
       clearTimeout(timer.current);
       timer.current = undefined;
+      inFlight.current = 0;
       seq.current++;
     };
   }, [threadId, refresh, poke]);
@@ -176,11 +182,12 @@ function useLive<T>(key: string, load: (threadId: string) => Promise<T>, sample:
       sdk.subscribe({ event: "realtime:connection", callback: (e) => e.state === "connected" && e.reconnected && poke() }),
     ];
     return () => offs.forEach((off) => off());
-  }, [follows, sdk, poke, wkey]);
+  }, [follows, sdk, poke]);
 
   // Pull requests change on GitHub, not in bb: hold bb's own read so bb keeps them fresh, and read
   // again when it says one changed.
-  const prKeys = watch.pullRequests?.length ? [...watch.pullRequests].sort() : NO_KEYS;
+  const prList = watchRef.current.pullRequests;
+  const prKeys = prList?.length ? [...prList].sort() : NO_KEYS;
   const pr = experimental_useRpcKeyedQuery({ pluginId: "bb--github-pr-status", contract: prStatus, method: "pullRequests", keys: prKeys, enabled: prKeys.length > 0 });
   const prSeen = prKeys.length && pr.data ? JSON.stringify(prKeys.map((k) => pr.data?.[k] ?? null)) : null;
   const prLast = useRef<string | null>(null);
@@ -665,7 +672,14 @@ export function ThreadsView({ props }: ViewProps) {
     parsed.ok ? JSON.stringify(ids) : `invalid:${parsed.error}`,
     (threadId) => (parsed.ok ? rpc.call("project_threads", { threadId, ids }) : Promise.resolve(failure("invalid", parsed.error))),
     sampleThreads,
-    parsed.ok ? (r) => ({ threads: ids ?? (r?.ok ? r.threads.map((t) => t.id) : []), newThreads: ids === null }) : null,
+    parsed.ok
+      ? (r) => ({
+          threads: ids ?? (r?.ok ? r.threads.map((t) => t.id) : []),
+          newThreads: ids === null,
+          // A row shows its thread's branch, which moves with its environment.
+          environments: r?.ok ? r.threads.flatMap((t) => (t.found && t.environmentId ? [t.environmentId] : [])) : [],
+        })
+      : null,
   );
   if (!parsed.ok) return <div ref={live.ref}><Problem error={parsed.error} /></div>;
   const r = live.data;

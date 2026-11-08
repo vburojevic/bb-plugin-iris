@@ -26,6 +26,9 @@ import { AccessibilityAuditView, GeoHeatmapView } from "./lazy";
 import { BudgetView, ForecastView } from "./lazy";
 import { CompareGridView, VideoCompareView } from "./lazy";
 import { DocReviewView, MarkUpView, RankView, ScreensView, VariantView, VariantsView } from "./lazy";
+import { AgentTraceView, ContextMeterView, EvalReportView, ToolCallView } from "./lazy";
+import { BisectView, BlastRadiusView, FlamegraphView, SchemaDiffView, TestHistoryView } from "./lazy";
+import { DecisionLogView, ThemePreviewView } from "./lazy";
 
 export const VIEWS: Record<string, View> = {
   Card: CardView, Stack: StackView, Row: RowView, Grid: GridView, Tabs: TabsView, Tab: TabView, Details: DetailsView, Divider: DividerView,
@@ -54,4 +57,7 @@ export const VIEWS: Record<string, View> = {
   AccessibilityAudit: AccessibilityAuditView, GeoHeatmap: GeoHeatmapView,
   Budget: BudgetView, Forecast: ForecastView,
   CompareGrid: CompareGridView, VideoCompare: VideoCompareView,
+  EvalReport: EvalReportView, AgentTrace: AgentTraceView, ContextMeter: ContextMeterView, ToolCall: ToolCallView,
+  TestHistory: TestHistoryView, Flamegraph: FlamegraphView, Bisect: BisectView, BlastRadius: BlastRadiusView, SchemaDiff: SchemaDiffView,
+  DecisionLog: DecisionLogView, ThemePreview: ThemePreviewView,
 };

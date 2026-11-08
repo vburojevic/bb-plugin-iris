@@ -55,6 +55,8 @@ export const GROUPS = [
   "Diagrams",
   "Code",
   "Project",
+  "Agents",
+  "Debug",
   "Evidence",
   "Planning",
   "Inputs",

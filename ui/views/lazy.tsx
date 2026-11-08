@@ -102,3 +102,14 @@ export const ScreensView = lazyView("review", "Screens", { height: 320, whenNear
 export function VariantView({ children }: { children?: ReactNode }) {
   return <div className="flex min-w-0 flex-col gap-3">{children}</div>;
 }
+export const EvalReportView = lazyView("agents", "EvalReport", { height: 320 });
+export const AgentTraceView = lazyView("agents", "AgentTrace", { height: 300 });
+export const ContextMeterView = lazyView("agents", "ContextMeter", { height: 200 });
+export const ToolCallView = lazyView("agents", "ToolCall", { height: 40 });
+export const TestHistoryView = lazyView("debug", "TestHistory", { height: 240 });
+export const FlamegraphView = lazyView("debug", "Flamegraph", { height: 360, whenNear: true });
+export const BisectView = lazyView("debug", "Bisect", { height: 260 });
+export const BlastRadiusView = lazyView("debug", "BlastRadius", { height: 300 });
+export const SchemaDiffView = lazyView("debug", "SchemaDiff", { height: 300 });
+export const DecisionLogView = lazyView("craft", "DecisionLog", { height: 320 });
+export const ThemePreviewView = lazyView("craft", "ThemePreview", { height: 360 });

@@ -304,7 +304,7 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
             </li>
             <li>
               <Glyph name="feather" size={18} />
-              <b>Light on context.</b> About 3,500 tokens per session: the rules and an index of every component. Details load only when an agent needs them.
+              <b>Light on context.</b> About 3,600 tokens per session: the rules and an index of every component. Details load only when an agent needs them.
             </li>
           </ul>
         </div>

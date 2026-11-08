@@ -13,7 +13,7 @@ import { brotliCompressSync, constants, gzipSync } from "node:zlib";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const outdir = join(root, "dist", "chunks");
-const ENTRIES = { icons: "chunks/icons.ts", "react-app": "chunks/react-app.ts", katex: "chunks/katex.ts", graph: "chunks/graph.ts", play: "chunks/play.tsx", scene: "chunks/scene.tsx", sheet: "chunks/sheet.tsx", inspect: "chunks/inspect.tsx", codework: "chunks/codework.tsx", board: "chunks/board.tsx", l10n: "chunks/strings.tsx", assets: "chunks/assets.tsx", pdf: "chunks/pdf.tsx", tools: "chunks/tools.tsx", interact: "chunks/interact.tsx", track: "chunks/track.tsx", compare: "chunks/compare.tsx", review: "chunks/review.tsx", "geo-world": "assets/geo/world.json", "geo-us": "assets/geo/us.json", "pdf-worker": "node_modules/pdfjs-dist/build/pdf.worker.min.mjs" };
+const ENTRIES = { icons: "chunks/icons.ts", "react-app": "chunks/react-app.ts", katex: "chunks/katex.ts", graph: "chunks/graph.ts", play: "chunks/play.tsx", scene: "chunks/scene.tsx", sheet: "chunks/sheet.tsx", inspect: "chunks/inspect.tsx", codework: "chunks/codework.tsx", board: "chunks/board.tsx", l10n: "chunks/strings.tsx", assets: "chunks/assets.tsx", pdf: "chunks/pdf.tsx", tools: "chunks/tools.tsx", interact: "chunks/interact.tsx", track: "chunks/track.tsx", compare: "chunks/compare.tsx", review: "chunks/review.tsx", "geo-world": "assets/geo/world.json", "geo-us": "assets/geo/us.json", "pdf-worker": "node_modules/pdfjs-dist/build/pdf.worker.min.mjs", agents: "chunks/agents.tsx", debug: "chunks/debug.tsx", craft: "chunks/craft.tsx" };
 
 // The iris-react frame runtime: React, react-dom and the kit as one classic
 // script, inlined into each app's srcdoc by the react-app chunk.

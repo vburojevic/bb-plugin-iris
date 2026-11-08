@@ -32,7 +32,7 @@ describe("setting a card's inputs", () => {
   it("refuses a name the card doesn't declare, with the nearest one", () => {
     const r = planInputs(card, {}, { seat: 3 });
     expect(r.ok).toBe(false);
-    expect(!r.ok && r.error).toContain('no input "seat"; did you mean seats?');
+    expect(!r.ok && r.error).toContain('no input "seat". Did you mean seats?');
   });
   it("keeps each input's type", () => {
     const r = planInputs(card, {}, { seats: "30" });

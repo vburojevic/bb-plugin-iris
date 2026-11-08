@@ -36,3 +36,14 @@ describe("shape hints", () => {
     expect(shapeHint("Gallery", { images: [{ src: "a.png", caption: "Mood one" }, { src: "b.png", caption: "Mood two" }] })).toBeNull();
   });
 });
+
+describe("shape hints stay quiet on look-alikes", () => {
+  it("leave trackers, claims with a plain status, and one-word galleries alone", () => {
+    expect(shapeHint("Table", { rows: [{ issue: "Login loop", priority: "high", owner: "Ana" }] })).toBeNull();
+    expect(shapeHint("Table", { rows: [{ requirement: "SSO", state: "planned" }] })).toBeNull();
+    expect(shapeHint("Table", { rows: [{ requirement: "SSO", status: "passed" }, { requirement: "Audit log", status: "failed" }] })).toContain("<Acceptance");
+    expect(shapeHint("Table", { rows: [{ priority: "P1", file: "a.ts:3", issue: "leak" }] })).toContain("<Findings");
+    expect(shapeHint("Gallery", { images: [{ src: "a.png", caption: "Dark roast" }, { src: "b.png", caption: "Dark chocolate" }] })).toBeNull();
+    expect(shapeHint("Gallery", { images: [{ src: "a.png", caption: "Candidate 1" }, { src: "b.png", caption: "Candidate 2" }] })).toBeNull();
+  });
+});

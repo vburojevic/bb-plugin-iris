@@ -12,16 +12,21 @@ const COLOR = /^(#[0-9a-f]{3,8}|rgba?\(|hsla?\(|oklch\(|var\(--)/i;
 const BEFORE = new Set(["before", "old", "was", "baseline", "previous", "prev"]);
 const AFTER = new Set(["after", "new", "now"]);
 const CHECK = new Set(["check", "criterion", "criteria", "requirement", "requirements", "acceptance", "claim"]);
-const RESULT = new Set(["result", "status", "outcome", "verdict", "pass", "passed", "state"]);
+const RESULT = new Set(["result", "outcome", "verdict", "pass", "passed"]);
+/** A status column counts as a result only when its values read as pass or fail. */
+const STATUS = new Set(["status", "state"]);
+const PASS_FAIL = /^(pass(ed)?|fail(ed)?|ok|blocked|untested|claimed|yes|no|done|missing)$/i;
 const BASIS = new Set(["basis", "evidence", "proof", "how", "source", "note", "notes"]);
-const SEVERITY = new Set(["severity", "sev", "priority", "impact"]);
+const SEVERITY = new Set(["severity", "sev"]);
+/** Priority or impact reads as a severity only beside a file or location column. */
+const LOOSE_SEVERITY = new Set(["priority", "impact"]);
 const WHERE = new Set(["where", "file", "location", "path", "line", "place"]);
 const WHAT = new Set(["what", "issue", "finding", "problem", "bug"]);
 const COLOR_COL = new Set(["color", "colour", "hex", "background", "bg", "accent", "foreground", "fg", "swatch", "tint"]);
 const OPTION_COL = new Set(["palette", "option", "direction", "variant", "scheme", "concept"]);
 /** Words in a caption or file name that mark a device, theme or locale column. */
-const DEVICE = /\b(iphone|ipad|mac|macos|ios|android|desktop|phone|mobile|tablet|watch|web|light|dark|high contrast|en|de|fr|es|ja|ar|rtl|ltr|portrait|landscape)\b/i;
-const BEFORE_AFTER = /\b(before|after|baseline|candidate)\b/i;
+const DEVICE = /\b(iphone|ipad|mac|macos|ios|android|desktop|phone|mobile|tablet|light|dark|high contrast|rtl|ltr|portrait|landscape)\b/gi;
+const BEFORE_AFTER = /\b(before|after|baseline)\b/i;
 
 function columns(props: Record<string, unknown>): Col[] {
   const out: Col[] = [];
@@ -69,16 +74,18 @@ function tableHint(props: Record<string, unknown>): string | null {
     return `reads as before and after (${names}): <Delta rows={rows.map((r) => ({ label: ${lab ? field(lab.key) : '"?"'}, before: ${field(before.key)}, after: ${field(after.key)} }))} /> adds each change and its percent; give better="up" or "down" (per row or for all) when you know which way is good, and it tallies better and worse.`;
   }
 
-  const sev = find(cols, SEVERITY);
+  const strict = find(cols, SEVERITY);
+  const sev = strict ?? find(cols, LOOSE_SEVERITY);
   const where = find(cols, WHERE, sev ? [sev] : []);
   const what = find(cols, WHAT, [sev, where].filter(Boolean) as Col[]);
-  if (sev && (where || what)) {
+  if (sev && (strict ? where || what : where)) {
     const parts = [`severity: ${field(sev.key)}`, what ? `title: ${field(what.key)}` : "", where ? `file: ${field(where.key)}` : ""].filter(Boolean).join(", ");
     return `reads as review findings (${names}): <Findings items={rows.map((r) => ({ ${parts} }))} /> groups them by severity, with file, line and fix.`;
   }
 
   const crit = find(cols, CHECK);
-  const result = crit ? find(cols, RESULT, [crit]) : undefined;
+  const status = crit ? find(cols, STATUS, [crit]) : undefined;
+  const result = crit ? (find(cols, RESULT, [crit]) ?? (status && mostly(values(status), (v) => PASS_FAIL.test(v)) ? status : undefined)) : undefined;
   if (crit && result) {
     const basis = find(cols, BASIS, [crit, result]);
     return `reads as acceptance checks (${names}): <Acceptance criteria={rows.map((r) => ({ name: ${field(crit.key)}, status: ${field(result.key)}${basis ? `, note: ${field(basis.key)}` : ""} }))} /> gives the verdict, with status passed, failed, blocked, untested or claimed.`;
@@ -107,7 +114,9 @@ function galleryHint(props: Record<string, unknown>): string | null {
   const words = (re: RegExp) => texts.filter((t) => re.test(t.replace(/[-_.]/g, " "))).length;
   if (words(BEFORE_AFTER) >= Math.ceil(texts.length / 2))
     return `shows before and after shots: <Compare images={[before, after]} /> puts one pair under a draggable wipe with changed pixels counted, and <CompareGrid pairs={[{ ref, cand, label }]} /> (or folders={{ ref, cand }}) lays out many.`;
-  if (words(DEVICE) >= Math.ceil(texts.length / 2))
+  // Two different device or theme words across the set (iPhone and iPad, light and dark), not one word that happens to match.
+  const tokens = new Set(texts.flatMap((t) => [...t.replace(/[-_.]/g, " ").matchAll(DEVICE)].map((m) => m[0].toLowerCase())));
+  if (tokens.size >= 2 && words(new RegExp(DEVICE.source, "i")) >= Math.ceil(texts.length / 2))
     return `captions name devices, themes or locales: <Screens shots={[{ screen: "Home", column: "Dark", src }]} /> puts one row per screen and one column per device or theme, so a missing shot shows.`;
   return null;
 }

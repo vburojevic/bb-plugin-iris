@@ -50,7 +50,7 @@ For layouts, put a <Mockup> or an <Image> in each Variant instead of Swatches.`,
   },
   {
     name: "Changing a card the person already has",
-    text: `To show another scenario in a card already in the thread (a slider, a pick, a field), set its inputs instead of sending a new card: iris_cards lists the thread's cards by number with what is set; iris_card_set with {card: 2, values: {seats: 20}} sets them (or \`bb iris set 2 seats=20\`). Each value must be a <state> the card declares and keep its type. An open card redraws at once.`,
+    text: `To show another scenario in a card already in the thread (a slider, a pick, a field), set its inputs instead of sending a new card: iris_cards lists the thread's cards with an id (message#index) and what is set; iris_card_set with {card: "<id>", values: {seats: 20}} sets them (or \`bb iris set <id> seats=20\`). Use the id: a card's # shifts once older cards leave the list. Each value must be a <state> the card declares and keep its type. An open card redraws at once.`,
   },
 ];
 

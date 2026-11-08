@@ -26,3 +26,10 @@ describe("eval scoring", () => {
     expect(r).toMatchObject({ hasIris: true, checkClean: false, noTable: false });
   });
 });
+
+describe("eval scoring of directives", () => {
+  it("ignores a directive shown inside a code block", () => {
+    const file: Case = { id: "f", category: "status", prompt: "", expect: [], tools: ["directive"] };
+    expect(score(file, 'Like this:\n```md\n::iris{file="$BB_THREAD_STORAGE/x.iris"}\n```\n', [], 5).hasIris).toBe(false);
+  });
+});

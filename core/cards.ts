@@ -89,7 +89,7 @@ export function planInputs(card: CardRef, current: Record<string, unknown>, valu
   for (const k of keys) {
     if (!names.includes(k)) {
       const hint = didYouMean(k, names);
-      return { ok: false, error: `card "${card.title}" has no input "${k}"${hint ? `; did you mean ${hint}?` : ""}. Its inputs: ${names.join(", ")}` };
+      return { ok: false, error: `card "${card.title}" has no input "${k}".${hint ? ` Did you mean ${hint}?` : ""} Its inputs: ${names.join(", ")}` };
     }
     const start = runtime.getState(k);
     if (kind(start) !== "empty" && kind(values[k]) !== kind(start)) return { ok: false, error: `"${k}" holds a ${kind(start)} (it starts as ${JSON.stringify(start)}), not a ${kind(values[k])}` };

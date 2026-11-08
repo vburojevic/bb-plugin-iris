@@ -654,32 +654,37 @@ export default async function plugin(bb: BbPluginApi) {
   }
   const cardList = (cards: CardWithInputs[]) =>
     cards.length
-      ? cards.map((c) => `#${c.n} "${c.title}" (${c.language})${Object.keys(c.inputs).length ? `: ${JSON.stringify(c.inputs)}` : ": nothing set"}`).join("\n")
+      ? cards.map((c) => `#${c.n} (id ${c.message}#${c.index}) "${c.title}" (${c.language})${Object.keys(c.inputs).length ? `: ${JSON.stringify(c.inputs)}` : ": nothing set"}`).join("\n")
       : "No Iris cards in this thread yet.";
 
   // The agent sets a card's inputs (a slider, a pick, a field), checked against the card's own
   // <state> names and types; an open card hears it and redraws with the new values.
   type SetResult = { ok: true; card: CardWithInputs; changed: string[]; report: string } | { ok: false; error: string };
   const cardLocks = new Map<string, Promise<unknown>>();
-  async function setCardInputs(threadId: string, n: number, values: Record<string, unknown>): Promise<SetResult> {
+  /** A card by its number from the list, or by its stable id "<message>#<index>" (numbers shift once old cards leave the list). */
+  async function setCardInputs(threadId: string, which: number | string, values: Record<string, unknown>): Promise<SetResult> {
     const prev = cardLocks.get(threadId) ?? Promise.resolve();
     const run = async (): Promise<SetResult> => {
       const listed = await listCards(threadId);
-      const c = listed.find((x) => x.n === n);
-      if (!c) return { ok: false, error: listed.length ? `No card #${n} here. ${cardList(await threadCards(threadId))}` : "No Iris cards in this thread yet." };
+      const c = listed.find((x) => (typeof which === "number" ? x.n === which : `${x.card.message}#${x.card.index}` === which.replace(/^#/, "")));
+      if (!c) return { ok: false, error: listed.length ? `No card ${typeof which === "number" ? `#${which}` : which} here.\n${cardList(await threadCards(threadId))}` : "No Iris cards in this thread yet." };
       const current = await cardState(threadId, c);
       const plan = planInputs(c.card, current, values);
       if (!plan.ok) return plan;
       if (JSON.stringify(plan.next).length > 200_000) return { ok: false, error: "the values are too large to store (200 KB at most)" };
+      // Only the card itself with the new values can refuse: a file it loads may not exist yet, and the card shows that live.
+      const own = check(c.card.source, { saved: personInputs(plan.next), load: () => new Promise<LoadResult>(() => undefined) });
+      if (!own.ok) return { ok: false, error: `The card errors with those values, so nothing was set.\n${formatReport(own)}` };
       const report = await checkSource(c.card.source, threadId, personInputs(plan.next));
-      if (report.startsWith("Error") || report.includes("\nError")) return { ok: false, error: `The card errors with those values, so nothing was set.\n${report}` };
       await bb.storage.kv.set(c.key ?? pendingKey(threadId, c.card), plan.next);
       bb.realtime.publish("iris-card-state", { threadId, item: `item:${c.card.message}#${c.card.language}#${c.card.index}` });
       const { source: _source, ...card } = c.card;
       return { ok: true, card: { ...card, n: c.n, inputs: personInputs(plan.next) }, changed: plan.changed, report };
     };
     const next = prev.then(run, run);
-    cardLocks.set(threadId, next.catch(() => undefined));
+    const settled = next.catch(() => undefined);
+    cardLocks.set(threadId, settled);
+    void settled.then(() => cardLocks.get(threadId) === settled && cardLocks.delete(threadId));
     return next;
   }
   const setText = (r: Extract<SetResult, { ok: true }>) =>
@@ -1001,15 +1006,15 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
-  const SET_PARAMS = z.object({ card: z.number().int().min(1), values: z.record(z.string(), z.unknown()) }).strict();
+  const SET_PARAMS = z.object({ card: z.union([z.number().int().min(1), z.string().min(1).max(200)]), values: z.record(z.string(), z.unknown()) }).strict();
   bb.agents.registerTool({
     name: "iris_card_set",
     description:
-      "Sets inputs in one of this thread's Iris cards: a slider, a pick, a field, any <state> it declares. Name the card by its # from iris_cards and give the values by state name; each keeps its type. The card is checked with the new values first, and an open card redraws with them. Use it to show the person a scenario in the card they already have instead of sending a new one.",
+      "Sets inputs in one of this thread's Iris cards: a slider, a pick, a field, any <state> it declares. Name the card by its id from iris_cards (or its #) and give the values by state name; each keeps its type. The card is checked with the new values first, and an open card redraws with them. Use it to show the person a scenario in the card they already have instead of sending a new one.",
     ...params(SET_PARAMS, {
       type: "object",
       properties: {
-        card: { type: "integer", minimum: 1, description: "The card's number, from iris_cards" },
+        card: { type: ["integer", "string"], description: 'The card\'s id from iris_cards ("<message>#<index>", stable) or its number' },
         values: { type: "object", description: 'Input values by state name, e.g. {"seats": 20, "plan": "Pro"}', additionalProperties: true },
       },
       required: ["card", "values"],
@@ -1131,19 +1136,20 @@ export default async function plugin(bb: BbPluginApi) {
         }),
         set: cliCommand({
           summary: "Set inputs in one of this thread's cards; an open card redraws with them",
-          description: "Name the card by its # from `bb iris cards`, then name=value pairs (values parse as JSON when they can: 20, true, [\"a\"]). Each must be a <state> the card declares and keep its type. Checked first: values that make the card error aren't set.",
+          description: "Name the card by its # from `bb iris cards`, then name=value pairs (values parse as JSON when they can: 20, true, [\"a\"]; quote text that looks like a number: name='\"123\"'). Each must be a <state> the card declares and keep its type. Checked first: values that make the card error aren't set.",
           positionals: [
-            { name: "card", description: "The card's number, from `bb iris cards`", required: true },
+            { name: "card", description: "The card's id (message#index) or number, from `bb iris cards`", required: true },
             { name: "values", description: "name=value pairs, e.g. seats=20 plan=Pro", variadic: true },
           ] as const,
           options: { json: { type: "string", description: 'The values as one JSON object, e.g. {"seats": 20}' } },
           async run(input, ctx) {
             const threadId = ctx.threadId;
             if (!threadId) throw new PluginCliError("set acts on the thread it runs in", { code: "thread_required", hint: "Run it from an agent's shell in bb, where BB_THREAD_ID is set" });
-            const n = Number(input.positionals.card.replace(/^#/, ""));
-            if (!Number.isInteger(n) || n < 1) throw new PluginCliError(`"${input.positionals.card}" isn't a card number`, { code: "invalid", hint: "`bb iris cards` lists them" });
+            const raw = input.positionals.card.replace(/^#/, "");
+            const which = /^\d+$/.test(raw) ? Number(raw) : raw;
+            if (which === 0 || (typeof which === "string" && !raw.includes("#"))) throw new PluginCliError(`"${input.positionals.card}" isn't a card number or id`, { code: "invalid", hint: "`bb iris cards` lists them" });
             const values = parseAssignments(input.positionals.values ?? [], input.options.json);
-            const r = await setCardInputs(threadId, n, values);
+            const r = await setCardInputs(threadId, which, values);
             return r.ok ? { exitCode: 0, stdout: `${setText(r)}\n` } : { exitCode: 1, stdout: "", stderr: `${r.error}\n` };
           },
         }),

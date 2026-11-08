@@ -39,7 +39,8 @@ export function score(c: Case, answer: string, calls: Call[], judge: number) {
   const blocks = [...answer.matchAll(FENCE)];
   const sent = toolCards(calls);
   const used = new Set<string>(sent.map((t) => t.tool));
-  if (DIRECTIVE.test(answer)) used.add("directive");
+  // A directive written inside a code block is an example, not a card.
+  if (DIRECTIVE.test(answer.replace(/^ {0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?^ {0,3}\1[ \t]*$/gm, ""))) used.add("directive");
   const hasIris = blocks.length > 0 || used.size > 0;
   const components = new Set<string>();
   let checkClean = hasIris;

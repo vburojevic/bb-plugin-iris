@@ -74,7 +74,7 @@ function Blast({ model, title, depth }: { model: BlastModel; title?: string; dep
               ) : (
                 <span className="w-4 shrink-0" />
               )}
-              <Glyph name={n.changed ? "file-pen-line" : n.test ? "flask-conical" : "file-code"} size={13} color={n.changed ? env.palette.accent : n.test ? env.palette.tone.good : "var(--muted-foreground)"} />
+              <Glyph name={n.changed ? "file-pen-line" : n.test ? "flask-conical" : "file-code"} size={13} color={n.changed ? env.palette.accent : n.test ? "var(--foreground)" : "var(--muted-foreground)"} />
               <button type="button" onClick={() => open(n.path)} className={cn("min-w-0 truncate rounded text-left hover:underline", FOCUS)} title={n.path}>
                 <span className="text-muted-foreground">{dir}</span>
                 <span className={cn(n.changed && "font-medium")}>{base}</span>
@@ -97,7 +97,7 @@ function Blast({ model, title, depth }: { model: BlastModel; title?: string; dep
           <ul className="space-y-0.5">
             {tests.map((t) => (
               <li key={t} className="flex min-w-0 items-center gap-1.5 text-[12px]">
-                <Glyph name="flask-conical" size={12} color={env.palette.tone.good} />
+                <Glyph name="flask-conical" size={12} className="text-muted-foreground" />
                 <button type="button" onClick={() => open(t)} className={cn("min-w-0 truncate rounded font-mono text-[11.5px] hover:underline", FOCUS)}>
                   {t}
                 </button>

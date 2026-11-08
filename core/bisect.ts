@@ -115,7 +115,8 @@ export function bisectState(input: { commits?: unknown; log?: unknown; current?:
     if (c) {
       c.verdict = m.verdict;
       c.subject ??= m.subject;
-    } else if (!fromLog) problems.push(`${m.sha.slice(0, 7)} is marked ${m.verdict} but isn't in the commits`);
+    } else if (!fromLog && m.verdict !== "good") problems.push(`${m.sha.slice(0, 7)} is marked ${m.verdict} but isn't in the commits`);
+    // A good mark outside the list is expected: git log good..bad leaves the good commit out.
   }
   const current = typeof input.current === "string" && input.current.trim() ? input.current.trim() : null;
   if (!list.length) {
@@ -145,7 +146,9 @@ export function bisectState(input: { commits?: unknown; log?: unknown; current?:
   }
   candidates = candidates.filter((i) => verdicts[i] !== "good");
   const untested = candidates.filter((i) => verdicts[i] == null);
-  if (!found && !fromLog && badIdx >= 0 && goodIdx > badIdx && untested.length === 0 && candidates.every((i) => i === badIdx || verdicts[i] === "skip")) {
+  // The good end is a good commit in the list, or (for good..bad lists) the good mark the list leaves out.
+  const goodBelow = goodIdx > badIdx || (goodIdx < 0 && log.marks.some((m) => m.verdict === "good"));
+  if (!found && !fromLog && badIdx >= 0 && goodBelow && untested.length === 0 && candidates.every((i) => i === badIdx || verdicts[i] === "skip")) {
     if (candidates.length === 1) found = list[badIdx].sha;
     else problems.push("only skipped commits are left: the first bad commit is one of them or the bad one");
   }

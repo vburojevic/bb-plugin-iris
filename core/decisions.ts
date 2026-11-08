@@ -72,14 +72,25 @@ function timeOf(date: string | undefined): number | null {
   return Number.isFinite(t) ? t : null;
 }
 
-/** A Markdown table (| a | b |) as rows keyed by its header. */
+/** Every Markdown table (| a | b |) in the text as rows, each table keyed by its own header. */
 export function markdownRows(src: string): Obj[] {
-  const lines = src.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.startsWith("|"));
-  if (lines.length < 2) return [];
   const cells = (l: string) => l.replace(/^\|/, "").replace(/\|$/, "").split(/(?<!\\)\|/).map((c) => c.trim().replace(/\\\|/g, "|"));
-  const head = cells(lines[0]);
-  const body = lines.slice(1).filter((l) => !/^[|\s:-]+$/.test(l));
-  return body.map((l) => Object.fromEntries(cells(l).map((c, k) => [head[k] ?? `col${k}`, c])));
+  const blocks: string[][] = [];
+  let cur: string[] = [];
+  for (const raw of src.split(/\r?\n/)) {
+    const l = raw.trim();
+    if (l.startsWith("|")) cur.push(l);
+    else if (cur.length) (blocks.push(cur), (cur = []));
+  }
+  if (cur.length) blocks.push(cur);
+  const out: Obj[] = [];
+  for (const lines of blocks) {
+    // A table is a header line, a separator line, then rows.
+    if (lines.length < 2 || !/^[|\s:-]+$/.test(lines[1])) continue;
+    const head = cells(lines[0]);
+    for (const l of lines.slice(2)) if (!/^[|\s:-]+$/.test(l)) out.push(Object.fromEntries(cells(l).map((c, k) => [head[k] ?? `col${k}`, c])));
+  }
+  return out;
 }
 
 const strip = (s: string) => s.replace(/^~~(.*)~~$/, "$1").replace(/\*\*(.+?)\*\*/g, "$1");

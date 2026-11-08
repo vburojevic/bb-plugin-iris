@@ -32,8 +32,10 @@ function hashOf(s: string): number {
 export function FlamegraphView({ props }: ViewProps) {
   const pending = isPendingValue(props.profile);
   const model = useMemo(() => (pending ? null : parseProfile(props.profile, props.unit)), [pending, props.profile, props.unit]);
+  // A new profile starts unzoomed: the key gives Flame fresh state for every new model.
+  const key = useMemo(() => `${Math.random()}`, [model]);
   if (!model) return <Shimmer className="h-56" />;
-  return <Flame model={model} title={str(props.title)} />;
+  return <Flame key={key} model={model} title={str(props.title)} />;
 }
 
 interface Placed {

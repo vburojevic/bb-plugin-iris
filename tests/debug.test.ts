@@ -81,6 +81,14 @@ describe("SchemaDiff", () => {
     expect(by("drop_table")).toMatchObject({ table: "audit_log", risk: "destructive" });
   });
 
+  it("treats a change to text as lossless and reads nested index columns and MySQL ADD INDEX", () => {
+    const steps = migrationSteps("CREATE INDEX users_email_lower ON users (lower(email)); ALTER TABLE t ADD INDEX idx_a (a), ADD FULLTEXT KEY ft (body);", [{ name: "t", columns: [{ name: "id", type: "int" }] }]);
+    expect(steps[0].detail).toBe("Adds an index users_email_lower on lower(email)");
+    expect(steps.slice(1).map((s) => s.kind)).toEqual(["create_index", "create_index"]);
+    const toText = migrationSteps("ALTER TABLE t ALTER COLUMN id TYPE text;", [{ name: "t", columns: [{ name: "id", type: "integer" }] }]);
+    expect(toText[0].risk).toBe("safe");
+  });
+
   it("knows which type changes widen", () => {
     expect([widens("int", "bigint"), widens("varchar(32)", "varchar(64)"), widens("varchar(64)", "text"), widens("bigint", "int"), widens("text", "integer"), widens("numeric(10,2)", "numeric(12,2)")]).toEqual([true, true, true, false, false, true]);
   });
@@ -185,6 +193,15 @@ describe("Flamegraph", () => {
     expect(sm.unit).toBe("samples");
   });
 
+  it("cuts very deep stacks instead of overflowing", () => {
+    const m = parseProfile(`${Array.from({ length: 20000 }, () => "a").join(";")} 1\n`);
+    expect(m.depth).toBe(400);
+    expect(m.total).toBe(1);
+    expect(flameSearch(m.root, "a").total).toBe(1);
+    expect(m.problems.join()).toMatch(/deeper than 400/);
+    expect(() => parseProfile({ shared: { frames: [] }, profiles: [{ type: "sampled", unit: "constructor", samples: [] }] })).not.toThrow();
+  });
+
   it("reads a nested tree and rejects what it can't read", () => {
     const m = parseProfile({ name: "root", value: 10, children: [{ name: "x", value: 6 }] });
     expect(m.root.children[0]).toMatchObject({ name: "root", self: 4, total: 10 });
@@ -226,6 +243,15 @@ a1b2c3d Release 2.3.0`;
       ["a1b2c3d", "good", false, false],
     ]);
     expect(m).toMatchObject({ good: "c3d4e5f", bad: "e5f6a7b", remaining: 1, steps: 1, suspect: "d4e5f6a", found: null });
+  });
+
+  it("reads a real good..bad list, which leaves the good commit out, without a false problem", () => {
+    const range = commits.split("\n").slice(0, 4).join("\n");
+    const m = bisectState({ commits: range, log });
+    expect(m.problems).toEqual([]);
+    expect(m.commits.filter((c) => c.inRange).map((c) => c.sha)).toEqual(["e5f6a7b", "d4e5f6a"]);
+    const done = bisectState({ commits: "e5f6a7b Cache the session token", log });
+    expect(done.found).toBe("e5f6a7b");
   });
 
   it("finds the first bad commit once the range is one commit", () => {

@@ -129,6 +129,20 @@ describe("AgentTrace", () => {
     expect(m.duration).toBe(2000);
   });
 
+  it("reads epoch seconds, milliseconds and microseconds by size", () => {
+    expect(normalizeTrace([{ name: "s", start: 1731000000.5, end: 1731000002 }]).duration).toBe(1500);
+    expect(normalizeTrace([{ name: "ms", start: 1731000000000, end: 1731000000250 }]).duration).toBe(250);
+    expect(normalizeTrace([{ name: "us", start: 1731000000000000, end: 1731000000040000 }]).duration).toBe(40);
+  });
+
+  it("survives parent loops and very deep chains", () => {
+    const loop = normalizeTrace([{ id: "a", parent: "b", name: "a" }, { id: "b", parent: "a", name: "b" }]);
+    expect(loop.flat).toHaveLength(2);
+    const chain = normalizeTrace(Array.from({ length: 300 }, (_, i) => ({ id: String(i), parent: String(i + 1), name: `s${i}`, ms: 1 })));
+    expect(Math.max(...chain.flat.map((s) => s.depth))).toBeLessThanOrEqual(64);
+    expect(chain.problems.join()).toMatch(/deeper than 64/);
+  });
+
   it("reads OpenTelemetry JSON with gen_ai attributes", () => {
     const m = normalizeTrace({
       resourceSpans: [

@@ -34,7 +34,9 @@ export function DecisionLogView({ props }: ViewProps) {
         <Problems items={model.problems} />
       </div>
     );
-  const rows = filterDecisions(model.rows, query, topic);
+  // A topic picked before the data changed may be gone; then the filter lets go of it.
+  const activeTopic = topic && model.topics.some((t) => t.name === topic) ? topic : null;
+  const rows = filterDecisions(model.rows, query, activeTopic);
   const inForce = model.rows.filter((r) => r.status === "active").length;
   return (
     <div className="min-w-0">
@@ -53,7 +55,7 @@ export function DecisionLogView({ props }: ViewProps) {
           {model.topics.length > 1 ? (
             <div className="iris-scroll-x -m-0.5 flex min-w-0 max-w-full gap-1 overflow-x-auto p-0.5" role="group" aria-label="Topics">
               {[{ name: null as string | null, count: model.rows.length }, ...model.topics].map((t) => (
-                <button key={t.name ?? "all"} type="button" aria-pressed={topic === t.name} onClick={() => setTopic(t.name)} className={cn("inline-flex h-7 shrink-0 items-center gap-1 rounded-full px-2.5 text-[12px] ring-1", topic === t.name ? "bg-foreground/10 text-foreground ring-foreground/25" : "text-muted-foreground ring-border hover:bg-state-hover hover:text-foreground", FOCUS)}>
+                <button key={t.name ?? "all"} type="button" aria-pressed={activeTopic === t.name} onClick={() => setTopic(t.name)} className={cn("inline-flex h-7 shrink-0 items-center gap-1 rounded-full px-2.5 text-[12px] ring-1", activeTopic === t.name ? "bg-foreground/10 text-foreground ring-foreground/25" : "text-muted-foreground ring-border hover:bg-state-hover hover:text-foreground", FOCUS)}>
                   {t.name ?? "All"}
                   <span className="tabular-nums text-muted-foreground">{t.count}</span>
                 </button>

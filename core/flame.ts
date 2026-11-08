@@ -28,6 +28,8 @@ export interface FlameModel {
 }
 
 export const MAX_FLAME_NODES = 30_000;
+/** Frames kept per stack; deeper ones fold into the last kept frame, which keeps every walk shallow. */
+export const MAX_FLAME_DEPTH = 400;
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => !!v && typeof v === "object" && !Array.isArray(v);
@@ -44,8 +46,15 @@ class Builder {
   root: FlameNode = { name: "all", self: 0, total: 0, children: [], depth: 0 };
   private index = new Map<FlameNode, Map<string, FlameNode>>();
   count = 0;
+  /** Set when a stack was cut to MAX_FLAME_DEPTH frames. */
+  cut = false;
   add(stack: Frame[], weight: number) {
     if (!(weight > 0)) return;
+    // Deeper stacks keep their callers; the rest of the stack's time lands on the last frame kept.
+    if (stack.length > MAX_FLAME_DEPTH) {
+      stack = stack.slice(0, MAX_FLAME_DEPTH);
+      this.cut = true;
+    }
     let node = this.root;
     node.total += weight;
     for (const f of stack) {
@@ -105,20 +114,21 @@ function fromCpuNodes(nodes: CpuNode[], samples: number[], deltas: number[], spa
     const per = span && hits ? span / hits : 1000;
     for (const n of nodes) if (n.hitCount) weight.set(n.id, n.hitCount * per);
   }
-  const paths = new Map<number, Frame[]>();
-  const pathOf = (id: number, guard = 0): Frame[] => {
-    const hit = paths.get(id);
-    if (hit) return hit;
-    const n = byId.get(id);
-    if (!n || guard > 2000) return [];
-    const cf = n.callFrame ?? {};
-    const raw = typeof cf.functionName === "string" ? cf.functionName : "";
-    const p = parent.get(id);
-    const up = p != null ? pathOf(p, guard + 1) : [];
-    // "(root)" is the tree's own root, not a frame anyone wrote.
-    const out = raw === "(root)" && p == null ? up : [...up, { name: raw || "(anonymous)", file: shortFile(cf.url), line: typeof cf.lineNumber === "number" && cf.lineNumber >= 0 ? cf.lineNumber + 1 : undefined }];
-    paths.set(id, out);
-    return out;
+  // Walk up to the root without recursion; a parent loop stops after as many steps as there are nodes.
+  const pathOf = (id: number): Frame[] => {
+    const out: Frame[] = [];
+    let cur: number | undefined = id;
+    for (let steps = 0; cur != null && steps <= byId.size; steps++) {
+      const n = byId.get(cur);
+      if (!n) break;
+      const cf = n.callFrame ?? {};
+      const raw = typeof cf.functionName === "string" ? cf.functionName : "";
+      const p = parent.get(cur);
+      // "(root)" is the tree's own root, not a frame anyone wrote.
+      if (!(raw === "(root)" && p == null)) out.push({ name: raw || "(anonymous)", file: shortFile(cf.url), line: typeof cf.lineNumber === "number" && cf.lineNumber >= 0 ? cf.lineNumber + 1 : undefined });
+      cur = p;
+    }
+    return out.reverse();
   };
   for (const [id, w] of weight) b.add(pathOf(id), w / 1000);
 }
@@ -221,7 +231,7 @@ function speedscope(v: Obj, b: Builder, problems: string[]): string {
   const p = profiles[pick] ?? profiles[0];
   if (!p) return "ms";
   if (profiles.length > 1) problems.push(`showing profile ${pick + 1} of ${profiles.length}${typeof p.name === "string" ? `: ${p.name}` : ""}`);
-  const [k, unit] = SPEEDSCOPE_UNITS[String(p.unit)] ?? [1, String(p.unit ?? "samples")];
+  const [k, unit] = Object.hasOwn(SPEEDSCOPE_UNITS, String(p.unit)) ? SPEEDSCOPE_UNITS[String(p.unit)] : [1, String(p.unit ?? "samples")];
   const fr = (i: unknown) => frames[num(i) ?? -1] ?? { name: `frame ${String(i)}` };
   if (p.type === "evented" && Array.isArray(p.events)) {
     const stack: Frame[] = [];
@@ -332,6 +342,7 @@ export function parseProfile(input: unknown, unitHint?: unknown): FlameModel {
   const root = b.root;
   if (format === "none" && input != null && !problems.length) problems.push("not a profile Iris reads: give a .cpuprofile, Chrome trace, speedscope JSON, folded stacks or {name, value, children}");
   else if (input != null && root.total <= 0 && !problems.length) problems.push("the profile has no samples");
+  if (b.cut) problems.push(`stacks deeper than ${MAX_FLAME_DEPTH} frames are cut there`);
   let nodes = b.count;
   if (nodes > MAX_FLAME_NODES) {
     nodes = prune(root, root.total / 20_000);

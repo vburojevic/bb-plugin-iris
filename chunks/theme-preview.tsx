@@ -31,7 +31,10 @@ export function ThemePreviewView({ props }: ViewProps) {
   const pending = isPendingValue(props.vars);
   const theme = useMemo(() => (pending ? null : readTheme(props.vars)), [pending, props.vars]);
   const initial: Mock = props.mock === "form" || props.mock === "pricing" ? props.mock : "app";
-  const [mock, setMock] = useState<Mock>(initial);
+  const [picked, setPicked] = useState<{ mock: Mock; from: Mock } | null>(null);
+  // The prop wins when it changes (a bound Select); a tab the person picked holds until then.
+  const mock = picked && picked.from === initial ? picked.mock : initial;
+  const setMock = (m: Mock) => setPicked({ mock: m, from: initial });
   if (!theme) return <Shimmer className="h-72" />;
   const style = themeStyle(theme, (c) => {
     try {

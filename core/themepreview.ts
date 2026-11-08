@@ -53,10 +53,14 @@ const ALIASES: Record<string, ThemeToken> = {
 
 const squash = (k: string) => k.toLowerCase().replace(/^-+/, "").replace(/[^a-z]/g, "");
 
+const SAFE_FUNCTIONS = new Set(["rgb", "rgba", "hsl", "hsla", "hwb", "lab", "lch", "oklab", "oklch", "color", "color-mix", "light-dark", "var", "calc", "min", "max", "clamp"]);
+
 /** A CSS value that can't leave its declaration or fetch anything. */
 export function safeCss(v: string): boolean {
   if (v.length > 200) return false;
   if (/[;{}<>\\]|\/\*|url\s*\(|image\s*\(|image-set|@import|expression\s*\(|attr\s*\(|env\s*\(/i.test(v)) return false;
+  // Only color and math functions: nothing that loads (url, image, src) or reads outside (attr, env).
+  for (const m of v.matchAll(/([a-z-]+)\s*\(/gi)) if (!SAFE_FUNCTIONS.has(m[1].toLowerCase())) return false;
   // Parentheses and quotes must balance, or the value spills into the next one.
   let depth = 0;
   for (const ch of v) {
@@ -82,7 +86,7 @@ export function readTheme(vars: unknown): ThemeModel {
   if (vars != null && (typeof vars !== "object" || Array.isArray(vars))) problems.push("vars should be an object like {primary: \"#4F46E5\", radius: 10}");
   const entries = vars && typeof vars === "object" && !Array.isArray(vars) ? Object.entries(vars as Record<string, unknown>) : [];
   for (const [k, raw] of entries) {
-    const token = ALIASES[squash(k)];
+    const token = Object.hasOwn(ALIASES, squash(k)) ? ALIASES[squash(k)] : undefined;
     if (!token) {
       problems.push(`${k} isn't a theme token; use ${THEME_TOKENS.join(", ")}`);
       continue;

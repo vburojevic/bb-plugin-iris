@@ -54,11 +54,21 @@ const numberOf = (v: unknown): number | null => {
   return null;
 };
 
-/** A time as ms: epoch ms, epoch seconds, ISO text or unix nanoseconds (OpenTelemetry). */
+/** Epoch numbers by size: seconds, milliseconds, microseconds or nanoseconds, all to ms. Small numbers are ms offsets. */
+function epochMs(n: number): number {
+  const a = Math.abs(n);
+  if (a >= 1e17) return n / 1e6;
+  if (a >= 1e14) return n / 1e3;
+  if (a >= 1e11) return n;
+  if (a >= 1e9) return n * 1000;
+  return n;
+}
+
+/** A time as ms: epoch seconds, ms, µs or ns (OpenTelemetry sends ns as digit strings), ISO text, or an offset in ms. */
 function timeOf(v: unknown): number | null {
-  if (typeof v === "string" && /^\d{16,}$/.test(v.trim())) return Number(BigInt(v.trim()) / 1000n) / 1000;
+  if (typeof v === "string" && /^\d{17,}$/.test(v.trim())) return Number(BigInt(v.trim()) / 1000n) / 1000;
   const n = numberOf(v);
-  if (n != null) return n > 1e15 ? n / 1e6 : n;
+  if (n != null) return epochMs(n);
   if (typeof v === "string") {
     const t = Date.parse(v);
     return Number.isFinite(t) ? t : null;

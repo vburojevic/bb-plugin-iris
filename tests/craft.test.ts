@@ -34,6 +34,15 @@ describe("DecisionLog", () => {
     expect(normalizeDecisions("no table here").problems[0]).toMatch(/no Markdown table/);
   });
 
+  it("reads each Markdown table under its own header", () => {
+    const md = "## October\n\n| Topic | Decision |\n|---|---|\n| API | REST |\n\n## November\n\n| Decision | Who | Date |\n|---|---|---|\n| Passkeys | Vedran | 2026-11-01 |\n";
+    const m = normalizeDecisions(md);
+    expect(m.rows.map((r) => [r.decision, r.by ?? null])).toEqual([
+      ["Passkeys", "Vedran"],
+      ["REST", null],
+    ]);
+  });
+
   it("filters by topic and every word", () => {
     const m = normalizeDecisions([{ topic: "Auth", decision: "Passkeys only", why: "No passwords" }, { topic: "Storage", decision: "SQLite", why: "Offline" }]);
     expect(filterDecisions(m.rows, "pass words", null)).toHaveLength(1);
@@ -52,7 +61,7 @@ describe("ThemePreview", () => {
   });
 
   it("refuses values that could leave the declaration or fetch", () => {
-    for (const bad of ["red; background: blue", "url(https://x.test/a.png)", "red} body{color:red", "image-set('a.png' 1x)", "calc(1px", "\\72 ed"]) expect(safeCss(bad), bad).toBe(false);
+    for (const bad of ["src(x.png)", "paint(worklet)", "red; background: blue", "url(https://x.test/a.png)", "red} body{color:red", "image-set('a.png' 1x)", "calc(1px", "\\72 ed"]) expect(safeCss(bad), bad).toBe(false);
     for (const ok of ["#fff", "oklch(0.7 0.15 250)", "color-mix(in oklab, #fff 20%, transparent)", "12px", '"SF Pro", system-ui']) expect(safeCss(ok), ok).toBe(true);
     const m = readTheme({ primary: "url(x)", nope: "1" });
     expect(m.values.primary.given).toBe(false);

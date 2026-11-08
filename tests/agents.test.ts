@@ -129,6 +129,12 @@ describe("AgentTrace", () => {
     expect(m.duration).toBe(2000);
   });
 
+  it("reads epoch seconds, milliseconds and microseconds by size", () => {
+    expect(normalizeTrace([{ name: "s", start: 1731000000.5, end: 1731000002 }]).duration).toBe(1500);
+    expect(normalizeTrace([{ name: "ms", start: 1731000000000, end: 1731000000250 }]).duration).toBe(250);
+    expect(normalizeTrace([{ name: "us", start: 1731000000000000, end: 1731000000040000 }]).duration).toBe(40);
+  });
+
   it("survives parent loops and very deep chains", () => {
     const loop = normalizeTrace([{ id: "a", parent: "b", name: "a" }, { id: "b", parent: "a", name: "b" }]);
     expect(loop.flat).toHaveLength(2);

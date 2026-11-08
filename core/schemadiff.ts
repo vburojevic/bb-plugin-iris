@@ -92,13 +92,15 @@ function typeParts(t: string): { base: string; args: number[] } {
   const s = t.toLowerCase().replace(/\s+using\s[\s\S]*$/, "").replace(/\s+/g, " ").trim().replace(/\[\]$/, "");
   const m = /^([a-z ]+?)\s*(?:\(([^)]*)\))?(?:\s+(?:unsigned|zerofill|collate\s+\S+))*$/.exec(s);
   const base = (m ? m[1] : s).trim();
-  return { base: ALIASES[base] ?? base, args: m?.[2] ? m[2].split(",").map((x) => Number(x.trim())).filter(Number.isFinite) : [] };
+  return { base: (Object.hasOwn(ALIASES, base) ? ALIASES[base] : undefined) ?? base, args: m?.[2] ? m[2].split(",").map((x) => Number(x.trim())).filter(Number.isFinite) : [] };
 }
 
 /** Whether a column can change from type a to b without losing or rejecting values. */
 export function widens(a: string, b: string): boolean {
   const x = typeParts(a);
   const y = typeParts(b);
+  // Any value has a text form: text, citext and varchar with no length hold them all.
+  if (["text", "citext"].includes(y.base) || (y.base === "varchar" && !y.args.length)) return true;
   if (x.base === y.base) {
     if (!y.args.length) return true;
     if (!x.args.length) return false;
@@ -203,6 +205,11 @@ function alterActions(table: string, actions: string, sql: string, known: Known)
       steps.push({ kind: "add_constraint", table, detail: `Adds a ${what} constraint${m[1] ? ` ${unq(m[1].trim().split(/\s+/)[1])}` : ""}`, risk: isNew ? "safe" : "risky", why: isNew ? undefined : "checks every existing row and fails if one breaks it", sql });
       continue;
     }
+    if ((m = /^add\s+(unique\s+)?(?:(?:fulltext|spatial)\s+)?(?:index|key)\b\s*([^\s(]*)\s*\(([\s\S]*)\)\s*$/i.exec(a))) {
+      const unique = !!m[1];
+      steps.push({ kind: "create_index", table, detail: `Adds ${unique ? "a unique" : "an"} index${m[2] ? ` ${unq(m[2])}` : ""} on ${m[3].trim()}`, risk: unique && !isNew ? "risky" : "safe", why: unique && !isNew ? "fails if existing rows have duplicates" : undefined, sql });
+      continue;
+    }
     if ((m = /^add\s+(?:column\s+)?(?:if\s+not\s+exists\s+)?([\s\S]+)$/i.exec(a))) {
       const c = columnDef(m[1]);
       setType(c.name, c.type);
@@ -266,6 +273,16 @@ function typeStep(table: string, column: string, from: string | undefined, to: s
   return { kind: "alter_type", table, column, detail: `Changes ${column} from ${from} to ${to}`, risk: ok ? "safe" : "destructive", why: ok ? undefined : "narrows the type: values that don't fit are cut or make it fail", sql };
 }
 
+/** The text inside the parenthesis that opens at `open`, nested ones included. */
+function parenBody(text: string, open: number): string {
+  let depth = 0;
+  for (let i = open; i < text.length; i++) {
+    if (text[i] === "(") depth++;
+    else if (text[i] === ")" && --depth === 0) return text.slice(open + 1, i);
+  }
+  return text.slice(open + 1);
+}
+
 function statementSteps(stmt: string, known: Known): SchemaStep[] {
   const sql = stmt.length > 400 ? `${stmt.slice(0, 400)}...` : stmt;
   let m: RegExpExecArray | null;
@@ -285,7 +302,8 @@ function statementSteps(stmt: string, known: Known): SchemaStep[] {
   }
   if ((m = new RegExp(String.raw`^alter\s+table\s+(?:if\s+exists\s+)?(?:only\s+)?(${QNAME})\s+([\s\S]+)$`, "i").exec(stmt))) return alterActions(tableName(m[1]), m[2], sql, known);
   if ((m = new RegExp(String.raw`^rename\s+table\s+(${QNAME})\s+to\s+(${QNAME})`, "i").exec(stmt))) return [{ kind: "rename_table", table: tableName(m[1]), detail: `Renames the table to ${tableName(m[2])}`, risk: "risky", why: "code still using the old name breaks until it ships", sql }];
-  if ((m = new RegExp(String.raw`^create\s+(unique\s+)?index\s+(concurrently\s+)?(?:if\s+not\s+exists\s+)?(?:(${QNAME})\s+)?on\s+(?:only\s+)?(${QNAME})\s*(?:using\s+\w+\s*)?\(([^)]*)\)`, "i").exec(stmt))) {
+  if ((m = new RegExp(String.raw`^create\s+(unique\s+)?index\s+(concurrently\s+)?(?:if\s+not\s+exists\s+)?(?:(${QNAME})\s+)?on\s+(?:only\s+)?(${QNAME})\s*(?:using\s+\w+\s*)?\(`, "i").exec(stmt))) {
+    m[5] = parenBody(stmt, m.index + m[0].length - 1);
     const table = tableName(m[4]);
     const isNew = known.created.has(key(table));
     const unique = !!m[1];

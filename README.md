@@ -550,7 +550,7 @@ An agent can keep a card in a file and show it inline: it writes the markup to `
 
 `iris_cards` (or `bb iris cards [--json]`, or the `cards.list` RPC) lists the thread's cards, newest last, with what the person set in each: a slider's value, a pick, typed notes, stored values. An agent can act on a card's state without asking again.
 
-`iris_card_set` sets those inputs instead: `{card: 2, values: {seats: 20}}`, `bb iris set 2 seats=20`, or the `cards.set` RPC. Each value must be a `<state>` the card declares and keep its type; the card is checked with the new values first, and an open card redraws with them at once. The agent can show the person another scenario in the card they already have.
+`iris_card_set` sets those inputs instead: `{card: "<id>", values: {seats: 20}}` with the card's id from `iris_cards` (or its number), `bb iris set <id> seats=20`, or the `cards.set` RPC. Each value must be a `<state>` the card declares and keep its type; the card is checked with the new values first, and an open card redraws with them at once. The agent can show the person another scenario in the card they already have.
 
 ### Checks that read the real data
 

@@ -111,6 +111,7 @@ export function IrisBlock(props: BlockProps) {
     rpc.call("state_get", { key: stateKey }).then(
       (r) => {
         // "@" keys hold a component's own progress (a quiz round, a timer), saved beside <state>.
+        if (r.state) lastSaved.current = { ...r.state };
         if (r.state) for (const [k, v] of Object.entries(r.state)) if (runtime.hasState(k) || k.startsWith("@")) runtime.state.set(k, v);
         if (r.state) runtime.update(runtime.program);
         setReady(true);
@@ -119,17 +120,24 @@ export function IrisBlock(props: BlockProps) {
     );
   }, [stateKey, streaming, rpc, runtime]);
   const savedVersion = useRef(-1);
+  /** The state as last read from or written to storage, to tell the person's unsaved changes apart. */
+  const lastSaved = useRef<Record<string, unknown>>({});
   // The agent set this card's inputs (iris_card_set): read the saved state again and show it.
   useRealtime("iris-card-state", (payload) => {
     const p = payload as { threadId?: unknown; item?: unknown } | null;
     if (!stateKey || streaming || !p || p.threadId !== threadId || typeof p.item !== "string" || !stateKey.endsWith(`|${p.item}`)) return;
+    const asked = runtime.version;
     rpc.call("state_get", { key: stateKey }).then(
       (r) => {
         if (!r.state) return;
-        for (const [k, v] of Object.entries(r.state)) if (runtime.hasState(k)) runtime.state.set(k, v);
+        // The person's unsaved change (still in its debounce, or made while this read ran) wins: it saves after this.
+        const untouched = runtime.version === asked && savedVersion.current === asked;
+        const mine = (k: string) => JSON.stringify(runtime.state.get(k)) !== JSON.stringify(lastSaved.current[k]);
+        for (const [k, v] of Object.entries(r.state)) if (runtime.hasState(k) && (untouched || !mine(k))) runtime.state.set(k, v);
+        lastSaved.current = { ...lastSaved.current, ...r.state };
         runtime.update(runtime.program);
-        // What was just read is already saved: don't write it back.
-        savedVersion.current = runtime.version;
+        // What was just read is already saved: don't write it back, unless the person changed something too.
+        if (untouched) savedVersion.current = runtime.version;
       },
       () => undefined,
     );
@@ -145,7 +153,9 @@ export function IrisBlock(props: BlockProps) {
     if (savedVersion.current === runtime.version || runtime.state.size === 0) return;
     const t = setTimeout(() => {
       savedVersion.current = runtime.version;
-      rpc.call("state_set", { key: stateKey, state: jsonSafe(runtime.snapshot()) }).catch(() => undefined);
+      const snapshot = jsonSafe(runtime.snapshot());
+      lastSaved.current = snapshot;
+      rpc.call("state_set", { key: stateKey, state: snapshot }).catch(() => undefined);
     }, 600);
     return () => clearTimeout(t);
   });

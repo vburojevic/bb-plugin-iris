@@ -15,7 +15,7 @@ Iris renders ```iris blocks in assistant replies as live UI in the person's bb t
 - `bb iris pin <file> [--id <id>] [--title <title>] [--once]`: pins the card in the file beside this thread's conversation and follows the file (re-read every 3 s), so rewriting it updates the pin; `--once` stores the card as it is now. Checked first; at most 5 pins per thread; the same id replaces a pin. The iris_pin tool does the same.
 - `bb iris unpin <id>` or `--all`, and `bb iris pins [--json]`: remove and list this thread's pins (iris_unpin, iris_pins).
 - `bb iris cards [--json]`: this thread's cards with what the person set in each (iris_cards; the cards.list RPC for other clients).
-- `bb iris set <n> name=value [name=value...]` or `--json '{...}'`: sets inputs in card #n from `bb iris cards`; each must be a <state> the card declares and keep its type, and an open card redraws (iris_card_set; the cards.set RPC).
+- `bb iris set <id|n> name=value [name=value...]` or `--json '{...}'`: sets inputs in a card from `bb iris cards`, by its id (message#index, stable) or number; each must be a <state> the card declares and keep its type, and an open card redraws (iris_card_set; the cards.set RPC).
 - `bb iris feed check <plugin>/<name>`: reads a plugin's Iris data feed the way a card does (load("plugin:<plugin>/<name>")) and prints whether it answers, its type, size, time and caching, and the fields a card can use. Exit 1 when a card couldn't read it.
 - `bb plugin rpc call iris pins.list|pins.set|pins.remove --input-file <json>`: the same pins for any client, by threadId.
 

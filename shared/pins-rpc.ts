@@ -57,8 +57,8 @@ export const cardsContract = defineRpcContract({
   },
   "cards.set": {
     experimental_description:
-      "Sets inputs in one of the thread's ```iris cards by its n from cards.list: values by <state> name, each keeping its type. The card is checked with them first (refused with the report on errors); open views redraw with the new values.",
-    input: z.object({ threadId, card: z.number().int().min(1), values: z.record(z.string(), z.unknown()) }),
+      "Sets inputs in one of the thread's ```iris cards, named by \"<message>#<index>\" (stable) or its n from cards.list: values by <state> name, each keeping its type. The card is checked with them first (refused with the report on errors); open views redraw with the new values.",
+    input: z.object({ threadId, card: z.union([z.number().int().min(1), z.string().min(1).max(200)]), values: z.record(z.string(), z.unknown()) }),
     output: z.union([z.object({ ok: z.literal(true), card, changed: z.array(z.string()), report: z.string() }), z.object({ ok: z.literal(false), error: z.string() })]),
   },
 });

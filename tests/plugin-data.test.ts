@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CardRuntime, compile } from "../core/program";
-import { loadPluginData, parsePluginAnswer, parsePluginSource, pluginDataPath } from "../core/plugin-data";
+import { checkFeed, loadPluginData, parsePluginAnswer, parsePluginSource, pluginDataPath } from "../core/plugin-data";
 
 describe("plugin data contract", () => {
   it("reads a plugin id, a name and a query", () => {
@@ -28,7 +28,7 @@ describe("plugin data contract", () => {
   });
 
   it("explains a missing route, a failure and an oversize answer", async () => {
-    const answer = (status: number, body = "", headers: Record<string, string> = {}) => (async () => new Response(body, { status, headers })) as unknown as typeof fetch;
+    const answer = (status: number, body = "", headers: Record<string, string> = {}) => (async () => new Response(new TextEncoder().encode(body), { status, headers })) as unknown as typeof fetch;
     expect(await loadPluginData("plugin:p/x", "thr_1", false, answer(404), "http://h")).toMatchObject({ ok: false, error: expect.stringContaining("has no Iris data named") });
     expect(await loadPluginData("plugin:p/x", "thr_1", false, answer(500), "http://h")).toMatchObject({ ok: false, error: expect.stringContaining("answered 500") });
     expect(await loadPluginData("plugin:p/x", "thr_1", false, answer(200, "{}", { "content-length": String(10 * 1024 * 1024) }), "http://h")).toMatchObject({ ok: false });
@@ -103,5 +103,27 @@ describe("web image literals", () => {
     expect(set.has("https://cdn.example.com/a.png")).toBe(true);
     expect(set.has("https://evil.tld/aaaa")).toBe(false);
     expect(set.has("https://evil.tld/aaaaaaaa")).toBe(true);
+  });
+});
+
+describe("feed check", () => {
+  const answer = (body: string, headers: Record<string, string>, status = 200) => (async () => new Response(new TextEncoder().encode(body), { status, headers })) as unknown as typeof fetch;
+  it("reports type, size and the fields a card can use", async () => {
+    const r = await checkFeed("acme/builds", "thr_1", "http://127.0.0.1:1", answer('[{"name":"api","ms":420},{"name":"web"}]', { "content-type": "application/json", "cache-control": "no-store" }));
+    expect(r.ok).toBe(true);
+    expect(r.lines[1]).toBe("GET /api/v1/plugins/acme/http/iris/builds?thread=thr_1");
+    expect(r.lines).toContain("Value: list of 2");
+    expect(r.lines).toContain("  ms: number 420 (in 1 of 2 rows)");
+  });
+  it("warns about a missing content-type and caching", async () => {
+    const r = await checkFeed("plugin:acme/rows.csv", null, "http://127.0.0.1:1", answer("a,b\n1,2\n", {}));
+    expect(r.ok).toBe(true);
+    expect(r.lines.some((l) => l.startsWith("Warning: no content-type"))).toBe(true);
+    expect(r.lines.some((l) => l.startsWith("Warning: cache-control is unset"))).toBe(true);
+  });
+  it("fails on errors a card would show", async () => {
+    expect((await checkFeed("acme/x", null, "http://127.0.0.1:1", answer("", {}, 500))).lines.at(-1)).toContain("answered 500");
+    expect((await checkFeed("acme/x", null, "http://127.0.0.1:1", answer("{broken", { "content-type": "application/json" }))).ok).toBe(false);
+    expect((await checkFeed("acme", null, "http://127.0.0.1:1", answer("", {}))).ok).toBe(false);
   });
 });

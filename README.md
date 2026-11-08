@@ -542,13 +542,21 @@ The thread's agent can pin too, for a status it keeps current:
 - From a shell: `bb iris pin <file> [--id fleet] [--title ...] [--once]`, `bb iris unpin <id>|--all` and `bb iris pins [--json]`. These act on the thread they run in only.
 - Any client can use the same pins through `bb plugin rpc call iris pins.list|pins.set|pins.remove` (listed by `bb plugin rpc list iris`).
 
-### Read back what the person set
+### A card that lives in a file
+
+An agent can keep a card in a file and show it inline: it writes the markup to `$BB_THREAD_STORAGE/status.iris` and puts `::iris{file="$BB_THREAD_STORAGE/status.iris"}` on its own line in a reply. The card follows the file, read again every 3 seconds while it is on screen, so rewriting the file updates the card in place. A failed read keeps the last good card with a note. The same file can be pinned with `iris_pin` to keep it in view.
+
+### Read back what the person set, and set it
 
 `iris_cards` (or `bb iris cards [--json]`, or the `cards.list` RPC) lists the thread's cards, newest last, with what the person set in each: a slider's value, a pick, typed notes, stored values. An agent can act on a card's state without asking again.
+
+`iris_card_set` sets those inputs instead: `{card: 2, values: {seats: 20}}`, `bb iris set 2 seats=20`, or the `cards.set` RPC. Each value must be a `<state>` the card declares and keep its type; the card is checked with the new values first, and an open card redraws with them at once. The agent can show the person another scenario in the card they already have.
 
 ### Checks that read the real data
 
 iris_check and `bb iris check` read the card's files, bb data and plugin feeds (`plugin:` sources, up to 5 seconds each) the way the card will, and warn when a required prop comes out empty, naming the fields the data does have (`<Metric value> is empty: it has no field "ship"; its fields are ships, status`).
+
+They also warn when a Table or Gallery holds data a more specific component draws better, with the rewrite built from the card's own columns: before and after values point at Delta, checks with results at Acceptance, severity and file at Findings, colors at Swatches or Variants, screenshots captioned by device or theme at Screens, and before and after shots at Compare (`<Table> reads as before and after (case, before, after): <Delta rows={rows.map((r) => ({ label: r.case, before: r.before, after: r.after }))} />`). Warnings never block a card.
 
 ### Ask for a card, or take one to the browser
 
@@ -564,14 +572,14 @@ Any bb plugin can feed live data to Iris cards without Iris knowing about it. Se
 bb.http.route("GET", "/iris/status", (c) => Response.json(statusFor(c.req.query("thread"))), { auth: "local" });
 ```
 
-Cards then read it with `load("plugin:<your-plugin-id>/status")`. Iris fetches `/api/v1/plugins/<id>/http/iris/status?thread=<threadId>` from bb's own page, parses it by content type, and re-reads it every 2 seconds inside a `<Card state="live">`. Only the `/iris/` prefix is ever read, answers are capped at 4 MB, and query keys pass through (`plugin:notes/today?tag=work`). Teach your plugin's agents to draw it with a line in your own instructions; Iris needs no change. Iris serves a sample at `plugin:iris/example`.
+Cards then read it with `load("plugin:<your-plugin-id>/status")`. Check a feed the way a card reads it with `bb iris feed check <your-plugin-id>/status`: whether it answers, its content type, size and time, caching, and the fields a card can use. Iris fetches `/api/v1/plugins/<id>/http/iris/status?thread=<threadId>` from bb's own page, parses it by content type, and re-reads it every 2 seconds inside a `<Card state="live">`. Only the `/iris/` prefix is ever read, answers are capped at 4 MB, and query keys pass through (`plugin:notes/today?tag=work`). Teach your plugin's agents to draw it with a line in your own instructions; Iris needs no change. Iris serves a sample at `plugin:iris/example`.
 
 > [!IMPORTANT]
 > Treat everything under `/iris/` as readable by any card in any thread. The `thread` parameter is a hint for scoping, not access control, so publish only what any agent may show. Cards can't send it to a place of their choosing: they make no network requests of their own, and a web image or media file loads only when its full URL is written in the block. With `webLookups` on, a map's places and a photo's search words do go to OpenStreetMap, Photon and Wikimedia Commons through Iris's server, so don't feed private data into those. A card choosing among several written URLs can still signal which one it picked, so don't publish secrets.
 
 ## For agents
 
-Agents get four tools, and the same checks run from a shell.
+Agents get these tools, and the same checks run from a shell. `iris_examples(["Recipes"])` returns patterns that combine them: a status card that follows a file, a Variants picker, and setting a card's inputs.
 
 <details>
 <summary><b>Agent tools</b></summary>
@@ -581,8 +589,10 @@ Agents get four tools, and the same checks run from a shell.
 |---|---|
 | `iris_check` | Validates a block, reads its files, moves every input to its extremes, and returns an outline of what the person will see; an iris-react module is compiled and its imports checked |
 | `iris_docs` | Every prop and an example for the named components |
-| `iris_examples` | Working examples for whole component families |
+| `iris_examples` | Working examples for whole component families, and recipes (`["Recipes"]`) |
 | `iris_ask` | A waiting picker written in Iris markup, an iris-react app or HTML; the answer comes back as JSON |
+| `iris_pin`, `iris_unpin`, `iris_pins` | Pin a card (or a file holding one) beside the conversation, unpin, list |
+| `iris_cards`, `iris_card_set` | Read what the person set in the thread's cards, and set a card's inputs |
 
 </details>
 
@@ -596,6 +606,9 @@ Agents get four tools, and the same checks run from a shell.
 | `bb iris components` | Lists every component with its one-line summary |
 | `bb iris docs <Name>` | Every prop and an example for the named components |
 | `bb iris try "<prompt>"` | Runs a prompt in a subthread that knows Iris |
+| `bb iris pin <file>`, `bb iris unpin <id>`, `bb iris pins` | Pin, unpin and list this thread's pinned cards |
+| `bb iris cards`, `bb iris set <n> name=value` | List this thread's cards with their inputs, and set a card's inputs |
+| `bb iris feed check <plugin>/<name>` | Checks a plugin's Iris data feed the way a card reads it |
 
 </details>
 
@@ -631,7 +644,7 @@ Change one with `bb plugin config iris set <key> <value>`, then `bb plugin reloa
 
 ## Evals
 
-`npm run eval` runs 24 generic chat moments (status reports, mid-task progress updates, proof that something is done, PR and CI state, data to decide on) through Claude Code headless with exactly the instructions and tools Iris gives agents in bb (`iris_docs`, `iris_examples` and `iris_check`, served by `evals/mcp-server.ts`). Each answer is scored on an Iris block, a clean check, a fitting component and no markdown tables, plus a 1 to 5 judgment of fit. The current baseline scores 95.2 of 100. `npm run release:check` runs the tests, the type check and the eval gate, which fails when the score drops more than 3 points below `evals/baseline.json`.
+`npm run eval` runs 35 generic chat moments (status reports, mid-task progress updates, proof that something is done, PR and CI state, data to decide on, rich questions for the person, cards kept in view) through Claude Code headless with exactly the instructions and tools Iris gives agents in bb (`iris_docs`, `iris_examples`, `iris_check`, and stand-ins for `iris_ask` and `iris_pin` that log their calls, served by `evals/mcp-server.ts`). Each answer is scored on Iris being used (a block, a `::iris{file}` card, or a picker or pin), every card checking clean, a fitting component and tool, and no markdown tables, plus a 1 to 5 judgment of fit. Every case runs twice and scores the mean, so one unlucky answer moves the suite less. `npm run release:check` runs the tests, the type check, the site build and the eval gate, which fails when the score drops more than 3 points below `evals/baseline.json` and names the cases that fell most.
 
 ## Develop
 

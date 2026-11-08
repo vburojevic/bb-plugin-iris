@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { isPluginSource, loadPluginData } from "../core/plugin-data";
 import type { Parsed } from "../core/data";
 import { isBbSource } from "../core/bb-data";
-import { experimental_copyToClipboard, experimental_useAppPanel, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_copyToClipboard, experimental_useAppPanel, useBbNavigate, useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
 import { toast } from "sonner";
 import type { ElementNode } from "../core/ast";
 import { findComponent } from "../core/catalog";
@@ -119,6 +119,21 @@ export function IrisBlock(props: BlockProps) {
     );
   }, [stateKey, streaming, rpc, runtime]);
   const savedVersion = useRef(-1);
+  // The agent set this card's inputs (iris_card_set): read the saved state again and show it.
+  useRealtime("iris-card-state", (payload) => {
+    const p = payload as { threadId?: unknown; item?: unknown } | null;
+    if (!stateKey || streaming || !p || p.threadId !== threadId || typeof p.item !== "string" || !stateKey.endsWith(`|${p.item}`)) return;
+    rpc.call("state_get", { key: stateKey }).then(
+      (r) => {
+        if (!r.state) return;
+        for (const [k, v] of Object.entries(r.state)) if (runtime.hasState(k)) runtime.state.set(k, v);
+        runtime.update(runtime.program);
+        // What was just read is already saved: don't write it back.
+        savedVersion.current = runtime.version;
+      },
+      () => undefined,
+    );
+  });
   useEffect(() => {
     if (!stateKey || !ready || streaming) return;
     // The baseline is taken once ready, even with no state yet: a card whose only

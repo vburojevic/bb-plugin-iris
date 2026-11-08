@@ -1,6 +1,6 @@
 ---
 name: iris
-description: Iris draws live, interactive UI in bb chat from ```iris blocks (JSX-style markup), ```iris-react apps (TSX with Iris's own components) and ```iris-app HTML pages. Use when writing or debugging an Iris card, checking one with iris_check or `bb iris check`, asking a rich question with iris_ask, or changing the Iris plugin's settings.
+description: Iris draws live, interactive UI in bb chat from ```iris blocks (JSX-style markup), ```iris-react apps (TSX with Iris's own components) and ```iris-app HTML pages. Use when writing or debugging an Iris card, checking one with iris_check or `bb iris check`, asking a rich question with iris_ask, keeping a card in a file (::iris{file}), setting a card's inputs, checking a plugin's data feed, or changing the Iris plugin's settings.
 ---
 
 # Iris
@@ -15,7 +15,12 @@ Iris renders ```iris blocks in assistant replies as live UI in the person's bb t
 - `bb iris pin <file> [--id <id>] [--title <title>] [--once]`: pins the card in the file beside this thread's conversation and follows the file (re-read every 3 s), so rewriting it updates the pin; `--once` stores the card as it is now. Checked first; at most 5 pins per thread; the same id replaces a pin. The iris_pin tool does the same.
 - `bb iris unpin <id>` or `--all`, and `bb iris pins [--json]`: remove and list this thread's pins (iris_unpin, iris_pins).
 - `bb iris cards [--json]`: this thread's cards with what the person set in each (iris_cards; the cards.list RPC for other clients).
+- `bb iris set <n> name=value [name=value...]` or `--json '{...}'`: sets inputs in card #n from `bb iris cards`; each must be a <state> the card declares and keep its type, and an open card redraws (iris_card_set; the cards.set RPC).
+- `bb iris feed check <plugin>/<name>`: reads a plugin's Iris data feed the way a card does (load("plugin:<plugin>/<name>")) and prints whether it answers, its type, size, time and caching, and the fields a card can use. Exit 1 when a card couldn't read it.
 - `bb plugin rpc call iris pins.list|pins.set|pins.remove --input-file <json>`: the same pins for any client, by threadId.
+
+## File cards
+Write a card's markup to a file (for example `$BB_THREAD_STORAGE/status.iris`) and put `::iris{file="$BB_THREAD_STORAGE/status.iris"}` on its own line in a reply: the card draws inline and follows the file, re-read every 3 s while it shows. `iris_examples(["Recipes"])` has this pattern, a Variants picker, and setting a card's inputs.
 
 ## Settings (`bb plugin config iris`)
 - `stance`: `eager` (default) shows anything that can be shown; `balanced` keeps short answers as prose.

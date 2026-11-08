@@ -1,4 +1,4 @@
-// Iris frontend: renders ```iris, ```iris-app and ```iris-react blocks in chat, the waiting
+// Iris frontend: renders ```iris, ```iris-app and ```iris-react blocks in chat, ::iris{file} cards, the waiting
 // pickers agents open with iris_ask, the side-panel view of a card, and the
 // component gallery.
 import "./app.css";
@@ -8,6 +8,7 @@ import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { AppFrame } from "./ui/app-frame";
 import { IrisBlock } from "./ui/block";
 import { GalleryPage } from "./ui/gallery";
+import { FileCardDirective } from "./ui/file-card";
 import { PinnedInfoSection, PinnedSection } from "./ui/pins";
 import { Glyph } from "./ui/views/kit";
 import { surfaceBehind } from "./ui/surface";
@@ -112,6 +113,8 @@ const LANG = PLUGIN_ID === "iris" ? "iris" : PLUGIN_ID;
 export default definePluginApp((app) => {
   app.slots.experimental_codeFenceRenderer({ id: "iris", languages: [LANG, `${LANG}-app`, `${LANG}-react`], component: Fence });
   app.slots.pendingInteraction({ id: "iris-ask", component: AskPicker });
+  // ::iris{file="$BB_THREAD_STORAGE/status.iris"}: a card that lives in a file, inline in the message, following the file.
+  app.slots.messageDirective({ id: LANG, component: FileCardDirective });
   app.slots.experimental_tab({
     id: "iris-card",
     title: "Iris card",

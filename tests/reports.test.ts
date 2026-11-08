@@ -69,6 +69,7 @@ describe("prompt", () => {
   it("keeps what every session pays for small", () => {
     // About 3k tokens: the rules, the index and the code-work section. Details load on demand.
     const always = [mainInstructions("eager"), ...indexSections().map((s) => s.text), CODE_WORK_INSTRUCTIONS].join("\n");
+    // The marketplace listing promises under 4,000 tokens; 13,000 characters keeps that true.
     expect(always.length).toBeLessThan(13_000);
   });
   it("serves full docs on demand for every component", () => {

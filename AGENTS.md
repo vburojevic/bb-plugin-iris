@@ -14,14 +14,10 @@ A public, generic bb plugin: agents write ```iris blocks and bb draws them as li
 A change to what the plugin ships is done only when it has been released in full: all of the steps below, every time, not only the tag. Changes that ship nothing (AGENTS.md, evals, tests, scripts) land on main without a release.
 1. Gates: `npm run release:check` (tests, typecheck and the eval gate) passes. Every user-visible change has a screenshot from the dev bb or the site.
 2. Version: bump `version` in package.json and package-lock.json. Patch for fixes, minor for features. Commit as "Iris X.Y.Z".
-3. Docs: README, PLUGIN_OVERVIEW.md and the website (`site/landing.tsx`) describe every new feature and current numbers (component count, token cost).
+3. Docs: README and the website (`site/landing.tsx`) describe every new feature and current numbers (component count, token cost). PLUGIN_OVERVIEW.md is mirrored in the marketplace listing, so it stays evergreen: no exact counts ("well over a hundred components", "under 4,000 tokens", the bound `tests/reports.test.ts` enforces).
 4. Tag and release: push main, tag `vX.Y.Z` and push it, then `gh release create vX.Y.Z` with notes in user language (New, Safer, Fixed). Tags are never moved.
 5. Website: `node scripts/build-site.mjs`, sync `site-dist/` onto the `gh-pages` branch, push, and check the live page.
-6. Marketplace: nothing to send for a version bump. The entry's source range `^1.0.0` follows release tags, so bb offers every 1.x tag as an update on its own. Open a PR to get-bb/marketplace (from the fork vburojevic/marketplace) only when the listing itself should change:
-   - the description in `entries/iris.json` or `overview/iris.md` (a copy of PLUGIN_OVERVIEW.md) no longer matches, for example a new headline feature, the component count or the token cost;
-   - the screenshots in `screenshots/iris/` (at most six, taken fresh in the dev bb) no longer show what Iris looks like;
-   - a major version (2.0.0) needs the range raised.
-   Run the marketplace's own checks first. Any edit to the entry needs a maintainer's `v1-change` label.
+6. Marketplace: a release never opens a marketplace PR (owner, 2026-11-08: no PR per version bump). The entry's source range `>=1.0.0` follows release tags, so bb offers every new tag as an update on its own, majors included. The listing (`entries/iris.json`, `overview/iris.md` copied from PLUGIN_OVERVIEW.md, `screenshots/iris/`) lives in get-bb/marketplace because the marketplace only takes local or getbb.app images and inlines the overview at build; its text is evergreen (no exact counts), so it stays true across releases. A listing PR (from the fork vburojevic/marketplace, after the marketplace's own `npm run check` and `npm test`) happens only when the owner asks for one, for a new look or a new headline feature. Any edit to the entry needs a maintainer's `v1-change` label.
 7. Install: `bb plugin update iris --yes` on the owner's bb. Confirm `bb plugin list` shows the new version.
 
 ## vstack

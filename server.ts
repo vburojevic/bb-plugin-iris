@@ -8,15 +8,15 @@ import { PluginCliError, defineCli, cliCommand, type BbPluginApi } from "@get-bb
 import { z } from "zod";
 import { check, formatReport } from "./core/check";
 import { parseDataFile } from "./core/data";
-import { isPluginSource, loadPluginData, parsePluginSource } from "./core/plugin-data";
+import { checkFeed, isPluginSource, loadPluginData, parsePluginSource } from "./core/plugin-data";
 import { tailText } from "./core/live";
 import type { LoadResult } from "./core/program";
-import { CODE_WORK_INSTRUCTIONS, docsFor, examplesForGroups, indexSections, mainInstructions, type Stance } from "./core/prompt";
-import { CATALOG, GROUPS } from "./core/catalog";
+import { ASK_INSTRUCTIONS, CODE_WORK_INSTRUCTIONS, docsFor, exampleFamilies, examplesForGroups, indexSections, mainInstructions, type Stance } from "./core/prompt";
+import { CATALOG } from "./core/catalog";
 import { rpcContract, type FileUrlResult, type FolderFilesResult } from "./shared/rpc";
 import { cardsContract, pinsContract } from "./shared/pins-rpc";
 import { alertSyntaxError, checkAlert } from "./core/pin-alerts";
-import { cardsInMessage, isCardKey, personInputs, type CardRef } from "./core/cards";
+import { cardsInMessage, isCardKey, pendingKey, pendingKeyFor, personInputs, planInputs, type CardRef } from "./core/cards";
 import { MAX_ALERT_WHEN, MAX_PINS, MAX_PIN_SOURCE, type Pin, type PinBy, type PinnedThread, alertText, cardFromFile, needsAttention, newestPinnedFirst, stepAlert, cardTitle, normalizePins, pinId, removePin, upsertPin, validPinId } from "./core/pins";
 import { failure, parseChangesTarget, parsePathFilter, parseThreadIds } from "./core/project";
 import { createProjectSource } from "./project-source";
@@ -367,7 +367,10 @@ export default async function plugin(bb: BbPluginApi) {
     },
     async state_get({ key }) {
       const state = await bb.storage.kv.get<Record<string, unknown>>(`state:${key}`);
-      return { state: state ?? null };
+      if (state) return { state };
+      // Values the agent set (iris_card_set) before the card saved any of its own.
+      const pending = pendingKeyFor(key);
+      return { state: (pending ? await bb.storage.kv.get<Record<string, unknown>>(pending) : null) ?? null };
     },
     async state_set({ key, state }) {
       const size = JSON.stringify(state).length;
@@ -609,7 +612,8 @@ export default async function plugin(bb: BbPluginApi) {
 
   const MAX_CARDS = 30;
   type CardWithInputs = Omit<CardRef, "source"> & { n: number; inputs: Record<string, unknown> };
-  async function threadCards(threadId: string): Promise<CardWithInputs[]> {
+  type ListedCard = { card: CardRef; n: number; key: string | null };
+  async function listCards(threadId: string): Promise<ListedCard[]> {
     // Finished items, newest first, a page of 100 at a time until MAX_CARDS cards turn up (at most 5
     // pages), then read oldest first. An agent message's text is final in its item/completed event.
     type Row = { seq?: number | string; type?: string; data?: { item?: { type?: string; id?: string; text?: string } } };
@@ -633,19 +637,89 @@ export default async function plugin(bb: BbPluginApi) {
     const cards: CardRef[] = [...messages].flatMap(([id, text]) => cardsInMessage(id, text));
     const recent = cards.slice(-MAX_CARDS);
     const keys = await bb.storage.kv.list(`state:${threadId}:`);
-    return Promise.all(
-      recent.map(async ({ source: _source, ...card }, k) => {
-        const key = keys.find((x) => isCardKey(x, { ...card, source: "" }));
-        return { ...card, n: cards.length - recent.length + k + 1, inputs: key ? personInputs(await bb.storage.kv.get<unknown>(key)) : {} };
-      }),
-    );
+    return recent.map((card, k) => ({ card, n: cards.length - recent.length + k + 1, key: keys.find((x) => isCardKey(x, card)) ?? null }));
+  }
+  /** What the card holds now: its own saved state, else values the agent set before it saved any. */
+  async function cardState(threadId: string, c: ListedCard): Promise<Record<string, unknown>> {
+    const own = c.key ? await bb.storage.kv.get<unknown>(c.key) : null;
+    const state = own ?? (await bb.storage.kv.get<unknown>(pendingKey(threadId, c.card)));
+    return state && typeof state === "object" && !Array.isArray(state) ? (state as Record<string, unknown>) : {};
+  }
+  async function threadCards(threadId: string): Promise<CardWithInputs[]> {
+    const listed = await listCards(threadId);
+    return Promise.all(listed.map(async (c) => {
+      const { source: _source, ...card } = c.card;
+      return { ...card, n: c.n, inputs: personInputs(await cardState(threadId, c)) };
+    }));
   }
   const cardList = (cards: CardWithInputs[]) =>
     cards.length
       ? cards.map((c) => `#${c.n} "${c.title}" (${c.language})${Object.keys(c.inputs).length ? `: ${JSON.stringify(c.inputs)}` : ": nothing set"}`).join("\n")
       : "No Iris cards in this thread yet.";
 
-  bb.rpc.register(cardsContract, { "cards.list": async ({ threadId }) => ({ cards: await threadCards(threadId) }) }, { experimental_discoverable: true, experimental_description: "Iris: the thread's cards and what the person set in them." });
+  // The agent sets a card's inputs (a slider, a pick, a field), checked against the card's own
+  // <state> names and types; an open card hears it and redraws with the new values.
+  type SetResult = { ok: true; card: CardWithInputs; changed: string[]; report: string } | { ok: false; error: string };
+  const cardLocks = new Map<string, Promise<unknown>>();
+  async function setCardInputs(threadId: string, n: number, values: Record<string, unknown>): Promise<SetResult> {
+    const prev = cardLocks.get(threadId) ?? Promise.resolve();
+    const run = async (): Promise<SetResult> => {
+      const listed = await listCards(threadId);
+      const c = listed.find((x) => x.n === n);
+      if (!c) return { ok: false, error: listed.length ? `No card #${n} here. ${cardList(await threadCards(threadId))}` : "No Iris cards in this thread yet." };
+      const current = await cardState(threadId, c);
+      const plan = planInputs(c.card, current, values);
+      if (!plan.ok) return plan;
+      if (JSON.stringify(plan.next).length > 200_000) return { ok: false, error: "the values are too large to store (200 KB at most)" };
+      const report = await checkSource(c.card.source, threadId, personInputs(plan.next));
+      if (report.startsWith("Error") || report.includes("\nError")) return { ok: false, error: `The card errors with those values, so nothing was set.\n${report}` };
+      await bb.storage.kv.set(c.key ?? pendingKey(threadId, c.card), plan.next);
+      bb.realtime.publish("iris-card-state", { threadId, item: `item:${c.card.message}#${c.card.language}#${c.card.index}` });
+      const { source: _source, ...card } = c.card;
+      return { ok: true, card: { ...card, n: c.n, inputs: personInputs(plan.next) }, changed: plan.changed, report };
+    };
+    const next = prev.then(run, run);
+    cardLocks.set(threadId, next.catch(() => undefined));
+    return next;
+  }
+  const setText = (r: Extract<SetResult, { ok: true }>) =>
+    `${r.changed.length ? `Set ${r.changed.map((k) => `${k} = ${JSON.stringify(r.card.inputs[k])}`).join(", ")}` : "Nothing changed"} in card #${r.card.n} "${r.card.title}". An open card redraws with it now; the person can still change it.\n\n${r.report}`;
+  /** CLI values: name=value, where value is JSON when it parses (20, true, ["a"]) and text otherwise. */
+  function parseAssignments(pairs: readonly string[], json: string | undefined): Record<string, unknown> {
+    const out: Record<string, unknown> = {};
+    if (json) {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(json);
+      } catch {
+        throw new PluginCliError("--json isn't valid JSON", { code: "invalid" });
+      }
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new PluginCliError("--json takes an object of input names and values", { code: "invalid" });
+      Object.assign(out, parsed);
+    }
+    for (const pair of pairs) {
+      const eq = pair.indexOf("=");
+      if (eq < 1) throw new PluginCliError(`"${pair}" isn't name=value`, { code: "invalid", hint: "For example: bb iris set 2 seats=20 plan=Pro" });
+      const raw = pair.slice(eq + 1);
+      let value: unknown = raw;
+      try {
+        value = JSON.parse(raw);
+      } catch {
+        value = raw;
+      }
+      out[pair.slice(0, eq)] = value;
+    }
+    return out;
+  }
+
+  bb.rpc.register(
+    cardsContract,
+    {
+      "cards.list": async ({ threadId }) => ({ cards: await threadCards(threadId) }),
+      "cards.set": ({ threadId, card, values }) => setCardInputs(threadId, card, values),
+    },
+    { experimental_discoverable: true, experimental_description: "Iris: the thread's cards, what the person set in them, and setting their inputs." },
+  );
 
   bb.rpc.register(
     pinsContract,
@@ -678,18 +752,18 @@ export default async function plugin(bb: BbPluginApi) {
   /** A TSX module rather than Iris markup. */
   const isReactApp = (source: string) => /^\s*export\s+default\b/m.test(source) || /^\s*import\s[^;]*\bfrom\s*["'](react|iris|lucide-react)["']/m.test(source);
 
-  async function checkSource(source: string, threadId: string | null): Promise<string> {
+  async function checkSource(source: string, threadId: string | null, saved?: Record<string, unknown>): Promise<string> {
     if (isReactApp(source)) return checkReact(source);
-    const { preloaded, live } = await readLoads(source, threadId);
-    const report = formatReport(check(source, { preloaded, load: () => new Promise<LoadResult>(() => undefined) }));
+    const { preloaded, live } = await readLoads(source, threadId, saved);
+    const report = formatReport(check(source, { preloaded, saved, load: () => new Promise<LoadResult>(() => undefined) }));
     return live.length ? `${report}\n\nDidn't answer within 5 s, so not checked here (the card reads them live): ${[...new Set(live)].join(", ")}` : report;
   }
 
   /** Everything the card's load() calls ask for, read here as the card would read it (bb data and plugin feeds at most 5 s each). */
-  async function readLoads(source: string, threadId: string | null): Promise<{ preloaded: Map<string, LoadResult>; live: string[] }> {
+  async function readLoads(source: string, threadId: string | null, saved?: Record<string, unknown>): Promise<{ preloaded: Map<string, LoadResult>; live: string[] }> {
     // First pass finds the files load() asks for; the second checks with them read.
     const asked = new Set<string>();
-    check(source, { load: (p, raw, tail) => (asked.add(`${tail ? "tail:" : raw ? "raw:" : ""}${p}`), new Promise<LoadResult>(() => undefined)) });
+    check(source, { saved, load: (p, raw, tail) => (asked.add(`${tail ? "tail:" : raw ? "raw:" : ""}${p}`), new Promise<LoadResult>(() => undefined)) });
     const preloaded = new Map<string, LoadResult>();
     const live: string[] = [];
     const bbReads: Promise<void>[] = [];
@@ -785,10 +859,10 @@ export default async function plugin(bb: BbPluginApi) {
     execute: validated(z.object({ components: z.array(z.string().min(1).max(40)).min(1).max(10) }), async ({ components }) => ({ content: [{ type: "text", text: docsFor(components) }] })),
   });
 
-  const families = GROUPS.filter((g) => CATALOG.some((c) => c.group === g));
+  const families = exampleFamilies();
   bb.agents.registerTool({
     name: "iris_examples",
-    description: "Returns working Iris examples for every component in the families you name.",
+    description: "Returns working Iris examples for every component in the families you name; \"Recipes\" gives patterns that combine components and tools (a status card that follows a file, a Variants picker).",
     instructions: examplesIndex.text,
     parameters: {
       type: "object",
@@ -809,8 +883,7 @@ export default async function plugin(bb: BbPluginApi) {
     name: "iris_ask",
     description:
       "Asks the person a rich question and waits for the answer: the picker replaces the composer and the thread shows it is waiting on them. Write the picker in Iris markup with <state> for each answer and a <Submit /> button; the answer comes back as JSON of the state values. Use it for picks that need more than a few options: compare designs, tune weights, edit a table, approve a plan. Plain questions go through the host's own ask mode.",
-    instructions:
-      "# iris_ask\nA waiting picker for rich answers. Pass `source` (Iris markup: <state> per answer, inputs bound to them, then <Submit />), `react` (an iris-react module that calls iris.submit(value) from a click) or `html` (a full page that calls window.iris.submit(value)). Prefer `source`: it draws natively in every bb client, including the phone app; `react` and `html` run in a sandboxed frame some clients can't show. The answer arrives as a message: the submitted JSON, or a cancellation. Keep it to one decision. Example source: <state pick=\"B\" note=\"\" />\\n<Radio bind=\"pick\" label=\"Which layout?\" options={[{ value: \"A\", label: \"Sidebar\" }, { value: \"B\", label: \"Tabs\", detail: \"Recommended\" }]} />\\n<TextArea bind=\"note\" label=\"Anything to change?\" />\\n<Submit />",
+    instructions: ASK_INSTRUCTIONS,
     parameters: {
       type: "object",
       properties: {
@@ -928,10 +1001,32 @@ export default async function plugin(bb: BbPluginApi) {
     },
   });
 
+  const SET_PARAMS = z.object({ card: z.number().int().min(1), values: z.record(z.string(), z.unknown()) }).strict();
+  bb.agents.registerTool({
+    name: "iris_card_set",
+    description:
+      "Sets inputs in one of this thread's Iris cards: a slider, a pick, a field, any <state> it declares. Name the card by its # from iris_cards and give the values by state name; each keeps its type. The card is checked with the new values first, and an open card redraws with them. Use it to show the person a scenario in the card they already have instead of sending a new one.",
+    ...params(SET_PARAMS, {
+      type: "object",
+      properties: {
+        card: { type: "integer", minimum: 1, description: "The card's number, from iris_cards" },
+        values: { type: "object", description: 'Input values by state name, e.g. {"seats": 20, "plan": "Pro"}', additionalProperties: true },
+      },
+      required: ["card", "values"],
+      additionalProperties: false,
+    }),
+    presentation: { label: { pending: "Setting a card's inputs", completed: "Set a card's inputs" } },
+    execute: validated(SET_PARAMS, async ({ card, values }, ctx: { threadId?: string | null }) => {
+      if (!ctx.threadId) return { content: [{ type: "text", text: "iris_card_set works only inside a thread" }], isError: true };
+      const r = await setCardInputs(ctx.threadId, card, values);
+      return r.ok ? { content: [{ type: "text", text: setText(r) }] } : { content: [{ type: "text", text: r.error }], isError: true };
+    }),
+  });
+
   // ---------- instructions ----------
 
   const personThreads = new Set<string>();
-  const toolNames = ["iris_check", "iris_ask", "iris_docs", "iris_examples", "iris_pin", "iris_unpin", "iris_pins", "iris_cards"];
+  const toolNames = ["iris_check", "iris_ask", "iris_docs", "iris_examples", "iris_pin", "iris_unpin", "iris_pins", "iris_cards", "iris_card_set"];
   bb.agents.configure((context) => {
     const trial = context.pluginMetadata?.iris === "trial";
     // Every top-level thread is one a person reads, whoever started it (the person, a side chat,
@@ -1034,6 +1129,24 @@ export default async function plugin(bb: BbPluginApi) {
             return { exitCode: 0, stdout: `${input.options.json ? JSON.stringify(cards, null, 2) : cardList(cards)}\n` };
           },
         }),
+        set: cliCommand({
+          summary: "Set inputs in one of this thread's cards; an open card redraws with them",
+          description: "Name the card by its # from `bb iris cards`, then name=value pairs (values parse as JSON when they can: 20, true, [\"a\"]). Each must be a <state> the card declares and keep its type. Checked first: values that make the card error aren't set.",
+          positionals: [
+            { name: "card", description: "The card's number, from `bb iris cards`", required: true },
+            { name: "values", description: "name=value pairs, e.g. seats=20 plan=Pro", variadic: true },
+          ] as const,
+          options: { json: { type: "string", description: 'The values as one JSON object, e.g. {"seats": 20}' } },
+          async run(input, ctx) {
+            const threadId = ctx.threadId;
+            if (!threadId) throw new PluginCliError("set acts on the thread it runs in", { code: "thread_required", hint: "Run it from an agent's shell in bb, where BB_THREAD_ID is set" });
+            const n = Number(input.positionals.card.replace(/^#/, ""));
+            if (!Number.isInteger(n) || n < 1) throw new PluginCliError(`"${input.positionals.card}" isn't a card number`, { code: "invalid", hint: "`bb iris cards` lists them" });
+            const values = parseAssignments(input.positionals.values ?? [], input.options.json);
+            const r = await setCardInputs(threadId, n, values);
+            return r.ok ? { exitCode: 0, stdout: `${setText(r)}\n` } : { exitCode: 1, stdout: "", stderr: `${r.error}\n` };
+          },
+        }),
         pins: cliCommand({
           summary: "List the cards pinned beside this thread's conversation",
           options: { json: { type: "boolean", description: "Print the pins as JSON" } },
@@ -1042,6 +1155,23 @@ export default async function plugin(bb: BbPluginApi) {
             if (!threadId) throw new PluginCliError("pins reads the thread it runs in", { code: "thread_required", hint: "Run it from an agent's shell in bb, where BB_THREAD_ID is set" });
             const pins = await readPins(threadId);
             return { exitCode: 0, stdout: `${input.options.json ? JSON.stringify(pins, null, 2) : pinList(pins)}\n` };
+          },
+        }),
+        "feed check": cliCommand({
+          summary: "Check a plugin's Iris data feed the way a card reads it: it answers, its type, size and time, and the fields a card can use",
+          description: "The feed is <plugin>/<name>, as in load(\"plugin:<plugin>/<name>\"); a ?key=value query passes through. From a thread's shell the thread is passed along as a card passes it. Exit 1 when a card couldn't read it.",
+          positionals: [{ name: "feed", description: "plugin/name, e.g. iris/example", required: true }] as const,
+          options: { json: { type: "boolean", description: "Print the report as JSON" } },
+          async run(input, ctx) {
+            let base: string | null = null;
+            try {
+              base = bb.server.loopbackBaseUrl;
+            } catch {
+              base = null;
+            }
+            if (!base) throw new PluginCliError("bb's own address isn't available to Iris here", { code: "unavailable" });
+            const r = await checkFeed(input.positionals.feed, ctx.threadId ?? null, base);
+            return { exitCode: r.ok ? 0 : 1, stdout: `${input.options.json ? JSON.stringify(r, null, 2) : r.lines.join("\n")}\n` };
           },
         }),
         try: cliCommand({

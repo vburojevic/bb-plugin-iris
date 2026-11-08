@@ -132,3 +132,80 @@ export async function loadPluginData(spec: string, threadId: string | null, raw:
     clearTimeout(timer);
   }
 }
+
+export interface FeedReport {
+  ok: boolean;
+  /** One line per finding, in order: what answered, its type and size, then its fields. */
+  lines: string[];
+}
+
+/** A value's shape in a few words: "number", "list of 12", "object". */
+function shapeOf(v: unknown): string {
+  if (v === null) return "null";
+  if (Array.isArray(v)) return `list of ${v.length}`;
+  if (typeof v === "object") return `object (${Object.keys(v as object).length} fields)`;
+  if (typeof v === "string") return v.length > 40 ? `text (${v.length} chars)` : `text ${JSON.stringify(v)}`;
+  return `${typeof v} ${JSON.stringify(v)}`;
+}
+
+/** The fields a card can read: an object's keys, or the keys a list's rows share (from the first 50). */
+export function describeFields(value: unknown, depth = 0): string[] {
+  const pad = "  ".repeat(depth + 1);
+  if (Array.isArray(value)) {
+    const rows = value.slice(0, 50).filter((r): r is Record<string, unknown> => !!r && typeof r === "object" && !Array.isArray(r));
+    if (!rows.length) return value.length ? [`${pad}items: ${shapeOf(value[0])}`] : [];
+    const keys = [...new Set(rows.flatMap((r) => Object.keys(r)))].slice(0, 30);
+    return keys.map((k) => {
+      const seen = rows.filter((r) => k in r).length;
+      return `${pad}${k}: ${shapeOf(rows.find((r) => k in r)?.[k])}${seen < rows.length ? ` (in ${seen} of ${rows.length} rows)` : ""}`;
+    });
+  }
+  if (value && typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>)
+      .slice(0, 30)
+      .flatMap(([k, v]) => [`${pad}${k}: ${shapeOf(v)}`, ...(depth < 1 && v && typeof v === "object" ? describeFields(v, depth + 1) : [])]);
+  }
+  return [];
+}
+
+/**
+ * Checks a plugin source the way a card reads it: the route answers, with a type Iris parses, under
+ * the size cap and in time, and says what fields the card can use.
+ */
+export async function checkFeed(spec: string, threadId: string | null, base: string, fetchImpl: typeof fetch = fetch): Promise<FeedReport> {
+  const full = isPluginSource(spec) ? spec : `${PLUGIN_DATA_PREFIX}${spec}`;
+  const parsed = parsePluginSource(full);
+  if (!parsed.ok) return { ok: false, lines: [`Error: ${parsed.error}`] };
+  const { source } = parsed;
+  const route = pluginDataPath(source, threadId);
+  const lines = [`${full}`, `GET ${route}`];
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), PLUGIN_DATA_TIMEOUT_MS);
+  const started = Date.now();
+  try {
+    const res = await fetchImpl(new URL(route, base).href, { method: "GET", headers: { accept: "application/json, text/csv;q=0.9, text/plain;q=0.8" }, signal: abort.signal });
+    const ms = Date.now() - started;
+    if (res.status === 404) return { ok: false, lines: [...lines, `Error: 404 in ${ms} ms. Plugin "${source.pluginId}" isn't installed or doesn't serve iris/${source.name} (bb.http.route("GET", "/iris/${source.name}", handler, { auth: "local" }))`] };
+    if (!res.ok) return { ok: false, lines: [...lines, `Error: answered ${res.status} in ${ms} ms; a card shows that as an error`] };
+    const type = res.headers.get("content-type") ?? "";
+    const text = await readCapped(res, MAX_PLUGIN_DATA_BYTES, abort);
+    const total = Date.now() - started;
+    if (text === null) return { ok: false, lines: [...lines, `Error: the answer is over ${MAX_PLUGIN_DATA_BYTES / 1024 / 1024} MB, so cards refuse it`] };
+    const bytes = new TextEncoder().encode(text).byteLength;
+    const kind = type.split(";")[0].trim().toLowerCase() || "no content-type";
+    lines.push(`200 in ${total} ms, ${kind}, ${bytes < 1024 ? `${bytes} bytes` : `${Math.round(bytes / 1024)} KB`}${total > 2000 ? "; slow: live cards read it every 10 s and wait for it" : ""}`);
+    const issues: string[] = [];
+    if (!type) issues.push("Warning: no content-type; Iris guesses from the name's extension. Send application/json, application/x-ndjson, text/csv or text/tab-separated-values");
+    const cache = res.headers.get("cache-control") ?? "";
+    if (!/no-store|no-cache|max-age=0/.test(cache)) issues.push(`Warning: cache-control is ${cache ? `"${cache}"` : "unset"}; send no-store so live cards see fresh data`);
+    const data = parsePluginAnswer(source.name, type, text, false);
+    if (!data.ok) return { ok: false, lines: [...lines, ...issues, `Error: ${data.error}`] };
+    lines.push(...issues, `Value: ${shapeOf(data.value)}`, ...describeFields(data.value));
+    lines.push(`Use it: <let feed={load("${full}")} />, or inside <Card state="live"> to re-read it every 10 s.`);
+    return { ok: true, lines };
+  } catch (e) {
+    return { ok: false, lines: [...lines, abort.signal.aborted ? `Error: no answer within ${PLUGIN_DATA_TIMEOUT_MS / 1000} s; a card gives up there` : `Error: couldn't reach bb: ${e instanceof Error ? e.message : String(e)}`] };
+  } finally {
+    clearTimeout(timer);
+  }
+}

@@ -61,13 +61,21 @@ export const pinsContract = defineRpcContract({
 
 export type PinsContract = typeof pinsContract;
 
-/** The thread's own Iris cards and what the person set in each. */
+const card = z.object({ n: z.number(), message: z.string(), index: z.number(), language: z.string(), title: z.string(), inputs: z.record(z.string(), z.unknown()) });
+
+/** The thread's own Iris cards and what the person set in each, and the agent setting them. */
 export const cardsContract = defineRpcContract({
   "cards.list": {
     experimental_description: "The thread's Iris cards, newest last: message id, block index, title, language, and the inputs the person set in each (sliders, choices, text, stored values).",
     input: z.object({ threadId }),
     output: z.object({
-      cards: z.array(z.object({ n: z.number(), message: z.string(), index: z.number(), language: z.string(), title: z.string(), inputs: z.record(z.string(), z.unknown()) })),
+      cards: z.array(card),
     }),
+  },
+  "cards.set": {
+    experimental_description:
+      "Sets inputs in one of the thread's ```iris cards by its n from cards.list: values by <state> name, each keeping its type. The card is checked with them first (refused with the report on errors); open views redraw with the new values.",
+    input: z.object({ threadId, card: z.number().int().min(1), values: z.record(z.string(), z.unknown()) }),
+    output: z.union([z.object({ ok: z.literal(true), card, changed: z.array(z.string()), report: z.string() }), z.object({ ok: z.literal(false), error: z.string() })]),
   },
 });

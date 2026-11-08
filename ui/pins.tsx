@@ -3,54 +3,19 @@
 // keeps refreshing while the chat scrolls on. A pin holds a card, or follows a file the agent
 // rewrites. Pins follow the thread across devices.
 import { experimental_InfoSection as InfoSection, experimental_useThreadContextKind, useBbNavigate, useRpc, type ExperimentalThreadContextSegmentProps } from "@get-bb/plugin-sdk/app";
-import { useEffect, useState, type MouseEvent } from "react";
-import { alertText, cardFromFile, needsAttention, type Pin } from "../core/pins";
+import { useState, type MouseEvent } from "react";
+import { alertText, needsAttention, type Pin } from "../core/pins";
 import type { PinsContract } from "../shared/pins-rpc";
-import type { RpcContract } from "../shared/rpc";
 import { copyCardImage, IrisBlock } from "./block";
+import { type FileCardState, shortHash, useFileCard } from "./file-card";
 import { ackAlert, unpin, useAllPins, usePins } from "./pin-store";
 import { toneColor, usePalette } from "./palette";
 import { Glyph, cn } from "./views/kit";
 
-/** How often a pin that follows a file reads it again while it shows. */
-const FILE_EVERY_MS = 3_000;
-
-/** A short hash of the card's source, so each pinned card keeps its own inputs. */
-function sourceKey(source: string): string {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < source.length; i++) h = Math.imul(h ^ source.charCodeAt(i), 0x01000193);
-  return (h >>> 0).toString(36);
-}
-
 /** A pin's card: its own source, or its file's latest content (the last good one through a failed read). */
-function usePinSource(threadId: string, pin: Pin): { source: string | null; error: string | null } {
-  const rpc = useRpc<RpcContract>();
-  const [state, setState] = useState<{ source: string | null; error: string | null }>({ source: pin.source ?? null, error: null });
-  useEffect(() => {
-    if (!pin.file) {
-      setState({ source: pin.source ?? null, error: null });
-      return;
-    }
-    let live = true;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const tick = async () => {
-      // Hidden tabs and windows don't read; the next tick after they show again does.
-      if (document.visibilityState !== "hidden") {
-        const r = await rpc.call("load_file", { threadId, path: pin.file as string, raw: true }).catch((e: unknown) => ({ ok: false as const, error: e instanceof Error ? e.message : String(e) }));
-        if (!live) return;
-        setState((prev) =>
-          r.ok && typeof r.value === "string" ? (prev.source === cardFromFile(r.value) && !prev.error ? prev : { source: cardFromFile(r.value), error: null }) : { source: prev.source, error: r.ok ? "not a text file" : r.error },
-        );
-      }
-      timer = setTimeout(() => void tick(), FILE_EVERY_MS);
-    };
-    void tick();
-    return () => {
-      live = false;
-      clearTimeout(timer);
-    };
-  }, [rpc, threadId, pin.file, pin.source]);
-  return state;
+function usePinSource(threadId: string, pin: Pin): FileCardState {
+  const fromFile = useFileCard(threadId, pin.file ?? null);
+  return pin.file ? fromFile : { source: pin.source ?? null, error: null };
 }
 
 function PinnedCard({ threadId, pin }: { threadId: string; pin: Pin }) {
@@ -84,7 +49,7 @@ function PinnedCard({ threadId, pin }: { threadId: string; pin: Pin }) {
         </button>
       </div>
       {source ? (
-        <IrisBlock source={source} streaming={false} threadId={threadId} mode="panel" stateKey={`pinned:${threadId}:${pin.id}:${pin.file ? "file" : sourceKey(source)}`} bare />
+        <IrisBlock source={source} streaming={false} threadId={threadId} mode="panel" stateKey={`pinned:${threadId}:${pin.id}:${pin.file ? "file" : shortHash(source)}`} bare />
       ) : (
         <div className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">{error ? `Couldn't read ${pin.file}: ${error}` : "Loading the pinned card"}</div>
       )}

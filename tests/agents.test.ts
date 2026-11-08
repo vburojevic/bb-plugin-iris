@@ -129,6 +129,14 @@ describe("AgentTrace", () => {
     expect(m.duration).toBe(2000);
   });
 
+  it("survives parent loops and very deep chains", () => {
+    const loop = normalizeTrace([{ id: "a", parent: "b", name: "a" }, { id: "b", parent: "a", name: "b" }]);
+    expect(loop.flat).toHaveLength(2);
+    const chain = normalizeTrace(Array.from({ length: 300 }, (_, i) => ({ id: String(i), parent: String(i + 1), name: `s${i}`, ms: 1 })));
+    expect(Math.max(...chain.flat.map((s) => s.depth))).toBeLessThanOrEqual(64);
+    expect(chain.problems.join()).toMatch(/deeper than 64/);
+  });
+
   it("reads OpenTelemetry JSON with gen_ai attributes", () => {
     const m = normalizeTrace({
       resourceSpans: [

@@ -106,7 +106,12 @@ interface Raw {
 }
 
 let autoId = 0;
-function rawOf(o: Obj, parent?: string): Raw {
+/** Deeper nesting than this is cut: no real run goes that deep, and it keeps recursion bounded. */
+export const MAX_DEPTH = 64;
+let budget = 0;
+function rawOf(o: Obj, parent?: string, depth = 0, seen = new Set<Obj>()): Raw {
+  seen.add(o);
+  budget -= 1;
   const usage = isObj(o.usage) ? o.usage : isObj(o.tokens) ? o.tokens : {};
   const tokensIn = numberOf(o.inputTokens ?? o.input_tokens ?? o.promptTokens ?? usage.input ?? usage.input_tokens ?? usage.prompt_tokens ?? usage.in);
   const tokensOut = numberOf(o.outputTokens ?? o.output_tokens ?? o.completionTokens ?? usage.output ?? usage.output_tokens ?? usage.completion_tokens ?? usage.out);
@@ -133,7 +138,7 @@ function rawOf(o: Obj, parent?: string): Raw {
     model: text(o.model),
     input: o.input ?? o.args ?? o.arguments ?? o.prompt,
     output: o.output ?? o.result ?? o.response,
-    children: kids.filter(isObj).map((c) => rawOf(c, id)),
+    children: depth >= MAX_DEPTH ? [] : kids.filter((c): c is Obj => isObj(c) && !seen.has(c) && budget > 0).map((c) => rawOf(c, id, depth + 1, seen)),
   };
 }
 
@@ -181,6 +186,7 @@ function fromOtel(root: Obj): Obj[] {
 
 function treeOf(input: unknown, problems: string[]): Raw[] {
   autoId = 0;
+  budget = MAX_SPANS * 2;
   let items: Obj[] = [];
   if (Array.isArray(input)) items = input.filter(isObj);
   else if (isObj(input)) {
@@ -188,23 +194,42 @@ function treeOf(input: unknown, problems: string[]): Raw[] {
     else if (Array.isArray(input.spans)) items = input.spans.filter(isObj);
     else items = [input];
   } else if (input != null) problems.push("spans should be a list of {name, kind, ms, children?} or OpenTelemetry JSON");
-  const top = items.map((o) => rawOf(o));
+  const seen = new Set<Obj>();
+  const top = items.slice(0, MAX_SPANS * 2).map((o) => rawOf(o, undefined, 0, seen));
   // Flat spans that name a parent nest under it; nested ones keep their place.
   const all = new Map<string, Raw>();
-  const walk = (r: Raw) => (all.set(r.id, r), r.children.forEach(walk));
-  top.forEach(walk);
+  const owner = new Map<Raw, Raw>();
+  const stack: Raw[] = [...top];
+  while (stack.length) {
+    const r = stack.pop()!;
+    if (!all.has(r.id)) all.set(r.id, r);
+    for (const c of r.children) (owner.set(c, r), stack.push(c));
+  }
   const roots: Raw[] = [];
   for (const r of top) {
     const p = r.parent ? all.get(r.parent) : undefined;
-    if (p && p !== r && !isAncestor(r, p)) p.children.push(r);
-    else roots.push(r);
+    // Walk up from the would-be parent: reaching r means the parents form a loop.
+    let loop = false;
+    let steps = 0;
+    for (let x: Raw | undefined = p; x && steps <= all.size; x = owner.get(x), steps++) if (x === r) (loop = true);
+    if (p && p !== r && !loop) {
+      p.children.push(r);
+      owner.set(r, p);
+    } else roots.push(r);
   }
+  // Cut anything deeper than MAX_DEPTH loose as a new top-level span, so later walks stay shallow.
+  let tooDeep = false;
+  const queue: [Raw, number][] = roots.map((r) => [r, 0]);
+  for (let i = 0; i < queue.length; i++) {
+    const [r, d] = queue[i];
+    if (d >= MAX_DEPTH && r.children.length) {
+      tooDeep = true;
+      for (const c of r.children) (roots.push(c), queue.push([c, 0]));
+      r.children = [];
+    } else for (const c of r.children) queue.push([c, d + 1]);
+  }
+  if (tooDeep) problems.push(`spans nested deeper than ${MAX_DEPTH} levels start again at the top`);
   return roots;
-}
-
-function isAncestor(a: Raw, b: Raw): boolean {
-  for (const c of a.children) if (c === b || isAncestor(c, b)) return true;
-  return false;
 }
 
 /** Lays out times: a start defaults to the end of the sibling before, a duration to the span of its children. */

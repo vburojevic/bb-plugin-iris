@@ -101,7 +101,7 @@ That's it. New agent sessions learn Iris on their own, and the gallery appears i
 <td width="50%" valign="top">
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/icons/dark/gauge.svg"><img src="docs/icons/light/gauge.svg" width="32" height="32" alt=""></picture>
 
-**Measured.** Every release passes an [eval suite](#evals) that runs real chat moments through an agent and scores whether it showed the right card. It scores 95.2 of 100 today.
+**Measured.** Every release passes an [eval suite](#evals) that runs real chat moments through an agent and scores whether it showed the right card. It scores 94.5 of 100 today, over 35 cases run twice each.
 </td>
 </tr>
 </table>

@@ -10,11 +10,7 @@ import { ChangesView, CommitsView, EnvironmentsView, PipelineView, PullRequestVi
 import { BoardView, CalendarView, DecisionView, EstimateView, PlanView, RoadmapView, StatusView, StepsView, TimelineView } from "./planning";
 import { ButtonView, ChecklistView, ColorInputView, DateInputView, InputView, RadioView, RatingView, SegmentedView, SelectView, SliderView, StepperView, TextAreaView, ToggleView } from "./inputs";
 import { ChoicesView, FollowUpsView, SubmitView } from "./pickers";
-import { VariantView, VariantsView } from "./variants";
-import { MarkUpView } from "./markup";
-import { DocReviewView } from "./docreview";
-import { RankView } from "./rank";
-import { GalleryView, HotspotsView, MapView, PhotoSearchView, ScreensView } from "./media";
+import { GalleryView, HotspotsView, MapView, PhotoSearchView } from "./media";
 import { AnnotateView, DeviceFrameView, SwatchesView, TypeSpecimenView } from "./design";
 import { DataGridView } from "./grid";
 import { FunctionPlotView, MathView } from "./math";
@@ -29,6 +25,7 @@ import { CellsView, CronView, DateDiffView, ReleaseView, TimeZonesView } from ".
 import { AccessibilityAuditView, GeoHeatmapView } from "./lazy";
 import { BudgetView, ForecastView } from "./lazy";
 import { CompareGridView, VideoCompareView } from "./lazy";
+import { DocReviewView, MarkUpView, RankView, ScreensView, VariantView, VariantsView } from "./lazy";
 
 export const VIEWS: Record<string, View> = {
   Card: CardView, Stack: StackView, Row: RowView, Grid: GridView, Tabs: TabsView, Tab: TabView, Details: DetailsView, Divider: DividerView,

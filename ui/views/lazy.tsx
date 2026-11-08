@@ -8,6 +8,7 @@ import { type ChunkName, loadChunk } from "../chunks";
 import type { View, ViewProps } from "../render";
 import { InlineError } from "../render";
 import { Shimmer } from "./kit";
+import type { ReactNode } from "react";
 
 type ChunkViews = Record<string, View>;
 const loaded = new Map<ChunkName, ChunkViews>();
@@ -91,3 +92,13 @@ export const GeoHeatmapView = lazyView("interact", "GeoHeatmap", { height: 300, 
 export const EditableBoardView = lazyView("interact", "EditableBoard", { height: 200 });
 export const CompareGridView = lazyView("compare", "CompareGrid", { height: 320, whenNear: true });
 export const VideoCompareView = lazyView("compare", "VideoCompare", { height: 340, whenNear: true });
+export const VariantsView = lazyView("review", "Variants", { height: 360 });
+export const MarkUpView = lazyView("review", "MarkUp", { height: 360, whenNear: true });
+export const DocReviewView = lazyView("review", "DocReview", { height: 320 });
+export const RankView = lazyView("review", "Rank", { height: 220 });
+export const ScreensView = lazyView("review", "Screens", { height: 320, whenNear: true });
+
+/** Variants draws its Variant children itself; a stray Variant shows its content. */
+export function VariantView({ children }: { children?: ReactNode }) {
+  return <div className="flex min-w-0 flex-col gap-3">{children}</div>;
+}

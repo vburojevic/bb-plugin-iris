@@ -8,8 +8,9 @@ import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { AppFrame } from "./ui/app-frame";
 import { IrisBlock } from "./ui/block";
 import { GalleryPage } from "./ui/gallery";
-import { PinnedInfoSection, PinnedSection } from "./ui/pins";
+import { PinnedChip, PinnedChipDetails, PinnedHome, PinnedInfoSection, PinnedSection, usePinnedChipVisible } from "./ui/pins";
 import { Glyph } from "./ui/views/kit";
+import { PinAlertOverlay } from "./ui/pin-alerts";
 import { surfaceBehind } from "./ui/surface";
 
 function Fence({ code, language, status, index, message }: ExperimentalCodeFenceRendererProps) {
@@ -124,6 +125,12 @@ export default definePluginApp((app) => {
   // A pinned card shows in the thread context card where bb has it on, and in the thread's Info tab everywhere.
   app.slots.experimental_threadContextCardSection({ id: "iris-pinned", title: "Pinned cards", group: "iris", component: ({ threadId }) => <PinnedSection threadId={threadId} /> });
   app.slots.experimental_threadInfoSection({ id: "iris-pinned-info", group: "iris", component: ({ threadId }) => <PinnedInfoSection threadId={threadId} /> });
+  // "2 pinned" above the composer: a click opens the pinned cards right there (the phone's quickest way to them).
+  app.slots.experimental_threadContextSegment({ id: "iris-pinned-chip", title: "Pinned cards", group: "2_iris", summary: PinnedChip, details: PinnedChipDetails, useVisible: usePinnedChipVisible });
+  // A pin's alert turning true: a toast in every open bb window, a desktop notification where allowed.
+  app.slots.experimental_appOverlay({ id: "iris-pin-alerts", component: PinAlertOverlay });
+  // bb's home page: every thread's pinned cards, live, newest first; a thread's title opens it.
+  app.slots.homepageSection({ id: "iris-pinned-home", title: "Pinned cards", component: PinnedHome });
   // Prose you'd rather see as a card: one click puts the request in the composer, ready to send.
   app.slots.messageAction({
     id: "iris-as-card",

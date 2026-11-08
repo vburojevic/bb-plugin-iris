@@ -331,3 +331,13 @@ export function experimental_Diff({ patch }: { patch: string; path?: string; vie
 export function definePluginApp<T>(fn: T): T {
   return fn;
 }
+
+/** The site downloads saved files through a plain link. */
+export async function experimental_saveFile(request: { fileName: string; blob?: Blob; url?: string }): Promise<"started" | "failed"> {
+  const href = request.blob ? URL.createObjectURL(request.blob) : request.url;
+  if (!href) return "failed";
+  const a = Object.assign(document.createElement("a"), { href, download: request.fileName });
+  a.click();
+  if (request.blob) setTimeout(() => URL.revokeObjectURL(href), 10_000);
+  return "started";
+}

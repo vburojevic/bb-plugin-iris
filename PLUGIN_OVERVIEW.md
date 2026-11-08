@@ -9,7 +9,8 @@ There are 140 components in 32 families: layout, charts, data grids, diagrams, c
 The agent writes a short `iris` code block in its reply, and bb draws it as a card while the reply streams in. Before sending, the agent checks the block with the `iris_check` tool, which reads the files it loads, moves every input to its extremes and returns an outline of what you will see.
 
 - Sliders, toggles and pickers recompute the card in place.
-- Pin up to five live cards beside the conversation, or let the agent pin and update a status card for you; each shows who pinned it, with one-tap Unpin.
+- Pin up to five live cards beside the conversation, or let the agent pin and update a status card for you. A "2 pinned" chip above the composer opens them, and bb's home page shows every thread's pins. A pin can alert you when its condition turns true (a toast and the thread marked unread; bb offers plugins no phone push).
+- Copy any card as an image: a PNG in your theme, ready to paste.
 - The agent can read back what you set in its cards, so a slider or a pick doesn't need asking twice.
 - Buttons put text in your message, and `iris_ask` opens a picker that waits for your answer, like ask mode: a ranked checklist, design variants in a live preview, a color with its contrast, marks on a screenshot, comments on a spec, or a list to put in order.
 - A live card re-reads its files every 2 seconds, so a running job's log, progress or test results fill in as they land.

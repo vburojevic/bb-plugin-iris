@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardFromFile, cardTitle, MAX_PINS, normalizePins, pinId, removePin, upsertPin, type Pin } from "../core/pins";
+import { cardFromFile, cardTitle, MAX_PINS, newestPinnedFirst, normalizePins, pinId, removePin, upsertPin, type Pin } from "../core/pins";
 
 const pin = (id: string, by: Pin["by"] = "agent"): Pin => ({ id, title: id, source: `<Card title="${id}" />`, by, at: 1 });
 
@@ -31,6 +31,19 @@ describe("pins", () => {
     expect(pinId("", "abc")).toMatch(/^card-[a-z0-9]+$/);
     expect(cardFromFile("```iris\n<Card />\n```\n")).toBe("<Card />");
     expect(cardFromFile("<Card />")).toBe("<Card />");
+  });
+});
+
+describe("pins on the home page", () => {
+  const pin = (id: string, at: number): Pin => ({ id, title: id, source: `<Card title="${id}" />`, by: "person", at });
+  it("puts the most recently pinned thread first, its newest pin first, and drops threads without pins", () => {
+    const out = newestPinnedFirst([
+      { threadId: "a", title: "A", projectId: null, pins: [pin("old", 1)] },
+      { threadId: "b", title: "B", projectId: "p", pins: [pin("x", 5), pin("y", 9)] },
+      { threadId: "c", title: "C", projectId: null, pins: [] },
+    ]);
+    expect(out.map((t) => t.threadId)).toEqual(["b", "a"]);
+    expect(out[0].pins.map((p) => p.id)).toEqual(["y", "x"]);
   });
 });
 

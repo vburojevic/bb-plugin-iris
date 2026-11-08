@@ -55,7 +55,7 @@ export function CardView({ props, children, node }: ViewProps) {
               <CardStatus state={state} text={status} />
             </div>
           ) : null}
-          {block.toolsFor === node.start ? <div className="ml-auto shrink-0">{block.tools}</div> : null}
+          {block.toolsFor === node.start ? <div className="ml-auto shrink-0" data-iris-snapshot-skip="">{block.tools}</div> : null}
         </header>
       ) : null}
       <div className={cn("flex min-w-0 flex-col gap-3", hasHeader && "pt-3")}>{children}</div>

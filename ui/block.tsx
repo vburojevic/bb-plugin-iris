@@ -2,11 +2,11 @@
 // state, saves that state per card, refreshes live cards, and draws the frame
 // with its toolbar (open in panel, source, copy, reset).
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from "react";
 import { isPluginSource, loadPluginData } from "../core/plugin-data";
 import type { Parsed } from "../core/data";
 import { isBbSource } from "../core/bb-data";
-import { experimental_copyToClipboard, experimental_useAppPanel, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
+import { experimental_copyToClipboard, experimental_saveFile, experimental_useAppPanel, useBbNavigate, useRpc } from "@get-bb/plugin-sdk/app";
 import { toast } from "sonner";
 import type { ElementNode } from "../core/ast";
 import { findComponent } from "../core/catalog";
@@ -16,7 +16,9 @@ import { MAX_LINK_SOURCE, PLAYGROUND_URL, playLink } from "../shared/playground"
 import type { RpcContract } from "../shared/rpc";
 import { EnvContext, type IrisEnv, type IrisMode, useActions } from "./env";
 import { usePalette, raisedSurface } from "./palette";
+import { alpha } from "./surface";
 import { pinFromCard, unpin, usePins } from "./pin-store";
+import { loadChunk } from "./chunks";
 import type { PinsContract } from "../shared/pins-rpc";
 import { InlineError, renderNodes } from "./render";
 import { Glyph, cn } from "./views/kit";
@@ -216,7 +218,7 @@ export function IrisBlock(props: BlockProps) {
         className="iris-root @container/iris group/iris relative my-2 min-w-0 text-foreground"
         style={{ ["--iris-accent" as string]: palette.accent, ["--iris-spectrum" as string]: palette.accent, ["--iris-raised" as string]: raisedSurface(palette) }}
       >
-        {!rootCard && tools ? <div className="pointer-events-none absolute -top-1 right-0 z-[2] opacity-0 transition-opacity focus-within:pointer-events-auto focus-within:opacity-100 group-hover/iris:pointer-events-auto group-hover/iris:opacity-100">{tools}</div> : null}
+        {!rootCard && tools ? <div data-iris-snapshot-skip="" className="pointer-events-none absolute -top-1 right-0 z-[2] opacity-0 transition-opacity focus-within:pointer-events-auto focus-within:opacity-100 group-hover/iris:pointer-events-auto group-hover/iris:opacity-100">{tools}</div> : null}
         {showSource ? <SourceView source={source} onClose={() => setShowSource(false)} /> : body}
         {!streaming && program.error ? <InlineError error={new IrisError(program.error.message, program.error.start, program.error.end)} context="Syntax" /> : null}
         {!streaming && !program.error && program.incomplete ? <InlineError error={new IrisError("The block ended before every tag was closed")} /> : null}
@@ -275,6 +277,15 @@ function Toolbar(p: { source: string; language: string; showSource: boolean; onT
   const copy = async () => {
     if (await experimental_copyToClipboard({ text: `\`\`\`${p.language}\n${p.source.trim()}\n\`\`\`` })) toast.success("Copied the card's source");
   };
+  // Pages and apps draw in a sandboxed frame the page can't read, so only cards copy as images.
+  const imageable = !p.streaming && !p.showSource && !/-(app|react)$/.test(p.language);
+  const [drawing, setDrawing] = useState(false);
+  const copyImage = (e: MouseEvent<HTMLButtonElement>) => {
+    const root = e.currentTarget.closest<HTMLElement>("[data-iris-root]");
+    if (!root || drawing) return;
+    setDrawing(true);
+    void copyCardImage(root, titleOf(p.source)).finally(() => setDrawing(false));
+  };
   // The playground runs ```iris cards only; pages and apps need bb's sandbox bridge.
   const shareable = !ON_PLAYGROUND && !p.streaming && p.language === "iris" && p.source.trim().length > 0 && p.source.length <= MAX_LINK_SOURCE;
   const openInPlayground = () => {
@@ -299,6 +310,11 @@ function Toolbar(p: { source: string; language: string; showSource: boolean; onT
       <button type="button" className={btn} onClick={copy} title="Copy" aria-label="Copy source">
         <Glyph name="copy" size={14} />
       </button>
+      {imageable ? (
+        <button type="button" className={btn} onClick={copyImage} disabled={drawing} title="Copy as image" aria-label="Copy the card as an image" aria-busy={drawing}>
+          <Glyph name={drawing ? "loader-circle" : "image"} size={14} className={drawing ? "animate-spin" : undefined} />
+        </button>
+      ) : null}
       {pinnable ? (
         <button type="button" className={cn(btn, pinned && "bg-state-active text-foreground")} onClick={togglePin} title={pinned ? "Unpin" : "Pin beside the conversation"} aria-label={pinned ? "Unpin this card" : "Pin this card beside the conversation"} aria-pressed={pinned}>
           <Glyph name={pinned ? "pin-off" : "pin"} size={14} />
@@ -316,6 +332,60 @@ function Toolbar(p: { source: string; language: string; showSource: boolean; onT
       ) : null}
     </div>
   );
+}
+
+/** The first opaque color behind el, for the image's background (a translucent tint would show as black). */
+function solidBehind(el: HTMLElement): string {
+  for (let up: HTMLElement | null = el; up; up = up.parentElement) {
+    const bg = getComputedStyle(up).backgroundColor;
+    if (bg && bg !== "transparent" && alpha(bg) >= 1) return bg;
+  }
+  return getComputedStyle(document.body).backgroundColor || "#ffffff";
+}
+
+/** A file name from the card's title: "Build status" draws to build-status.png. */
+export function imageFileName(title: string): string {
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+  return `${slug || "iris-card"}.png`;
+}
+
+/**
+ * Draws the card to a PNG and puts it on the clipboard. Where the page can't write images to the
+ * clipboard (some browsers, the phone app), the PNG is saved instead: a download, or the phone's
+ * share sheet. The clipboard write starts inside the click, which Safari requires.
+ */
+export async function copyCardImage(root: HTMLElement, title: string): Promise<void> {
+  const png = loadChunk<{ cardPng: (el: HTMLElement, bg: string) => Promise<Blob> }>("snapshot").then(async (m) => {
+    // The toolbar and hover readouts leave the card while it draws, so the image closes up around them.
+    root.setAttribute("data-iris-snapshot", "");
+    try {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return await m.cardPng(root, solidBehind(root));
+    } finally {
+      root.removeAttribute("data-iris-snapshot");
+    }
+  });
+  png.catch(() => undefined);
+  try {
+    if (typeof ClipboardItem === "undefined" || !navigator.clipboard?.write) throw new Error("no image clipboard");
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
+    toast.success("Copied the card as an image");
+    return;
+  } catch {
+    // Falls through to saving the image.
+  }
+  let blob: Blob;
+  try {
+    blob = await png;
+  } catch (e) {
+    toast.error(`Couldn't draw the card: ${e instanceof Error ? e.message : String(e)}`);
+    return;
+  }
+  if ((await experimental_saveFile({ fileName: imageFileName(title), blob })) === "started") toast.success("Saved the card as an image");
 }
 
 export function titleOf(source: string): string {

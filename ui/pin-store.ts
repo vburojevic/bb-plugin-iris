@@ -2,12 +2,12 @@
 // A change from anywhere (a card's pin button, the agent's iris_pin, `bb iris pin`, another device)
 // arrives as a realtime signal; a window coming back into focus reads again too.
 import { useRealtime, useRpc } from "@get-bb/plugin-sdk/app";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { cardTitle, pinId, type Pin } from "../core/pins";
+import { cardTitle, pinId, type Pin, type PinnedThread } from "../core/pins";
 import type { PinsContract } from "../shared/pins-rpc";
 
-export type { Pin };
+export type { Pin, PinnedThread };
 
 type Rpc = ReturnType<typeof useRpc<PinsContract>>;
 // One read per thread however many cards and panes ask, and every subscriber hears a change.
@@ -72,6 +72,17 @@ export async function unpin(rpc: Rpc, threadId: string, id: string) {
   toast.success("Unpinned");
 }
 
+/** The person dismisses a pin's alert, or every alert in the thread without an id. */
+export async function ackAlert(rpc: Rpc, threadId: string, id?: string) {
+  const r = await rpc.call("pins.ack", { threadId, ...(id ? { id } : {}) }).catch(() => null);
+  if (!r) {
+    toast.error("Couldn't dismiss the alert");
+    return;
+  }
+  cache.delete(threadId);
+  announce(threadId, await read(rpc, threadId, true));
+}
+
 /** The thread's pins, kept current: undefined while the first read runs. */
 export function usePins(threadId: string | null): Pin[] | undefined {
   const rpc = useRpc<PinsContract>();
@@ -101,4 +112,36 @@ export function usePins(threadId: string | null): Pin[] | undefined {
     };
   }, [rpc, threadId]);
   return pins;
+}
+
+// ---------- every thread's pins, for bb's home page ----------
+
+/** Every open thread with pins, newest first, kept current by the same signals; undefined while the first read runs. */
+export function useAllPins(): PinnedThread[] | undefined {
+  const rpc = useRpc<PinsContract>();
+  const [threads, setThreads] = useState<PinnedThread[] | undefined>(undefined);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const load = useRef<() => void>(() => undefined);
+  load.current = () => {
+    void rpc.call("pins.all", {}).then(
+      (r) => setThreads(r.threads),
+      // A failed read keeps what shows; the next signal or focus reads again.
+      () => setThreads((prev) => prev ?? []),
+    );
+  };
+  // A pin changing in any thread reads the list again, once for a burst of changes.
+  useRealtime("iris-pins", () => {
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => load.current(), 300);
+  });
+  useEffect(() => {
+    load.current();
+    const again = () => load.current();
+    addEventListener("focus", again);
+    return () => {
+      removeEventListener("focus", again);
+      clearTimeout(timer.current);
+    };
+  }, [rpc]);
+  return threads;
 }

@@ -7,6 +7,24 @@ export const MAX_PIN_SOURCE = 100_000;
 
 export type PinBy = "agent" | "person";
 
+/**
+ * A pin's alert: an Iris expression over the card's own names (its lets, states and loads). When it
+ * turns true, the pin asks for the person's attention until they dismiss it.
+ */
+export interface PinAlert {
+  when: string;
+  /** What the alert says; default the card's title. */
+  message?: string;
+  /** The condition held at the last check. */
+  firing?: boolean;
+  /** When it last turned true, ms since the epoch. */
+  since?: number;
+  /** The person dismissed this firing. A new firing (false, then true again) asks again. */
+  seen?: boolean;
+}
+
+export const MAX_ALERT_WHEN = 500;
+
 export interface Pin {
   /** Stable within the thread: pinning again with the same id replaces the pin in place. */
   id: string;
@@ -18,6 +36,7 @@ export interface Pin {
   by: PinBy;
   /** When it was pinned or last replaced, ms since the epoch. */
   at: number;
+  alert?: PinAlert;
 }
 
 const ID = /^[a-z0-9][a-z0-9-]{0,39}$/;
@@ -74,6 +93,7 @@ export function normalizePins(stored: unknown): Pin[] {
       ...(source ? { source } : { file }),
       by: p.by === "agent" ? "agent" : "person",
       at: typeof p.at === "number" && Number.isFinite(p.at) ? p.at : 0,
+      ...(normalizeAlert(p.alert) ? { alert: normalizeAlert(p.alert) } : {}),
     });
     if (out.length >= MAX_PINS) break;
   }
@@ -98,4 +118,52 @@ export function upsertPin(pins: Pin[], pin: Pin): PinChange {
 export function removePin(pins: Pin[], id: string): { ok: boolean; pins: Pin[] } {
   const next = pins.filter((p) => p.id !== id);
   return { ok: next.length !== pins.length, pins: next };
+}
+
+/** One thread's pins on bb's home page. */
+export interface PinnedThread {
+  threadId: string;
+  title: string;
+  projectId: string | null;
+  pins: Pin[];
+}
+
+/** Threads with pins, the most recently pinned first, each thread's pins newest first. */
+export function newestPinnedFirst(threads: PinnedThread[]): PinnedThread[] {
+  const latest = (t: PinnedThread) => Math.max(0, ...t.pins.map((p) => p.at));
+  return threads
+    .filter((t) => t.pins.length > 0)
+    .map((t) => ({ ...t, pins: t.pins.slice().sort((a, b) => b.at - a.at) }))
+    .sort((a, b) => latest(b) - latest(a) || a.threadId.localeCompare(b.threadId));
+}
+
+function normalizeAlert(stored: unknown): PinAlert | undefined {
+  if (!stored || typeof stored !== "object") return undefined;
+  const a = stored as Record<string, unknown>;
+  if (typeof a.when !== "string" || !a.when.trim() || a.when.length > MAX_ALERT_WHEN) return undefined;
+  return {
+    when: a.when.trim(),
+    ...(typeof a.message === "string" && a.message.trim() ? { message: a.message.trim().slice(0, 200) } : {}),
+    ...(a.firing === true ? { firing: true } : {}),
+    ...(typeof a.since === "number" && Number.isFinite(a.since) ? { since: a.since } : {}),
+    ...(a.seen === true ? { seen: true } : {}),
+  };
+}
+
+/** The pin asks for the person's attention: its alert holds and they haven't dismissed it. */
+export const needsAttention = (pin: Pin): boolean => pin.alert?.firing === true && pin.alert.seen !== true;
+
+/** What a pin's alert says. */
+export const alertText = (pin: Pin): string => pin.alert?.message ?? pin.title;
+
+/**
+ * The alert after a check. held is the condition's value, or null when it couldn't be decided
+ * (a source still loading or unreadable), which changes nothing. fired is true only on the turn
+ * from false to true.
+ */
+export function stepAlert(alert: PinAlert, held: boolean | null, now: number): { alert: PinAlert; fired: boolean; changed: boolean } {
+  if (held === null) return { alert, fired: false, changed: false };
+  if (held && !alert.firing) return { alert: { when: alert.when, ...(alert.message ? { message: alert.message } : {}), firing: true, since: now }, fired: true, changed: true };
+  if (!held && alert.firing) return { alert: { when: alert.when, ...(alert.message ? { message: alert.message } : {}) }, fired: false, changed: true };
+  return { alert, fired: false, changed: false };
 }

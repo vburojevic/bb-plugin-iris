@@ -37,7 +37,18 @@ function isolation(): { config: string } | null {
   process.on("exit", () => fs.rmSync(config, { recursive: true, force: true }));
   return (isolated = { config });
 }
+/**
+ * Inside a bb thread routed through bb's Account Pooler, the child claude runs on the person's
+ * pooled subscription accounts: the pool's route stays, and the parent token authenticates it
+ * (bb's documented way to route a nested claude). Then --bare keeps it free of local setup.
+ */
+const POOLED = Boolean(process.env.ANTHROPIC_BASE_URL && process.env.BB_ACCOUNT_POOL_PARENT_TOKEN);
 function evalEnv(): NodeJS.ProcessEnv {
+  if (POOLED) {
+    const env = { ...process.env, ANTHROPIC_AUTH_TOKEN: process.env.BB_ACCOUNT_POOL_PARENT_TOKEN };
+    for (const k of ["CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST", "CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_CHILD_SESSION", "CLAUDE_CODE_SESSION_ID", "CLAUDE_CODE_MESSAGING_SOCKET", "CLAUDE_CODE_MESSAGING_TOKEN", "CLAUDE_CONFIG_DIR"]) delete env[k];
+    return env;
+  }
   const env = { ...process.env };
   for (const k of ["ANTHROPIC_BASE_URL", "CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST", "CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_CHILD_SESSION", "CLAUDE_CODE_SESSION_ID", "CLAUDE_CODE_MESSAGING_SOCKET", "CLAUDE_CODE_MESSAGING_TOKEN"]) delete env[k];
   const iso = isolation();
@@ -101,7 +112,7 @@ function claude(prompt: string, system: string, timeoutMs = 300_000, withIris = 
     // No tools and no MCP servers: the agent can only answer in text.
     // Built-in tools off; the agent gets only Iris's own tools, the judge none.
     const iris = withIris ? ["--mcp-config", MCP_CONFIG, "--allowedTools", IRIS_TOOLS] : [];
-    const iso = isolation();
+    const iso = POOLED ? null : isolation();
     const child = spawn("claude", ["-p", ...(iso ? [] : ["--bare"]), "--strict-mcp-config", ...iris, "--model", MODEL, "--append-system-prompt-file", sysFile, "--tools", "", "--output-format", "json", "--no-session-persistence"], { stdio: ["pipe", "pipe", "pipe"], env: evalEnv() });
     child.on("error", (e) => {
       fs.rmSync(dir, { recursive: true, force: true });

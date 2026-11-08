@@ -158,7 +158,7 @@ function balanced(text: string, open: number): { inner: string; end: number } | 
 }
 
 /** Splits on commas that sit outside brackets and strings. */
-function splitTop(text: string, sep = ","): string[] {
+export function splitTop(text: string, sep = ","): string[] {
   const out: string[] = [];
   let depth = 0;
   let cur = "";
@@ -194,7 +194,7 @@ const short = (q: string) => q.slice(q.lastIndexOf(".") + 1);
 const names = (list: string) => splitTop(list).map(unquote);
 
 /** Removes comments, leaving quoted strings alone: DEFAULT '--' and "https://x" survive. */
-function stripComments(text: string, line: string, block = true): string {
+export function stripComments(text: string, line: string, block = true): string {
   let out = "";
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];

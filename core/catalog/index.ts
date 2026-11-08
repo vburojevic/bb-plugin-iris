@@ -13,11 +13,12 @@ import { FILES, PLAYERS } from "./files";
 import { COMPUTE, RELEASE, TIME } from "./tools";
 import { ACCESSIBILITY, GEO } from "./interact";
 import { TRACKING } from "./track";
+import { AGENTS, DEBUG, DECISIONS, SCHEMA_DIFF, TEST_HISTORY, THEME_PREVIEW } from "./agents";
 import type { ComponentSpec } from "./spec";
 
 export * from "./spec";
 
-export const CATALOG: readonly ComponentSpec[] = [...LAYOUT, ...CONTENT, ...DATA, ...CHARTS, ...DIAGRAMS, ...CODE, ...PROJECT, ...EVIDENCE, ...LIVE_PROJECT, ...PLANNING, ...INPUTS, ...PICKERS, ...MEDIA, ...DESIGN, ...DATA_EXPLORE, ...MATH, ...GRAPHS, ...LIVE_CARDS, ...LEARNING, ...GRAPHICS, ...SHEETS, ...API, ...REVIEW, ...TERMINAL, ...WHITEBOARD, ...LOCALIZATION, ...PLAYERS, ...FILES, ...COMPUTE, ...TIME, ...RELEASE, ...ACCESSIBILITY, ...GEO, ...TRACKING];
+export const CATALOG: readonly ComponentSpec[] = [...LAYOUT, ...CONTENT, ...DATA, ...CHARTS, ...DIAGRAMS, ...CODE, ...PROJECT, ...TEST_HISTORY, ...AGENTS, ...DEBUG, ...EVIDENCE, ...LIVE_PROJECT, ...PLANNING, ...DECISIONS, ...INPUTS, ...PICKERS, ...MEDIA, ...DESIGN, ...THEME_PREVIEW, ...DATA_EXPLORE, ...MATH, ...GRAPHS, ...LIVE_CARDS, ...LEARNING, ...GRAPHICS, ...SHEETS, ...API, ...SCHEMA_DIFF, ...REVIEW, ...TERMINAL, ...WHITEBOARD, ...LOCALIZATION, ...PLAYERS, ...FILES, ...COMPUTE, ...TIME, ...RELEASE, ...ACCESSIBILITY, ...GEO, ...TRACKING];
 
 const byName = new Map<string, ComponentSpec>();
 const byAlias = new Map<string, ComponentSpec>();

@@ -9,19 +9,23 @@ import { chunkEntryUrl, sampleUrl } from "./chunks";
 import { useEnv } from "./env";
 import { hexColor, themeVar, useGlSlot } from "./gl";
 import { inkOn, sequentialRamp, toneColor, tooClose } from "./palette";
-import { InlineError } from "./render";
-import { renderValue } from "./render";
+import { InlineError, renderNodes, renderValue } from "./render";
+import { findComponent } from "../core/catalog";
+import { AppFrame } from "./app-frame";
+import { options, same, useBound } from "./views/inputs";
+import { Lightbox } from "./views/media";
 import { runCells } from "../core/compute";
 import { Prose } from "./views/prose";
-import { Chip, Glyph, Shimmer, cn, num, str } from "./views/kit";
+import { Chip, Glyph, Shimmer, cn, num, str, useTone } from "./views/kit";
 import { CompareView } from "./views/evidence";
-import { literalStrings } from "./files";
+import { literalStrings, useLoadedImages } from "./files";
 import { useWipeDrag } from "./wipe";
 
 export type { GlSlot } from "./gl";
 export { chunkEntryUrl, sampleUrl };
 export { Chip, CompareView, Glyph, InlineError, literalStrings, Prose, Shimmer, cn, hexColor, num, sequentialRamp, str, themeVar, useEnv, useGlSlot };
-export { renderValue, runCells };
+export { renderNodes, renderValue, runCells };
+export { AppFrame, Lightbox, findComponent, options, same, useBound, useLoadedImages, useTone };
 export { inkOn, toneColor, tooClose, useWipeDrag };
 
 export const CHUNK_API = {
@@ -48,4 +52,13 @@ export const CHUNK_API = {
   get CompareView() { return CompareView; },
   get literalStrings() { return literalStrings; },
   get useWipeDrag() { return useWipeDrag; },
+  get renderNodes() { return renderNodes; },
+  get findComponent() { return findComponent; },
+  get AppFrame() { return AppFrame; },
+  get Lightbox() { return Lightbox; },
+  get useBound() { return useBound; },
+  get options() { return options; },
+  get same() { return same; },
+  get useLoadedImages() { return useLoadedImages; },
+  get useTone() { return useTone; },
 };

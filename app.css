@@ -180,6 +180,12 @@
 [data-iris-root] .iris-tools {
   box-shadow: 0 0 0 1px var(--border);
 }
+/* While a card draws itself to an image: no toolbar, no hover readouts, and the layout closes up around them. */
+[data-iris-snapshot] .iris-tools,
+[data-iris-snapshot] .iris-readout,
+[data-iris-snapshot] [data-iris-snapshot-skip] {
+  display: none !important;
+}
 [data-iris-root] .iris-card .iris-tools {
   box-shadow: none;
   background: transparent;

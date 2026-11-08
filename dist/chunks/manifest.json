@@ -17,6 +17,7 @@
     "interact-ZSXY7NHW.js": 56733,
     "track-56CKGQY5.js": 32752,
     "compare-G3SPS477.js": 43654,
+    "snapshot-LIHNLNZ3.js": 24619,
     "geo-world-AZI5CNE3.js": 39680,
     "geo-us-Q2BATQH6.js": 24224,
     "pdf-worker-7QMKGGQK.js": 1195179,
@@ -63,6 +64,7 @@
     "interact": "interact-ZSXY7NHW.js",
     "track": "track-56CKGQY5.js",
     "compare": "compare-G3SPS477.js",
+    "snapshot": "snapshot-LIHNLNZ3.js",
     "geo-world": "geo-world-AZI5CNE3.js",
     "geo-us": "geo-us-Q2BATQH6.js",
     "pdf-worker": "pdf-worker-7QMKGGQK.js"

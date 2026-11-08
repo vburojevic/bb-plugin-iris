@@ -533,14 +533,36 @@ A live card keeps showing its last good values when a refresh fails, with a quie
 
 ### Pin a card beside the conversation
 
-Hover any card in a thread and press the pin button: the card stays in view while the chat scrolls on, still live. Pins show in the thread's right panel (Info tab, under Pinned cards), and in the thread context card when that is on in bb (Settings, Experiments). A thread keeps up to five pins, each marked with who pinned it and with its own Unpin, and pins follow the thread to your other devices.
+Hover any card in a thread and press the pin button: the card stays in view while the chat scrolls on, still live. A thread keeps up to five pins, each marked with who pinned it and with its own Unpin, and pins follow the thread to your other devices. They show in four places:
+
+- **Above the composer**, as a "2 pinned" chip. A click opens the pinned cards right there; on a phone this is the quickest way to them.
+- **On bb's home page**, under Pinned cards: every open thread's pins, live, the most recently pinned first. A thread's title opens it.
+- **In the thread context card** at the pane's upper right, when that is on in bb (Settings, Experiments, Thread context card). The chip hides itself there.
+- **In the thread's right panel** (Info tab, under Pinned cards).
 
 The thread's agent can pin too, for a status it keeps current:
 
 - `iris_pin` pins a card from its source, or from a file such as `$BB_THREAD_STORAGE/status.iris`. A file pin re-reads the file every 3 seconds, so the agent updates the card by rewriting the file. The card is checked first; one with errors isn't pinned. Pinning again with the same `id` replaces the pin in place.
 - `iris_unpin` and `iris_pins` remove and list the thread's pins.
-- From a shell: `bb iris pin <file> [--id fleet] [--title ...] [--once]`, `bb iris unpin <id>|--all` and `bb iris pins [--json]`. These act on the thread they run in only.
-- Any client can use the same pins through `bb plugin rpc call iris pins.list|pins.set|pins.remove` (listed by `bb plugin rpc list iris`).
+- From a shell: `bb iris pin <file> [--id fleet] [--title ...] [--once] [--alert-when ...] [--alert-message ...]`, `bb iris unpin <id>|--all` and `bb iris pins [--json]`. These act on the thread they run in only.
+- Any client can use the same pins through `bb plugin rpc call iris pins.list|pins.all|pins.set|pins.ack|pins.remove` (listed by `bb plugin rpc list iris`).
+
+### Pins that alert you
+
+A pin can carry a condition over its card's own names, for example `iris_pin` with `alert_when: 'build.state == "failed"'` on a card that loads `build` from a status file. Iris checks it every 30 seconds, reading the card's files and feeds as the card would. When it turns true:
+
+- the pin shows the alert with Dismiss, and the chip above the composer reads "2 pinned · 1 alert";
+- every open bb window shows a toast with Open (bb keeps it in its notification center);
+- bb's desktop app shows a system notification when bb may already show them and its window isn't in front;
+- the thread is marked unread, so it stands out in the sidebar on every device.
+
+It asks again only after the condition clears and holds again. A source that is still loading or can't be read leaves the alert as it was. Alerts never message the thread or wake the agent.
+
+Phone pushes aren't possible: bb gives plugins no notification API, and bb's push notifications fire only when an agent finishes a turn or asks a question. On the phone, an alert shows as the thread's unread mark and on the pin itself.
+
+### Copy a card as an image
+
+Every card's toolbar, and every pin, has Copy as image: the card is drawn to a PNG in your theme, without its toolbar, and put on the clipboard. Where a page can't write images to the clipboard (some browsers, the phone app), the PNG is saved instead: a download on a computer, the share sheet on a phone. Pages and apps (`iris-app` and `iris-react` blocks) run in a sandboxed frame the page can't read, so they don't copy as images.
 
 ### Read back what the person set
 

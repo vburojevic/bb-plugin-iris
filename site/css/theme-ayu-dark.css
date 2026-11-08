@@ -39,6 +39,7 @@
   /* accent */
   --primary: #e6b450;
   --primary-foreground: #765b24;
+  --timeline-accent: #59c2ff;
   --file-accent: #59c2ff;
 
   /* semantic */
@@ -49,6 +50,7 @@
   --warning-text: #e6b450;
   --attention: #e6b450;
   --success: #70bf56;
+  --success-foreground: #70bf56;
   --diff-added: #70bf56;
   --diff-removed: #f26d78;
   --pr-merged: #d2a6ff;

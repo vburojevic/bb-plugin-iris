@@ -12,10 +12,11 @@ Iris renders ```iris blocks in assistant replies as live UI in the person's bb t
 - `bb iris components`: every component with its one-line summary.
 - `bb iris docs <Name> [Name...]`: props and an example.
 - `bb iris try "<prompt>"`: runs a prompt in a subthread whose agent knows Iris (works in trial rollout too).
-- `bb iris pin <file> [--id <id>] [--title <title>] [--once]`: pins the card in the file beside this thread's conversation and follows the file (re-read every 3 s), so rewriting it updates the pin; `--once` stores the card as it is now. Checked first; at most 5 pins per thread; the same id replaces a pin. The iris_pin tool does the same.
+- `bb iris pin <file> [--id <id>] [--title <title>] [--once] [--alert-when <expr>] [--alert-message <text>]`: pins the card in the file beside this thread's conversation and follows the file (re-read every 3 s), so rewriting it updates the pin; `--once` stores the card as it is now. Checked first; at most 5 pins per thread; the same id replaces a pin. The iris_pin tool does the same (`alert_when`, `alert_message`).
+- Pin alerts: `--alert-when 'build.state == "failed"'` is an Iris expression over the card's own names, checked every 30 s. When it turns true the person sees the alert on the pin and the pinned-count chip, a toast in bb, a desktop notification where allowed, and the thread marked unread, until they dismiss it. Phone pushes aren't possible: bb gives plugins no notification API, and its push notifications fire only on agent turns and questions. Alerts never message the thread.
 - `bb iris unpin <id>` or `--all`, and `bb iris pins [--json]`: remove and list this thread's pins (iris_unpin, iris_pins).
 - `bb iris cards [--json]`: this thread's cards with what the person set in each (iris_cards; the cards.list RPC for other clients).
-- `bb plugin rpc call iris pins.list|pins.set|pins.remove --input-file <json>`: the same pins for any client, by threadId.
+- `bb plugin rpc call iris pins.list|pins.all|pins.set|pins.ack|pins.remove --input-file <json>`: the same pins for any client, by threadId.
 
 ## Settings (`bb plugin config iris`)
 - `stance`: `eager` (default) shows anything that can be shown; `balanced` keeps short answers as prose.

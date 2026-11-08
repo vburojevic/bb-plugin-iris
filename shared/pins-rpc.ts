@@ -14,6 +14,7 @@ const pin: z.ZodType<Pin> = z.object({
   file: z.string().optional(),
   by: z.enum(["agent", "person"]),
   at: z.number(),
+  alert: z.object({ when: z.string(), message: z.string().optional(), firing: z.boolean().optional(), since: z.number().optional(), seen: z.boolean().optional() }).optional(),
 });
 
 export const pinsContract = defineRpcContract({
@@ -32,8 +33,24 @@ export const pinsContract = defineRpcContract({
       source: z.string().min(1).max(100_000).optional(),
       file: z.string().min(1).max(2000).optional(),
       by: z.enum(["agent", "person"]).optional(),
+      alert: z
+        .object({
+          when: z.string().min(1).max(500).describe("An Iris expression over the card's own names, such as build.state == \"failed\"; when it turns true the pin asks for the person's attention"),
+          message: z.string().min(1).max(200).optional().describe("What the alert says; default the card's title"),
+        })
+        .optional(),
     }),
     output: z.union([z.object({ ok: z.literal(true), pin, replaced: z.boolean(), report: z.string() }), z.object({ ok: z.literal(false), error: z.string() })]),
+  },
+  "pins.all": {
+    experimental_description: "Every open thread's pinned cards, the most recently pinned thread first: thread id, title, project id and its pins.",
+    input: z.object({}),
+    output: z.object({ threads: z.array(z.object({ threadId: z.string(), title: z.string(), projectId: z.string().nullable(), pins: z.array(pin) })) }),
+  },
+  "pins.ack": {
+    experimental_description: "Dismisses a pin's alert by id, or every alert in the thread without an id. It asks again only after its condition clears and holds again.",
+    input: z.object({ threadId, id: z.string().min(1).max(40).optional() }),
+    output: z.object({ ok: z.boolean(), acked: z.array(z.string()) }),
   },
   "pins.remove": {
     experimental_description: "Unpins one card by id, or every card with all: true.",

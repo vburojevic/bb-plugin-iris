@@ -284,7 +284,7 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
           <ul className="site-facts site-facts-3">
             <li>
               <Glyph name="pin" size={18} />
-              <b>Pin it beside the chat.</b> Up to five cards stay live next to the conversation while the thread scrolls on. The agent can pin and update its own status card, marked as its pin, with one-tap Unpin.
+              <b>Pin it beside the chat.</b> Up to five cards per thread stay live next to the conversation, behind a "2 pinned" chip above the composer and on bb's home page with every other thread's pins. A pin can alert you when its condition turns true, such as a build that fails.
             </li>
             <li>
               <Glyph name="message-square-plus" size={18} />
@@ -295,8 +295,8 @@ export function Landing({ theme, setTheme }: { theme: ThemeName; setTheme: (t: T
               <b>Answer in a picker.</b> When an agent needs your call, it opens a picker that waits for you: a ranked checklist, design variants in a live preview, a color with its contrast, marks on a screenshot, comments on a spec, or a list to put in order.
             </li>
             <li>
-              <Glyph name="external-link" size={18} />
-              <b>Open it in the browser.</b> Any card opens in this playground. Its source travels in the link and never reaches a server.
+              <Glyph name="image" size={18} />
+              <b>Copy it as an image, or open it in the browser.</b> One click puts a card on the clipboard as a PNG in your theme, ready to paste anywhere. Any card also opens in this playground; its source travels in the link and never reaches a server.
             </li>
             <li>
               <Glyph name="smartphone" size={18} />

@@ -16,7 +16,8 @@ export const rpcContract = defineRpcContract({
   /** An image from the workspace or thread storage as a data URL. */
   load_image: {
     input: z.object({ threadId: z.string().min(1), path: z.string().min(1).max(2000) }),
-    output: z.union([z.object({ ok: z.literal(true), dataUrl: z.string() }), z.object({ ok: z.literal(false), error: z.string() })]),
+    // final: reading again can't help (not an image type, over the size limit).
+    output: z.union([z.object({ ok: z.literal(true), dataUrl: z.string() }), z.object({ ok: z.literal(false), error: z.string(), final: z.boolean().optional() })]),
   },
   /** A 3D model (.glb or .gltf) from the workspace or thread storage, base64, for Scene. */
   load_model: {

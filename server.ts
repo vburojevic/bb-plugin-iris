@@ -16,6 +16,7 @@ import { CATALOG } from "./core/catalog";
 import { rpcContract, type FileUrlResult, type FolderFilesResult } from "./shared/rpc";
 import { cardsContract, pinsContract } from "./shared/pins-rpc";
 import { alertSyntaxError, checkAlert } from "./core/pin-alerts";
+import { askLabels } from "./core/ask";
 import { cardsInMessage, isCardKey, pendingKey, pendingKeyFor, personInputs, planInputs, type CardRef } from "./core/cards";
 import { MAX_ALERT_WHEN, MAX_PINS, MAX_PIN_SOURCE, type Pin, type PinBy, type PinnedThread, alertText, cardFromFile, needsAttention, newestPinnedFirst, stepAlert, cardTitle, normalizePins, pinId, removePin, upsertPin, validPinId } from "./core/pins";
 import { failure, parseChangesTarget, parsePathFilter, parseThreadIds } from "./core/project";
@@ -211,14 +212,14 @@ export default async function plugin(bb: BbPluginApi) {
   }
 
   /** Only the thread's workspace and its thread storage can be read. */
-  async function readFile(threadId: string, requested: string, maxBytes: number): Promise<{ ok: true; content: string; encoding: "utf8" | "base64" } | { ok: false; error: string }> {
+  async function readFile(threadId: string, requested: string, maxBytes: number): Promise<{ ok: true; content: string; encoding: "utf8" | "base64" } | { ok: false; error: string; final?: true }> {
     const where = await resolvePath(threadId, requested);
     if (!where.ok) return where;
     const { root, target } = where;
     try {
       const result = await bb.sdk.files.read({ path: target, rootPath: root.path, hostId: root.hostId });
       if (!("content" in result)) return { ok: false, error: "the file could not be read" };
-      if (result.sizeBytes > maxBytes) return { ok: false, error: `the file is ${Math.round(result.sizeBytes / 1024)} KB, over the ${Math.round(maxBytes / 1024)} KB limit` };
+      if (result.sizeBytes > maxBytes) return { ok: false, error: `the file is ${Math.round(result.sizeBytes / 1024)} KB, over the ${Math.round(maxBytes / 1024)} KB limit`, final: true };
       return { ok: true, content: result.content, encoding: result.contentEncoding };
     } catch (cause) {
       const status = typeof cause === "object" && cause !== null && "status" in cause ? (cause as { status: unknown }).status : null;
@@ -341,7 +342,7 @@ export default async function plugin(bb: BbPluginApi) {
     bb_data: ({ threadId, spec }) => bbData.read(threadId, spec),
     async load_image({ threadId, path: p }) {
       const ext = /\.([^./\\]+)$/.exec(p)?.[1]?.toLowerCase();
-      if (!ext || !IMAGE_TYPES[ext]) return { ok: false as const, error: `only ${Object.keys(IMAGE_TYPES).join(", ")} images can be shown` };
+      if (!ext || !IMAGE_TYPES[ext]) return { ok: false as const, error: `only ${Object.keys(IMAGE_TYPES).join(", ")} images can be shown`, final: true };
       const file = await readFile(threadId, p, MAX_IMAGE_BYTES);
       if (!file.ok) return file;
       const base64 = file.encoding === "base64" ? file.content : Buffer.from(file.content, "utf8").toString("base64");
@@ -919,8 +920,8 @@ export default async function plugin(bb: BbPluginApi) {
           title,
           payload: source ? { title, source } : react ? { title, react } : { title, html: html ?? "" },
           timeoutMs: (timeoutMinutes ?? 60) * 60_000,
-          presentation: { label: { pending: `Waiting: ${title}`, completed: `Answered: ${title}` } },
-          describeSubmission: (value) => ({ title: `Answered: ${title}`, detail: summarize(value) }),
+          presentation: { label: askLabels(title) },
+          describeSubmission: (value) => ({ title: askLabels(title).completed, detail: summarize(value) }),
         },
         { signal: ctx.signal },
       );
